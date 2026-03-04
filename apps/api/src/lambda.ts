@@ -5,9 +5,19 @@ import { db } from './db.js';
 let handlerCache: any;
 
 export const handler = async (event: any, context: any) => {
-    if (!handlerCache) {
-        const app = await buildApp(db);
-        handlerCache = awsLambdaFastify(app);
+    try {
+        if (!handlerCache) {
+            console.log('🚀 Initializing Fastify app for Lambda...');
+            const app = await buildApp(db);
+            handlerCache = awsLambdaFastify(app);
+            console.log('✅ Fastify app initialized.');
+        }
+        return await handlerCache(event, context);
+    } catch (err) {
+        console.error('❌ Lambda initialization/execution failed:', err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Internal Server Error', message: err instanceof Error ? err.message : String(err) }),
+        };
     }
-    return handlerCache(event, context);
 };
