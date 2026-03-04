@@ -2,6 +2,7 @@
   "name": "tt-players",
   "private": true,
   "scripts": {
+    "build": "pnpm --filter @tt-players/web build",
     "db:migrate": "pnpm --filter @tt-players/db run db:migrate",
     "db:migrate:down": "pnpm --filter @tt-players/db run db:migrate:down",
     "db:seed": "pnpm --filter @tt-players/db run db:seed",

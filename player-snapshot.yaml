@@ -1,0 +1,85 @@
+- generic [ref=e3]:
+  - generic [ref=e71]:
+    - banner [ref=e72]:
+      - button "← Back" [ref=e73] [cursor=pointer]
+      - heading "Player Profile" [level=1] [ref=e74]
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic [ref=e80]: AJ
+            - generic [ref=e81]:
+              - heading "Alice Johnson" [level=2] [ref=e82]
+              - generic [ref=e83]:
+                - img [ref=e84]
+                - generic [ref=e87]: Local League
+          - generic [ref=e88]:
+            - generic [ref=e89]: 100%
+            - generic [ref=e90]: Win Rate
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]: "3"
+            - generic [ref=e94]: PLAYED
+          - generic [ref=e95]:
+            - generic [ref=e96]: W3
+            - generic [ref=e97]: STREAK
+          - generic [ref=e98]:
+            - generic [ref=e99]: 3W 0L
+            - generic [ref=e100]: W/L
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e114]: Nemesis
+          - paragraph [ref=e115]: None
+          - paragraph
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - img [ref=e119]
+            - generic [ref=e121]: Dynamic Duo
+          - paragraph [ref=e122]: None
+          - paragraph
+      - generic [ref=e123]:
+        - heading "Recent Matches" [level=3] [ref=e125]:
+          - img [ref=e126]
+          - text: Recent Matches
+        - generic [ref=e128]:
+          - button "W 17 Jan vs George Lucas Premier Division 3-1" [ref=e129] [cursor=pointer]:
+            - generic [ref=e130]:
+              - img [ref=e132]
+              - generic [ref=e134]:
+                - generic [ref=e135]:
+                  - generic [ref=e136]: W
+                  - generic [ref=e137]: 17 Jan
+                - heading "vs George Lucas" [level=4] [ref=e138]
+                - paragraph [ref=e139]: Premier Division
+            - generic [ref=e141]: 3-1
+          - button "W 10 Jan vs Charlie Brown Premier Division 3-1" [ref=e142] [cursor=pointer]:
+            - generic [ref=e143]:
+              - img [ref=e145]
+              - generic [ref=e147]:
+                - generic [ref=e148]:
+                  - generic [ref=e149]: W
+                  - generic [ref=e150]: 10 Jan
+                - heading "vs Charlie Brown" [level=4] [ref=e151]
+                - paragraph [ref=e152]: Premier Division
+            - generic [ref=e154]: 3-1
+          - button "W 10 Jan vs Diana Prince Premier Division 3-0" [ref=e155] [cursor=pointer]:
+            - generic [ref=e156]:
+              - img [ref=e158]
+              - generic [ref=e160]:
+                - generic [ref=e161]:
+                  - generic [ref=e162]: W
+                  - generic [ref=e163]: 10 Jan
+                - heading "vs Diana Prince" [level=4] [ref=e164]
+                - paragraph [ref=e165]: Premier Division
+            - generic [ref=e167]: 3-0
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button "Home" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+        - generic [ref=e36]: Home
+      - button [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]

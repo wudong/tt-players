@@ -1,0 +1,138 @@
+- generic [ref=e3]:
+  - generic [ref=e227]:
+    - generic [ref=e228]:
+      - heading "League Central" [level=1] [ref=e230]:
+        - img [ref=e231]
+        - text: League Central
+      - generic [ref=e237]:
+        - button "Tables" [ref=e238] [cursor=pointer]:
+          - img [ref=e239]
+          - text: Tables
+        - button "Cups" [ref=e242] [cursor=pointer]:
+          - img [ref=e243]
+          - text: Cups
+        - button "Leaders" [ref=e249] [cursor=pointer]:
+          - img [ref=e250]
+          - text: Leaders
+    - generic [ref=e252]:
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - combobox [ref=e256]:
+            - option "Basildon TTL" [selected]
+            - option "Brentwood & District TTL"
+            - option "Brentwood & District TTL"
+            - option "Chelmsford TTL"
+            - option "Colchester & District TTL"
+            - option "Southend & District TTL"
+          - img
+        - generic [ref=e257]:
+          - combobox [ref=e258]:
+            - option "Division 1" [selected]
+            - option "Division 2"
+          - img
+      - generic [ref=e261]:
+        - generic [ref=e262]:
+          - img [ref=e263]
+          - heading "League Table" [level=2] [ref=e269]
+        - table "League standings" [ref=e271]:
+          - rowgroup [ref=e272]:
+            - row "# Team W L Pts" [ref=e273]:
+              - columnheader "#" [ref=e274]
+              - columnheader "Team" [ref=e275]
+              - columnheader "W" [ref=e276]
+              - columnheader "L" [ref=e277]
+              - columnheader "Pts" [ref=e278]
+          - rowgroup [ref=e279]:
+            - row "1 Basildon A 15 1 0" [ref=e280]:
+              - cell "1" [ref=e281]
+              - cell "Basildon A" [ref=e282]
+              - cell "15" [ref=e283]
+              - cell "1" [ref=e284]
+              - cell "0" [ref=e285]:
+                - generic [ref=e286]: "0"
+            - row "2 Northlands Park 11 4 0" [ref=e287]:
+              - cell "2" [ref=e288]
+              - cell "Northlands Park" [ref=e289]
+              - cell "11" [ref=e290]
+              - cell "4" [ref=e291]
+              - cell "0" [ref=e292]:
+                - generic [ref=e293]: "0"
+            - row "3 Hockley A 12 2 0" [ref=e294]:
+              - cell "3" [ref=e295]
+              - cell "Hockley A" [ref=e296]
+              - cell "12" [ref=e297]
+              - cell "2" [ref=e298]
+              - cell "0" [ref=e299]:
+                - generic [ref=e300]: "0"
+            - row "4 Basildon B 9 4 0" [ref=e301]:
+              - cell "4" [ref=e302]
+              - cell "Basildon B" [ref=e303]
+              - cell "9" [ref=e304]
+              - cell "4" [ref=e305]
+              - cell "0" [ref=e306]:
+                - generic [ref=e307]: "0"
+            - row "5 Selbourne 8 5 0" [ref=e308]:
+              - cell "5" [ref=e309]
+              - cell "Selbourne" [ref=e310]
+              - cell "8" [ref=e311]
+              - cell "5" [ref=e312]
+              - cell "0" [ref=e313]:
+                - generic [ref=e314]: "0"
+            - row "6 Coys A 7 7 0" [ref=e315]:
+              - cell "6" [ref=e316]
+              - cell "Coys A" [ref=e317]
+              - cell "7" [ref=e318]
+              - cell "7" [ref=e319]
+              - cell "0" [ref=e320]:
+                - generic [ref=e321]: "0"
+            - row "7 Hockley B 6 8 0" [ref=e322]:
+              - cell "7" [ref=e323]
+              - cell "Hockley B" [ref=e324]
+              - cell "6" [ref=e325]
+              - cell "8" [ref=e326]
+              - cell "0" [ref=e327]:
+                - generic [ref=e328]: "0"
+            - row "8 Basildon C 6 9 0" [ref=e329]:
+              - cell "8" [ref=e330]
+              - cell "Basildon C" [ref=e331]
+              - cell "6" [ref=e332]
+              - cell "9" [ref=e333]
+              - cell "0" [ref=e334]:
+                - generic [ref=e335]: "0"
+            - row "9 Stanford A 4 12 0" [ref=e336]:
+              - cell "9" [ref=e337]
+              - cell "Stanford A" [ref=e338]
+              - cell "4" [ref=e339]
+              - cell "12" [ref=e340]
+              - cell "0" [ref=e341]:
+                - generic [ref=e342]: "0"
+            - row "10 Basildon D 4 7 0" [ref=e343]:
+              - cell "10" [ref=e344]
+              - cell "Basildon D" [ref=e345]
+              - cell "4" [ref=e346]
+              - cell "7" [ref=e347]
+              - cell "0" [ref=e348]:
+                - generic [ref=e349]: "0"
+            - row "11 Canvey A 2 13 0" [ref=e350]:
+              - cell "11" [ref=e351]
+              - cell "Canvey A" [ref=e352]
+              - cell "2" [ref=e353]
+              - cell "13" [ref=e354]
+              - cell "0" [ref=e355]:
+                - generic [ref=e356]: "0"
+            - row "12 Basildon E 2 14 0" [ref=e357]:
+              - cell "12" [ref=e358]
+              - cell "Basildon E" [ref=e359]
+              - cell "2" [ref=e360]
+              - cell "14" [ref=e361]
+              - cell "0" [ref=e362]:
+                - generic [ref=e363]: "0"
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button [ref=e224] [cursor=pointer]:
+        - img [ref=e33]
+      - button "Leagues" [active] [ref=e225] [cursor=pointer]:
+        - img [ref=e38]
+        - generic [ref=e226]: Leagues
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]

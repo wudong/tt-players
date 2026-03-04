@@ -1,4 +1,5 @@
-import { Trophy } from 'lucide-react';
+import { Trophy, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStandings } from '../hooks/useStandings';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 
 export function LeagueTable({ competitionId }: Props) {
     const { data, isLoading, isError, error } = useStandings(competitionId);
+    const navigate = useNavigate();
 
     if (isLoading) {
         return (
@@ -80,7 +82,8 @@ export function LeagueTable({ competitionId }: Props) {
                         {data.map((row, idx) => (
                             <tr
                                 key={row.team_id}
-                                className={`border-b border-slate-50 transition-colors hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                onClick={() => navigate(`/teams/${row.team_id}`)}
+                                className={`group cursor-pointer border-b border-slate-50 transition-colors hover:bg-emerald-50/50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
                                     }`}
                             >
                                 {/* Position */}
@@ -89,8 +92,13 @@ export function LeagueTable({ competitionId }: Props) {
                                 </td>
 
                                 {/* Team name */}
-                                <td className="px-4 py-3 font-semibold text-slate-800">
-                                    {row.team_name}
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                                            {row.team_name}
+                                        </span>
+                                        <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </div>
                                 </td>
 
                                 {/* Won */}

@@ -1,0 +1,49 @@
+- generic [ref=e3]:
+  - generic [ref=e168]:
+    - banner [ref=e169]:
+      - button "Back" [ref=e171] [cursor=pointer]:
+        - img [ref=e172]
+        - text: Back
+      - generic [ref=e174]:
+        - generic [ref=e175]: Match Details
+        - heading "Fixture Results" [level=1] [ref=e176]
+      - generic [ref=e177]:
+        - generic [ref=e178]:
+          - generic [ref=e179]: "1"
+          - generic [ref=e180]: Home
+        - generic [ref=e181]: VS
+        - generic [ref=e182]:
+          - generic [ref=e183]: "1"
+          - generic [ref=e184]: Away
+    - generic [ref=e185]:
+      - generic [ref=e186]:
+        - img [ref=e187]
+        - heading "Match Breakdown" [level=2] [ref=e196]
+      - generic [ref=e197]:
+        - generic [ref=e198]:
+          - generic [ref=e201]: Match 1
+          - generic [ref=e202]:
+            - generic [ref=e204]: George Lucas
+            - generic [ref=e205]:
+              - generic [ref=e206]: "1"
+              - generic [ref=e207]: "-"
+              - generic [ref=e208]: "3"
+            - generic [ref=e210]: Alice Johnson
+        - generic [ref=e211]:
+          - generic [ref=e214]: Match 2
+          - generic [ref=e215]:
+            - generic [ref=e217]: Helen Troy
+            - generic [ref=e218]:
+              - generic [ref=e219]: "3"
+              - generic [ref=e220]: "-"
+              - generic [ref=e221]: "0"
+            - generic [ref=e223]: Bob Smith
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button [ref=e224] [cursor=pointer]:
+        - img [ref=e33]
+      - button "Leagues" [ref=e225] [cursor=pointer]:
+        - img [ref=e38]
+        - generic [ref=e226]: Leagues
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]

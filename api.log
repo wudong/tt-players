@@ -1,0 +1,13 @@
+
+> @tt-players/api@0.0.1 dev /Users/wudong/repo/tt-players/apps/api
+> tsx src/server.ts
+
+🚀 Imports starting...
+🚀 dotenv loaded
+🚀 db imported
+🚀 app built-in imported
+🚀 Starting on port 4003...
+🚀 app built
+🚀 Calling app.listen...
+🚀  API server listening at http://127.0.0.1:4003
+🚀 app.listen call finished

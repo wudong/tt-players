@@ -1,0 +1,25 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - heading "TT Hub" [level=1] [ref=e9]
+          - paragraph [ref=e10]: Table tennis stats & analysis
+        - button [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - searchbox "Find players, clubs, or leagues..." [ref=e21]
+    - main [ref=e22]:
+      - heading "Trending Players" [level=2] [ref=e24]:
+        - img [ref=e25]
+        - text: Trending Players
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button "Home" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+        - generic [ref=e36]: Home
+      - button [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]

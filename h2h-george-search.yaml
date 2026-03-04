@@ -1,0 +1,51 @@
+- generic [ref=e3]:
+  - generic [ref=e556]:
+    - generic [ref=e557]:
+      - heading "Head to Head" [level=1] [ref=e559]:
+        - img [ref=e560]
+        - text: Head to Head
+      - paragraph [ref=e569]: Compare players and past encounters
+    - generic [ref=e571]:
+      - generic [ref=e573]:
+        - generic [ref=e574]:
+          - generic [ref=e596]: AL
+          - generic [ref=e597]:
+            - generic [ref=e598]: Player A
+            - generic [ref=e599]: Alice Johnson
+        - button [ref=e600] [cursor=pointer]:
+          - img [ref=e601]
+      - generic [ref=e580]: VS
+      - generic [ref=e581]:
+        - generic [ref=e582]:
+          - img [ref=e583]
+          - textbox "Search Player B..." [active] [ref=e586]: George
+        - generic [ref=e604]:
+          - button "GE George Gregory 67% WR • 12 matches" [ref=e605] [cursor=pointer]:
+            - generic [ref=e606]: GE
+            - generic [ref=e607]:
+              - generic [ref=e608]: George Gregory
+              - generic [ref=e609]: 67% WR • 12 matches
+          - button "GE George Lucas 0% WR • 2 matches" [ref=e610] [cursor=pointer]:
+            - generic [ref=e611]: GE
+            - generic [ref=e612]:
+              - generic [ref=e613]: George Lucas
+              - generic [ref=e614]: 0% WR • 2 matches
+          - button "GE George Simkin 14% WR • 21 matches" [ref=e615] [cursor=pointer]:
+            - generic [ref=e616]: GE
+            - generic [ref=e617]:
+              - generic [ref=e618]: George Simkin
+              - generic [ref=e619]: 14% WR • 21 matches
+          - button "RA Ray George 0% WR • 6 matches" [ref=e620] [cursor=pointer]:
+            - generic [ref=e621]: RA
+            - generic [ref=e622]:
+              - generic [ref=e623]: Ray George
+              - generic [ref=e624]: 0% WR • 6 matches
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button [ref=e224] [cursor=pointer]:
+        - img [ref=e33]
+      - button [ref=e587] [cursor=pointer]:
+        - img [ref=e38]
+      - button "H2H" [ref=e588] [cursor=pointer]:
+        - img [ref=e45]
+        - generic [ref=e589]: H2H

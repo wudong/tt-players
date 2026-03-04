@@ -1,0 +1,30 @@
+- generic [ref=e3]:
+  - generic [ref=e556]:
+    - generic [ref=e557]:
+      - heading "Head to Head" [level=1] [ref=e559]:
+        - img [ref=e560]
+        - text: Head to Head
+      - paragraph [ref=e569]: Compare players and past encounters
+    - generic [ref=e571]:
+      - generic [ref=e573]:
+        - generic [ref=e574]:
+          - img [ref=e575]
+          - textbox "Search Player A..." [active] [ref=e578]: Alice
+        - button "AL Alice Johnson 100% WR • 3 matches" [ref=e591] [cursor=pointer]:
+          - generic [ref=e592]: AL
+          - generic [ref=e593]:
+            - generic [ref=e594]: Alice Johnson
+            - generic [ref=e595]: 100% WR • 3 matches
+      - generic [ref=e580]: VS
+      - generic [ref=e582]:
+        - img [ref=e583]
+        - textbox "Search Player B..." [ref=e586]
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button [ref=e224] [cursor=pointer]:
+        - img [ref=e33]
+      - button [ref=e587] [cursor=pointer]:
+        - img [ref=e38]
+      - button "H2H" [ref=e588] [cursor=pointer]:
+        - img [ref=e45]
+        - generic [ref=e589]: H2H

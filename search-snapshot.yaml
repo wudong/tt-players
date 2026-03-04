@@ -1,0 +1,34 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - heading "TT Hub" [level=1] [ref=e9]
+          - paragraph [ref=e10]: Table tennis stats & analysis
+        - button [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - searchbox "Find players, clubs, or leagues..." [active] [ref=e21]: Alice
+    - main [ref=e22]:
+      - heading "Search Results" [level=2] [ref=e54]:
+        - img [ref=e55]
+        - text: Search Results
+      - button "AJ Alice Johnson 100% WR 3 matches" [ref=e58] [cursor=pointer]:
+        - generic [ref=e59]:
+          - generic [ref=e61]: AJ
+          - generic [ref=e62]:
+            - heading "Alice Johnson" [level=3] [ref=e63]
+            - generic [ref=e64]:
+              - generic [ref=e65]: 100% WR
+              - generic [ref=e66]: 3 matches
+        - img [ref=e69]
+  - navigation "Main navigation" [ref=e30]:
+    - generic [ref=e31]:
+      - button "Home" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+        - generic [ref=e36]: Home
+      - button [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]

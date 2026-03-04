@@ -189,7 +189,7 @@ function PlayerAutocomplete({ label, selected, onSelect, excludeId, color }: Aut
     }
 
     return (
-        <div className="relative z-20">
+        <div className={`relative ${isFocused ? 'z-30' : 'z-20'}`}>
             <div className={`flex items-center gap-3 rounded-2xl bg-white px-4 shadow-sm ring-1 ring-slate-200 transition-all ${isFocused ? 'ring-2 ' + colorClasses : ''}`}>
                 <Search size={18} className={isFocused ? `text-${color}-500` : "text-slate-400"} />
                 <input
