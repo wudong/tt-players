@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { FixtureItem } from '../types';
+import type { FixtureItem, FixturesResponse } from '../types';
 
 // ---------------------------------------------------------------------------
 // Mock the hook
@@ -40,6 +40,16 @@ const MOCK_FIXTURES: FixtureItem[] = [
 
 const TEAM_ID = 'team-abc-123';
 
+function makeFixturesResponse(data: FixtureItem[], availability: FixturesResponse['availability'] = 'available'): FixturesResponse {
+    return {
+        availability,
+        total: data.length,
+        limit: 20,
+        offset: 0,
+        data,
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Helper
 // ---------------------------------------------------------------------------
@@ -64,7 +74,7 @@ describe('Dashboard', () => {
     // --- Success state --------------------------------------------------------
     describe('when data loads successfully', () => {
         it('renders a card/row for every fixture in mock data', () => {
-            mockHook({ data: MOCK_FIXTURES, isLoading: false, isError: false });
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             // Each fixture should be discoverable in the DOM — we assert by unique id attr or status text
@@ -72,7 +82,7 @@ describe('Dashboard', () => {
         });
 
         it('displays the status for each fixture', () => {
-            mockHook({ data: MOCK_FIXTURES, isLoading: false, isError: false });
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             expect(screen.getByText(/completed/i)).toBeInTheDocument();
@@ -80,7 +90,7 @@ describe('Dashboard', () => {
         });
 
         it('shows a formatted date for each fixture', () => {
-            mockHook({ data: MOCK_FIXTURES, isLoading: false, isError: false });
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             // We just assert that a date element is rendered for each fixture
@@ -89,14 +99,14 @@ describe('Dashboard', () => {
         });
 
         it('renders "TBD" when away_team_id is null', () => {
-            mockHook({ data: MOCK_FIXTURES, isLoading: false, isError: false });
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             expect(screen.getByText(/tbd/i)).toBeInTheDocument();
         });
 
         it('shows an empty-state when fixtures list is empty', () => {
-            mockHook({ data: [], isLoading: false, isError: false });
+            mockHook({ data: makeFixturesResponse([], 'no_matches_yet'), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             expect(screen.getByText(/no recent matches/i)).toBeInTheDocument();
@@ -152,7 +162,7 @@ describe('Dashboard', () => {
     describe('hook wiring', () => {
         it('calls useFixtures with the provided teamId', () => {
             const spy = vi.spyOn(useFixturesModule, 'useFixtures').mockReturnValue({
-                data: MOCK_FIXTURES,
+                data: makeFixturesResponse(MOCK_FIXTURES),
                 isLoading: false,
                 isError: false,
                 error: null,

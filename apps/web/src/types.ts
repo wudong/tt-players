@@ -32,6 +32,7 @@ export interface FixtureItem {
 }
 
 export interface FixturesResponse {
+    availability: 'available' | 'no_matches_yet' | 'source_data_missing';
     total: number;
     limit: number;
     offset: number;
@@ -66,10 +67,38 @@ export interface PlayerSearchResponse {
     data: PlayerSearchItem[];
 }
 
+export type LeaderboardMode = 'win_pct' | 'most_played' | 'combined';
+
+export interface LeaderboardItem {
+    rank: number;
+    player_id: string;
+    player_name: string;
+    played: number;
+    wins: number;
+    losses: number;
+    win_rate: number;
+    score: number | null;
+}
+
+export interface LeadersResponse {
+    mode: LeaderboardMode;
+    formula: string;
+    min_played: number;
+    data: LeaderboardItem[];
+}
+
 export interface ExtendedPlayerStats extends PlayerStats {
     nemesis: string;
     duo: string;
     streak: string;
+    most_played_opponents: Array<{
+        opponent_id: string;
+        opponent_name: string;
+        played: number;
+        wins: number;
+        losses: number;
+        win_rate: number;
+    }>;
 }
 
 export interface RubberItem {
@@ -78,11 +107,15 @@ export interface RubberItem {
     date: string;
     league: string;
     opponent: string;
+    opponent_id: string | null;
     result: string;
     isWin: boolean;
 }
 
 export interface RubbersResponse {
+    total: number;
+    limit: number;
+    offset: number;
     data: RubberItem[];
 }
 
@@ -90,6 +123,20 @@ export interface H2HResponse {
     player1_wins: number;
     player2_wins: number;
     encounters: RubberItem[];
+}
+
+export interface PlayerCurrentSeasonAffiliation {
+    team_id: string;
+    team_name: string;
+    league_id: string;
+    league_name: string;
+    season_id: string;
+    season_name: string;
+    competition_name: string;
+}
+
+export interface PlayerCurrentSeasonAffiliationsResponse {
+    data: PlayerCurrentSeasonAffiliation[];
 }
 
 export interface RosterItem {
@@ -101,6 +148,7 @@ export interface RosterItem {
 }
 
 export interface RosterResponse {
+    availability: 'available' | 'no_matches_yet' | 'source_data_missing';
     data: RosterItem[];
 }
 
@@ -126,7 +174,17 @@ export interface FixtureRubberItem {
     away_games_won: number;
 }
 
+export interface FixtureMeta {
+    id: string;
+    played_at: string | null;
+    league_name: string;
+    division_name: string;
+    home_team_name: string | null;
+    away_team_name: string | null;
+}
+
 export interface FixtureRubbersResponse {
+    fixture: FixtureMeta;
     data: FixtureRubberItem[];
 }
 

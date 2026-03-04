@@ -22,6 +22,13 @@ const RosterItemSchema = z.object({
     wins: z.number().int(),
 });
 
+const DataAvailabilitySchema = z.enum(['available', 'no_matches_yet', 'source_data_missing']);
+
+const RosterResponseSchema = z.object({
+    availability: DataAvailabilitySchema,
+    data: z.array(RosterItemSchema),
+});
+
 const FormResponseSchema = z.object({
     form: z.array(z.string()),
     position: z.number().int().nullable(),
@@ -41,6 +48,7 @@ const FixtureItemSchema = z.object({
 });
 
 const ResponseSchema = z.object({
+    availability: DataAvailabilitySchema,
     total: z.number().int(),
     limit: z.number().int(),
     offset: z.number().int(),
@@ -55,6 +63,22 @@ const ErrorSchema = z.object({
 export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
     return async function (fastify) {
         const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+        async function resolveTeamDataAvailability(teamId: string): Promise<'available' | 'no_matches_yet' | 'source_data_missing'> {
+            const latestStanding = await db
+                .selectFrom('league_standings')
+                .select(['played'])
+                .where('team_id', '=', teamId)
+                .where('deleted_at', 'is', null)
+                .orderBy('updated_at', 'desc')
+                .limit(1)
+                .executeTakeFirst();
+
+            if ((latestStanding?.played ?? 0) > 0) {
+                return 'source_data_missing';
+            }
+            return 'no_matches_yet';
+        }
 
         app.get(
             '/:id/fixtures',
@@ -126,6 +150,9 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 }));
 
                 return reply.send({
+                    availability: Number(count) > 0
+                        ? 'available'
+                        : await resolveTeamDataAvailability(id),
                     total: Number(count),
                     limit,
                     offset,
@@ -140,7 +167,7 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 schema: {
                     params: ParamsSchema,
                     response: {
-                        200: z.object({ data: z.array(RosterItemSchema) }),
+                        200: RosterResponseSchema,
                         404: ErrorSchema,
                         500: ErrorSchema,
                     },
@@ -180,7 +207,12 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     };
                 });
 
-                return reply.send({ data });
+                return reply.send({
+                    availability: data.length > 0
+                        ? 'available'
+                        : await resolveTeamDataAvailability(id),
+                    data,
+                });
             }
         );
 

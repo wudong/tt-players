@@ -77,6 +77,7 @@ function FixtureCard({ fixture }: { fixture: FixtureItem }) {
 
 export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
     const { data, isLoading, isError, error } = useFixtures(teamId, { limit, offset });
+    const fixtures = data?.data ?? [];
 
     if (isLoading) {
         return (
@@ -113,11 +114,15 @@ export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
         );
     }
 
-    if (!data || data.length === 0) {
+    if (!data || fixtures.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center gap-2 p-12 text-slate-400">
                 <CalendarDays size={32} strokeWidth={1.5} />
-                <p className="text-sm font-medium">No recent matches found</p>
+                <p className="text-sm font-medium">
+                    {data?.availability === 'source_data_missing'
+                        ? 'Match data is not available for this source yet'
+                        : 'No recent matches found'}
+                </p>
             </div>
         );
     }
@@ -134,7 +139,7 @@ export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
 
             {/* Fixture list */}
             <div className="flex flex-col gap-3">
-                {data.map((fixture) => (
+                {fixtures.map((fixture) => (
                     <FixtureCard key={fixture.id} fixture={fixture} />
                 ))}
             </div>

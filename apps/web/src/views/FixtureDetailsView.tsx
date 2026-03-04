@@ -8,6 +8,16 @@ export function FixtureDetailsView() {
 
     const { data: rubbersData, isLoading, isError } = useFixtureRubbers(fixtureId);
     const rubbers = rubbersData?.data || [];
+    const fixtureMeta = rubbersData?.fixture;
+    const playedAtLabel = fixtureMeta?.played_at
+        ? new Date(fixtureMeta.played_at).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        })
+        : 'Time not available';
 
     // Calculate overall score based on the rubbers
     let homeScore = 0;
@@ -39,6 +49,16 @@ export function FixtureDetailsView() {
                     <h1 className="text-2xl font-extrabold text-white drop-shadow-md">
                         Fixture Results
                     </h1>
+                    {!isLoading && !isError && fixtureMeta && (
+                        <>
+                            <p className="mt-2 text-xs font-semibold text-indigo-100">
+                                {fixtureMeta.league_name} · {fixtureMeta.division_name}
+                            </p>
+                            <p className="mt-1 text-[11px] font-medium text-indigo-200">
+                                {playedAtLabel}
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 {/* Scoreboard Card */}
@@ -46,14 +66,18 @@ export function FixtureDetailsView() {
                     <div className="relative z-10 mt-6 flex w-full items-center justify-between rounded-2xl bg-white/10 p-4 backdrop-blur-md ring-1 ring-white/20 shadow-xl">
                         <div className="flex flex-1 flex-col items-center">
                             <span className="text-3xl font-black text-white">{homeScore}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-200 mt-1">Home</span>
+                            <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-indigo-200">
+                                {fixtureMeta?.home_team_name ?? 'Home'}
+                            </span>
                         </div>
                         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/40 font-bold text-white ring-2 ring-indigo-400/30">
                             VS
                         </div>
                         <div className="flex flex-1 flex-col items-center">
                             <span className="text-3xl font-black text-white">{awayScore}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-200 mt-1">Away</span>
+                            <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-indigo-200">
+                                {fixtureMeta?.away_team_name ?? 'Away'}
+                            </span>
                         </div>
                     </div>
                 )}
@@ -79,37 +103,59 @@ export function FixtureDetailsView() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        {rubbers.map((rubber, index) => {
+                        {rubbers.map((rubber) => {
                             const isHomeWin = rubber.home_games_won > rubber.away_games_won;
                             const isAwayWin = rubber.away_games_won > rubber.home_games_won;
 
-                            // Format names for doubles if needed
-                            const homeName = rubber.is_doubles
-                                ? `${rubber.home_player_1_name?.split(' ')[0] || 'Unknown'} & ${rubber.home_player_2_name?.split(' ')[0] || 'Unknown'}`
-                                : rubber.home_player_1_name || 'Unknown';
+                            const homePlayers = [
+                                { id: rubber.home_player_1_id, name: rubber.home_player_1_name },
+                                ...(rubber.is_doubles ? [{ id: rubber.home_player_2_id, name: rubber.home_player_2_name }] : []),
+                            ].filter((player) => Boolean(player.name));
+                            const resolvedHomePlayers = homePlayers.length > 0
+                                ? homePlayers
+                                : [{ id: null, name: 'Unknown' }];
 
-                            const awayName = rubber.is_doubles
-                                ? `${rubber.away_player_1_name?.split(' ')[0] || 'Unknown'} & ${rubber.away_player_2_name?.split(' ')[0] || 'Unknown'}`
-                                : rubber.away_player_1_name || 'Unknown';
+                            const awayPlayers = [
+                                { id: rubber.away_player_1_id, name: rubber.away_player_1_name },
+                                ...(rubber.is_doubles ? [{ id: rubber.away_player_2_id, name: rubber.away_player_2_name }] : []),
+                            ].filter((player) => Boolean(player.name));
+                            const resolvedAwayPlayers = awayPlayers.length > 0
+                                ? awayPlayers
+                                : [{ id: null, name: 'Unknown' }];
 
                             return (
-                                <div key={rubber.id} className="relative flex flex-col rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all hover:shadow-md">
-                                    <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-slate-200"></div>
-
-                                    <div className="mb-3 flex items-center justify-between border-b border-slate-50 pb-2">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Match {index + 1} {rubber.is_doubles ? '(Doubles)' : ''}</span>
+                                <div key={rubber.id} className="flex items-center justify-between gap-3 rounded-[1.25rem] bg-white px-3 py-2.5 shadow-sm ring-1 ring-slate-100 transition-all hover:shadow-md">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        {rubber.is_doubles ? 'Doubles' : 'Singles'}
                                     </div>
-
-                                    <div className="flex items-center justify-between gap-4">
+                                    <div className="flex flex-1 items-center justify-between gap-3">
                                         {/* Home Player */}
                                         <div className="flex flex-1 flex-col items-start">
-                                            <span className={`text-sm font-bold ${isHomeWin ? 'text-indigo-600' : 'text-slate-700'}`}>
-                                                {homeName}
-                                            </span>
+                                            <div className="flex flex-wrap items-center gap-1.5 text-left">
+                                                {resolvedHomePlayers.map((player, idx) => (
+                                                    <div key={`${rubber.id}-home-${idx}`} className="flex items-center gap-1.5">
+                                                        {player.id ? (
+                                                            <button
+                                                                onClick={() => navigate(`/players/${player.id}`)}
+                                                                className={`text-sm font-bold ${isHomeWin ? 'text-indigo-600' : 'text-slate-700'} hover:underline`}
+                                                            >
+                                                                {player.name}
+                                                            </button>
+                                                        ) : (
+                                                            <span className={`text-sm font-bold ${isHomeWin ? 'text-indigo-600' : 'text-slate-700'}`}>
+                                                                {player.name}
+                                                            </span>
+                                                        )}
+                                                        {idx < resolvedHomePlayers.length - 1 && (
+                                                            <span className="text-xs text-slate-300">&amp;</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
 
                                         {/* Score Pill */}
-                                        <div className="flex items-center justify-center rounded-xl bg-slate-50 px-3 py-1.5 ring-1 ring-slate-100">
+                                        <div className="flex items-center justify-center rounded-xl bg-slate-50 px-2.5 py-1 ring-1 ring-slate-100">
                                             <span className={`w-4 text-center text-sm font-black ${isHomeWin ? 'text-indigo-600' : 'text-slate-400'}`}>
                                                 {rubber.home_games_won}
                                             </span>
@@ -121,9 +167,27 @@ export function FixtureDetailsView() {
 
                                         {/* Away Player */}
                                         <div className="flex flex-1 flex-col items-end text-right">
-                                            <span className={`text-sm font-bold ${isAwayWin ? 'text-indigo-600' : 'text-slate-700'}`}>
-                                                {awayName}
-                                            </span>
+                                            <div className="flex flex-wrap items-center justify-end gap-1.5 text-right">
+                                                {resolvedAwayPlayers.map((player, idx) => (
+                                                    <div key={`${rubber.id}-away-${idx}`} className="flex items-center gap-1.5">
+                                                        {idx > 0 && (
+                                                            <span className="text-xs text-slate-300">&amp;</span>
+                                                        )}
+                                                        {player.id ? (
+                                                            <button
+                                                                onClick={() => navigate(`/players/${player.id}`)}
+                                                                className={`text-sm font-bold ${isAwayWin ? 'text-indigo-600' : 'text-slate-700'} hover:underline`}
+                                                            >
+                                                                {player.name}
+                                                            </button>
+                                                        ) : (
+                                                            <span className={`text-sm font-bold ${isAwayWin ? 'text-indigo-600' : 'text-slate-700'}`}>
+                                                                {player.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

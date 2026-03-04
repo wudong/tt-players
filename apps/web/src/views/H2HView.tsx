@@ -1,14 +1,41 @@
 import { Swords, Search, X, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
 import { usePlayerH2H } from '../hooks/usePlayerH2H';
+import { usePlayerStats } from '../hooks/usePlayerStats';
 import { PlayerSearchItem, RubberItem } from '../types';
+import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
+
+interface H2HPrefillState {
+    playerA?: PlayerSearchItem;
+    playerB?: PlayerSearchItem;
+}
+
+function overallWinRate(player: PlayerSearchItem, total?: number, wins?: number) {
+    if (typeof total === 'number' && total > 0 && typeof wins === 'number') {
+        return Math.round((wins / total) * 100);
+    }
+    return player.played > 0 ? Math.round((player.wins / player.played) * 100) : 0;
+}
 
 export function H2HView() {
     const [playerA, setPlayerA] = useState<PlayerSearchItem | null>(null);
     const [playerB, setPlayerB] = useState<PlayerSearchItem | null>(null);
+    const location = useLocation();
+    const { selectedLeagueIds } = useLeaguePreferences();
+
+    useEffect(() => {
+        const prefill = location.state as H2HPrefillState | null;
+        if (prefill?.playerA && prefill?.playerB) {
+            setPlayerA(prefill.playerA);
+            setPlayerB(prefill.playerB);
+        }
+    }, [location.state]);
 
     const { data: h2hData, isLoading: h2hLoading } = usePlayerH2H(playerA?.id, playerB?.id);
+    const { data: playerAStats } = usePlayerStats(playerA?.id ?? '');
+    const { data: playerBStats } = usePlayerStats(playerB?.id ?? '');
     const h2h = h2hData;
     const h2hTotal = h2h ? h2h.player1_wins + h2h.player2_wins : 0;
 
@@ -35,6 +62,7 @@ export function H2HView() {
                         onSelect={setPlayerA}
                         excludeId={playerB?.id}
                         color="indigo"
+                        leagueIds={selectedLeagueIds}
                     />
 
                     <div className="relative z-10 my-1 ml-[11px] flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 ring-4 ring-slate-50 shadow-sm">
@@ -47,6 +75,7 @@ export function H2HView() {
                         onSelect={setPlayerB}
                         excludeId={playerA?.id}
                         color="pink"
+                        leagueIds={selectedLeagueIds}
                     />
                 </section>
 
@@ -84,11 +113,15 @@ export function H2HView() {
 
                             <div className="flex items-center justify-between mt-6">
                                 <div className="text-center">
-                                    <span className="block text-2xl font-bold text-slate-800">{playerA.played > 0 ? Math.round((playerA.wins / playerA.played) * 100) : 0}%</span>
+                                    <span className="block text-2xl font-bold text-slate-800">
+                                        {overallWinRate(playerA, playerAStats?.total, playerAStats?.wins)}%
+                                    </span>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Overall WR</span>
                                 </div>
                                 <div className="text-center">
-                                    <span className="block text-2xl font-bold text-slate-800">{playerB.played > 0 ? Math.round((playerB.wins / playerB.played) * 100) : 0}%</span>
+                                    <span className="block text-2xl font-bold text-slate-800">
+                                        {overallWinRate(playerB, playerBStats?.total, playerBStats?.wins)}%
+                                    </span>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Overall WR</span>
                                 </div>
                             </div>
@@ -153,13 +186,14 @@ interface AutocompleteProps {
     onSelect: (p: PlayerSearchItem | null) => void;
     excludeId?: string;
     color: 'indigo' | 'pink';
+    leagueIds: string[];
 }
 
-function PlayerAutocomplete({ label, selected, onSelect, excludeId, color }: AutocompleteProps) {
+function PlayerAutocomplete({ label, selected, onSelect, excludeId, color, leagueIds }: AutocompleteProps) {
     const [query, setQuery] = useState('');
     const [isFocused, setIsFocused] = useState(false);
 
-    const { data } = usePlayerSearch(query);
+    const { data } = usePlayerSearch(query, leagueIds);
     const results = (data?.data || []).filter(p => p.id !== excludeId);
 
     const colorClasses = color === 'indigo'

@@ -24,6 +24,15 @@ const RubberItemSchema = z.object({
     away_games_won: z.number().int(),
 });
 
+const FixtureMetaSchema = z.object({
+    id: z.string().uuid(),
+    played_at: z.string().nullable(),
+    league_name: z.string(),
+    division_name: z.string(),
+    home_team_name: z.string().nullable(),
+    away_team_name: z.string().nullable(),
+});
+
 const ErrorSchema = z.object({
     error: z.string(),
     statusCode: z.number(),
@@ -39,7 +48,10 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 schema: {
                     params: ParamsSchema,
                     response: {
-                        200: z.object({ data: z.array(RubberItemSchema) }),
+                        200: z.object({
+                            fixture: FixtureMetaSchema,
+                            data: z.array(RubberItemSchema),
+                        }),
                         404: ErrorSchema,
                         500: ErrorSchema,
                     },
@@ -49,10 +61,22 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 const { id } = request.params;
 
                 const fixture = await db
-                    .selectFrom('fixtures')
-                    .select('id')
-                    .where('id', '=', id)
-                    .where('deleted_at', 'is', null)
+                    .selectFrom('fixtures as f')
+                    .innerJoin('competitions as c', 'c.id', 'f.competition_id')
+                    .innerJoin('seasons as s', 's.id', 'c.season_id')
+                    .innerJoin('leagues as l', 'l.id', 's.league_id')
+                    .leftJoin('teams as ht', 'ht.id', 'f.home_team_id')
+                    .leftJoin('teams as at', 'at.id', 'f.away_team_id')
+                    .select([
+                        'f.id',
+                        'f.date_played',
+                        'l.name as league_name',
+                        'c.name as division_name',
+                        'ht.name as home_team_name',
+                        'at.name as away_team_name',
+                    ])
+                    .where('f.id', '=', id)
+                    .where('f.deleted_at', 'is', null)
                     .executeTakeFirst();
 
                 if (!fixture) {
@@ -88,7 +112,22 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .orderBy('rubbers.created_at', 'asc')
                     .execute();
 
-                return reply.send({ data: rubbers as any });
+                return reply.send({
+                    fixture: {
+                        id: fixture.id,
+                        played_at:
+                            fixture.date_played instanceof Date
+                                ? fixture.date_played.toISOString()
+                                : fixture.date_played
+                                    ? String(fixture.date_played)
+                                    : null,
+                        league_name: fixture.league_name,
+                        division_name: fixture.division_name,
+                        home_team_name: fixture.home_team_name,
+                        away_team_name: fixture.away_team_name,
+                    },
+                    data: rubbers as any,
+                });
             }
         );
     };

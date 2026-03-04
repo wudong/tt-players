@@ -13,6 +13,7 @@ export function TeamPage() {
     const { data: formData, isLoading: formLoading } = useTeamForm(teamId);
 
     const roster = rosterData?.data || [];
+    const rosterAvailability = rosterData?.availability;
     const form = formData || null;
 
     return (
@@ -100,7 +101,9 @@ export function TeamPage() {
                         <div className="flex flex-col gap-3">
                             {roster.length === 0 ? (
                                 <div className="rounded-[1.5rem] bg-white p-6 text-center text-sm font-medium text-slate-500 ring-1 ring-slate-100">
-                                    No players found for this team.
+                                    {rosterAvailability === 'source_data_missing'
+                                        ? 'Roster data is not available for this source yet.'
+                                        : 'No players found for this team yet.'}
                                 </div>
                             ) : (
                                 roster.map((player: RosterItem) => (
