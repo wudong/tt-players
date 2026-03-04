@@ -1,0 +1,21 @@
+{
+  "name": "tt-players",
+  "private": true,
+  "scripts": {
+    "db:migrate": "pnpm --filter @tt-players/db run db:migrate",
+    "db:migrate:down": "pnpm --filter @tt-players/db run db:migrate:down",
+    "db:seed": "pnpm --filter @tt-players/db run db:seed",
+    "test": "pnpm --filter @tt-players/db run test",
+    "api:test": "pnpm --filter @tt-players/api run test",
+    "web:test": "pnpm --filter @tt-players/web run test",
+    "web:dev": "pnpm --filter @tt-players/web run dev"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+*.tsbuildinfo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!terraform.tfvars.example
+.playwright-report/
+.playwright-cli

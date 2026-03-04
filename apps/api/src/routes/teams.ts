@@ -1,0 +1,244 @@
+import type { FastifyPluginAsync } from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+import type { Kysely } from 'kysely';
+import type { Database } from '@tt-players/db';
+import { sql } from 'kysely';
+
+const ParamsSchema = z.object({
+    id: z.string().uuid(),
+});
+
+const QuerySchema = z.object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).default(0),
+});
+
+const RosterItemSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    played: z.number().int(),
+    winRate: z.number().int(),
+    wins: z.number().int(),
+});
+
+const FormResponseSchema = z.object({
+    form: z.array(z.string()),
+    position: z.number().int().nullable(),
+    points: z.number().int().nullable(),
+});
+
+const FixtureItemSchema = z.object({
+    id: z.string().uuid(),
+    competition_id: z.string().uuid(),
+    external_id: z.string(),
+    home_team_id: z.string().uuid().nullable(),
+    away_team_id: z.string().uuid().nullable(),
+    date_played: z.string(),   // ISO string from serialisation
+    status: z.enum(['upcoming', 'completed', 'postponed']),
+    round_name: z.string().nullable(),
+    round_order: z.number().int().nullable(),
+});
+
+const ResponseSchema = z.object({
+    total: z.number().int(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+    data: z.array(FixtureItemSchema),
+});
+
+const ErrorSchema = z.object({
+    error: z.string(),
+    statusCode: z.number(),
+});
+
+export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
+    return async function (fastify) {
+        const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+        app.get(
+            '/:id/fixtures',
+            {
+                schema: {
+                    params: ParamsSchema,
+                    querystring: QuerySchema,
+                    response: {
+                        200: ResponseSchema,
+                        404: ErrorSchema,
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (request, reply) => {
+                const { id } = request.params;
+                const { limit, offset } = request.query;
+
+                // Verify team exists
+                const team = await db
+                    .selectFrom('teams')
+                    .select('id')
+                    .where('id', '=', id)
+                    .where('deleted_at', 'is', null)
+                    .executeTakeFirst();
+
+                if (!team) {
+                    return reply.status(404).send({
+                        error: `Team ${id} not found`,
+                        statusCode: 404,
+                    });
+                }
+
+                // Count total
+                const { count } = await db
+                    .selectFrom('fixtures')
+                    .select((eb) => eb.fn.countAll<number>().as('count'))
+                    .where((eb) =>
+                        eb.or([
+                            eb('home_team_id', '=', id),
+                            eb('away_team_id', '=', id),
+                        ])
+                    )
+                    .where('deleted_at', 'is', null)
+                    .executeTakeFirstOrThrow();
+
+                const rows = await db
+                    .selectFrom('fixtures')
+                    .selectAll()
+                    .where((eb) =>
+                        eb.or([
+                            eb('home_team_id', '=', id),
+                            eb('away_team_id', '=', id),
+                        ])
+                    )
+                    .where('deleted_at', 'is', null)
+                    .orderBy('date_played', 'asc')
+                    .limit(limit)
+                    .offset(offset)
+                    .execute();
+
+                // Serialise dates to ISO strings
+                const data = rows.map((r) => ({
+                    ...r,
+                    date_played:
+                        r.date_played instanceof Date
+                            ? r.date_played.toISOString()
+                            : String(r.date_played),
+                }));
+
+                return reply.send({
+                    total: Number(count),
+                    limit,
+                    offset,
+                    data,
+                });
+            },
+        );
+
+        app.get(
+            '/:id/roster',
+            {
+                schema: {
+                    params: ParamsSchema,
+                    response: {
+                        200: z.object({ data: z.array(RosterItemSchema) }),
+                        404: ErrorSchema,
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (request, reply) => {
+                const { id } = request.params;
+
+                const roster = await sql<any>`
+                    SELECT 
+                        ep.id, ep.name,
+                        COUNT(DISTINCT r.id) as played,
+                        SUM(CASE WHEN 
+                            ((f.home_team_id = ${id} AND r.home_games_won > r.away_games_won) OR (f.away_team_id = ${id} AND r.away_games_won > r.home_games_won)) THEN 1 ELSE 0 END) as wins
+                    FROM fixtures f
+                    JOIN rubbers r ON r.fixture_id = f.id
+                    JOIN external_players ep ON (
+                        (f.home_team_id = ${id} AND (r.home_player_1_id = ep.id OR r.home_player_2_id = ep.id)) OR
+                        (f.away_team_id = ${id} AND (r.away_player_1_id = ep.id OR r.away_player_2_id = ep.id))
+                    )
+                    WHERE (f.home_team_id = ${id} OR f.away_team_id = ${id})
+                      AND r.deleted_at IS NULL
+                      AND r.outcome_type != 'walkover'
+                    GROUP BY ep.id, ep.name
+                    ORDER BY wins DESC, played DESC
+                `.execute(db);
+
+                const data = roster.rows.map((row: any) => {
+                    const played = Number(row.played);
+                    const wins = Number(row.wins);
+                    return {
+                        id: row.id,
+                        name: row.name,
+                        played,
+                        wins,
+                        winRate: played > 0 ? Math.round((wins / played) * 100) : 0,
+                    };
+                });
+
+                return reply.send({ data });
+            }
+        );
+
+        app.get(
+            '/:id/form',
+            {
+                schema: {
+                    params: ParamsSchema,
+                    response: {
+                        200: FormResponseSchema,
+                        404: ErrorSchema,
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (request, reply) => {
+                const { id } = request.params;
+
+                const standing = await db.selectFrom('league_standings')
+                    .select(['position', 'points'])
+                    .where('team_id', '=', id)
+                    .orderBy('created_at', 'desc')
+                    .limit(1)
+                    .executeTakeFirst();
+
+                const recents = await sql<any>`
+                    SELECT f.home_team_id, f.away_team_id,
+                        SUM(CASE WHEN r.home_games_won > r.away_games_won THEN 1 ELSE 0 END) as home_score,
+                        SUM(CASE WHEN r.away_games_won > r.home_games_won THEN 1 ELSE 0 END) as away_score
+                    FROM fixtures f
+                    JOIN rubbers r ON r.fixture_id = f.id
+                    WHERE (f.home_team_id = ${id} OR f.away_team_id = ${id}) 
+                      AND f.status = 'completed'
+                      AND r.deleted_at IS NULL
+                    GROUP BY f.id, f.date_played, f.home_team_id, f.away_team_id
+                    ORDER BY f.date_played DESC
+                    LIMIT 5
+                `.execute(db);
+
+                const form = recents.rows.map((r: any) => {
+                    const isHome = r.home_team_id === id;
+                    const hs = Number(r.home_score);
+                    const as = Number(r.away_score);
+
+                    let teamScore = isHome ? hs : as;
+                    let oppScore = isHome ? as : hs;
+
+                    if (teamScore > oppScore) return 'W';
+                    if (teamScore < oppScore) return 'L';
+                    return 'D';
+                });
+
+                return reply.send({
+                    form: form.reverse(), // chronologically oldest to newest for display
+                    position: standing ? standing.position : null,
+                    points: standing ? standing.points : null,
+                });
+            }
+        );
+    };
+}

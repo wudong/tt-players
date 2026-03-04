@@ -1,0 +1,29 @@
+{
+    "name": "@tt-players/api",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx src/server.ts",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@fastify/cors": "^11.0.0",
+        "fastify-type-provider-zod": "^4.0.2",
+        "@tt-players/db": "workspace:*",
+        "dotenv": "^16.4.7",
+        "fastify": "^5.2.1",
+        "kysely": "^0.27.5",
+        "pg": "^8.13.1",
+        "zod": "^3.24.2"
+    },
+    "devDependencies": {
+        "@types/pg": "^8.11.11",
+        "@types/supertest": "^6.0.2",
+        "supertest": "^7.0.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.3",
+        "vitest": "^3.0.5"
+    }
+}

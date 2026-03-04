@@ -1,0 +1,47 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import {
+    serializerCompiler,
+    validatorCompiler,
+    type ZodTypeProvider,
+} from 'fastify-type-provider-zod';
+import type { Kysely } from 'kysely';
+import type { Database } from '@tt-players/db';
+
+import { competitionsRoutes } from './routes/competitions.js';
+import { leaguesRoutes } from './routes/leagues.js';
+import { teamsRoutes } from './routes/teams.js';
+import { playersRoutes } from './routes/players.js';
+import { fixturesRoutes } from './routes/fixtures.js';
+
+export async function buildApp(db: Kysely<Database>) {
+    const app = Fastify({ logger: false }).withTypeProvider<ZodTypeProvider>();
+
+    // ── Serialiser / validator (Zod) ─────────────────────────────────────────
+    app.setSerializerCompiler(serializerCompiler);
+    app.setValidatorCompiler(validatorCompiler);
+
+    // ── CORS ─────────────────────────────────────────────────────────────────
+    await app.register(cors, {
+        origin: 'http://localhost:7373',
+        methods: ['GET', 'OPTIONS'],
+    });
+
+    // ── Global error handler ──────────────────────────────────────────────────
+    app.setErrorHandler((error: any, _request, reply) => {
+        const statusCode = error.statusCode ?? 500;
+        reply.status(statusCode).send({
+            error: error.message ?? 'Internal Server Error',
+            statusCode,
+        });
+    });
+
+    // ── Routes ────────────────────────────────────────────────────────────────
+    await app.register(leaguesRoutes(db), { prefix: '/leagues' });
+    await app.register(competitionsRoutes(db), { prefix: '/competitions' });
+    await app.register(teamsRoutes(db), { prefix: '/teams' });
+    await app.register(playersRoutes(db), { prefix: '/players' });
+    await app.register(fixturesRoutes(db), { prefix: '/fixtures' });
+
+    return app;
+}
