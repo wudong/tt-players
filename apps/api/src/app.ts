@@ -38,11 +38,11 @@ export async function buildApp(db: Kysely<Database>) {
     });
 
     // ── Routes ────────────────────────────────────────────────────────────────
-    await app.register(leaguesRoutes(db), { prefix: '/leagues' });
-    await app.register(competitionsRoutes(db), { prefix: '/competitions' });
-    await app.register(teamsRoutes(db), { prefix: '/teams' });
-    await app.register(playersRoutes(db), { prefix: '/players' });
-    await app.register(fixturesRoutes(db), { prefix: '/fixtures' });
+    await app.register(leaguesRoutes(db), { prefix: '/api/leagues' });
+    await app.register(competitionsRoutes(db), { prefix: '/api/competitions' });
+    await app.register(teamsRoutes(db), { prefix: '/api/teams' });
+    await app.register(playersRoutes(db), { prefix: '/api/players' });
+    await app.register(fixturesRoutes(db), { prefix: '/api/fixtures' });
 
     return app;
 }
