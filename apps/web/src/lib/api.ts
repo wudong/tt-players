@@ -1,6 +1,7 @@
 import type { StandingsResponse, FixturesResponse, PlayerStats } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4003';
+const BASE_URL =
+    import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '/api' : 'http://localhost:4003');
 
 async function apiFetch<T>(path: string): Promise<T> {
     const res = await fetch(`${BASE_URL}${path}`);

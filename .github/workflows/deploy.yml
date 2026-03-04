@@ -9,6 +9,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: /api
     steps:
       - uses: actions/checkout@v4
 
@@ -36,4 +38,4 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
 
       - name: Deploy to Netlify
-        run: npx netlify-cli deploy --dir=apps/web/dist --prod --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --filter=@tt-players/web
+        run: npx netlify-cli deploy --dir=apps/web/dist --prod --no-build --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --filter=@tt-players/web
