@@ -7,6 +7,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "worker:start": "tsx src/worker.ts",
+        "worker:scrape": "tsx src/scrape-once.ts",
         "worker:migrate": "tsx -e \"import { runMigrations } from 'graphile-worker'; runMigrations({ connectionString: process.env.DATABASE_URL }).then(() => console.log('Done'));\""
     },
     "dependencies": {
