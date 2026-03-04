@@ -1,4 +1,4 @@
-import { User, TrendingUp, Activity, MapPin, Swords, Shield, Zap, Calendar, ChevronRight } from 'lucide-react';
+import { MapPin, Swords, Shield, Zap, Calendar } from 'lucide-react';
 import { usePlayerExtendedStats } from '../hooks/usePlayerExtendedStats';
 import { usePlayerRubbers } from '../hooks/usePlayerRubbers';
 import { winPercentage } from '../types';

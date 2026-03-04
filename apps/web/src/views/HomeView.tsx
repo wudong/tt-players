@@ -1,4 +1,4 @@
-import { Search, Filter, TrendingUp, Trophy, ChevronRight, Activity, Medal, Flame } from 'lucide-react';
+import { Search, Filter, TrendingUp, ChevronRight, Medal, Flame } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
