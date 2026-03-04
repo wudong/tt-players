@@ -33,6 +33,7 @@ jobs:
         run: pnpm db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
 
       - name: Deploy to Netlify
         uses: netlify/actions/cli@master
