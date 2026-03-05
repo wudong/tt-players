@@ -25,7 +25,7 @@ function FixtureStatusBadge({ status }: { status: FixtureItem['status'] }) {
     );
 }
 
-function FixtureCard({ fixture }: { fixture: FixtureItem }) {
+function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string }) {
     const date = new Date(fixture.date_played);
     const formattedDate = date.toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -33,6 +33,26 @@ function FixtureCard({ fixture }: { fixture: FixtureItem }) {
         year: 'numeric',
     });
     const navigate = useNavigate();
+    const isHome = fixture.home_team_id === teamId;
+    const teamName = isHome ? fixture.home_team_name : fixture.away_team_name;
+    const opponentName = isHome ? fixture.away_team_name : fixture.home_team_name;
+    const hasScore =
+        fixture.home_score != null &&
+        fixture.away_score != null &&
+        fixture.status === 'completed';
+    const teamScore = hasScore
+        ? (isHome ? fixture.home_score : fixture.away_score)
+        : null;
+    const opponentScore = hasScore
+        ? (isHome ? fixture.away_score : fixture.home_score)
+        : null;
+    const outcomeLabel = !hasScore
+        ? null
+        : teamScore! > opponentScore!
+            ? 'W'
+            : teamScore! < opponentScore!
+                ? 'L'
+                : 'D';
 
     return (
         <button
@@ -53,21 +73,31 @@ function FixtureCard({ fixture }: { fixture: FixtureItem }) {
 
             {/* Teams */}
             <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="truncate text-xs font-medium text-slate-500">
-                        {fixture.home_team_id ?? 'TBD'}
+                        {teamName ?? 'Your Team'}
                     </span>
                     <span className="shrink-0 text-xs font-bold text-slate-300">vs</span>
                     <span className="truncate text-right text-xs font-medium text-slate-500">
-                        {fixture.away_team_id ?? 'TBD'}
+                        {opponentName ?? 'TBD'}
                     </span>
                 </div>
 
                 {/* Round + status */}
                 <div className="mt-1.5 flex items-center justify-between">
-                    {fixture.round_name && (
-                        <span className="text-xs text-slate-400">{fixture.round_name}</span>
-                    )}
+                    <div className="flex flex-col">
+                        {fixture.round_name && (
+                            <span className="text-xs text-slate-400">{fixture.round_name}</span>
+                        )}
+                        {hasScore && (
+                            <span
+                                data-testid="fixture-result"
+                                className="text-xs font-semibold text-slate-600"
+                            >
+                                {outcomeLabel} {teamScore}-{opponentScore}
+                            </span>
+                        )}
+                    </div>
                     <FixtureStatusBadge status={fixture.status} />
                 </div>
             </div>
@@ -140,7 +170,7 @@ export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
             {/* Fixture list */}
             <div className="flex flex-col gap-3">
                 {fixtures.map((fixture) => (
-                    <FixtureCard key={fixture.id} fixture={fixture} />
+                    <FixtureCard key={fixture.id} fixture={fixture} teamId={teamId} />
                 ))}
             </div>
         </section>

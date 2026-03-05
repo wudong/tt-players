@@ -25,6 +25,10 @@ export interface FixtureItem {
     external_id: string;
     home_team_id: string | null;
     away_team_id: string | null;
+    home_team_name: string | null;
+    away_team_name: string | null;
+    home_score: number | null;
+    away_score: number | null;
     date_played: string;
     status: FixtureStatus;
     round_name: string | null;

@@ -41,6 +41,10 @@ const FixtureItemSchema = z.object({
     external_id: z.string(),
     home_team_id: z.string().uuid().nullable(),
     away_team_id: z.string().uuid().nullable(),
+    home_team_name: z.string().nullable(),
+    away_team_name: z.string().nullable(),
+    home_score: z.number().int().nullable(),
+    away_score: z.number().int().nullable(),
     date_played: z.string(),   // ISO string from serialisation
     status: z.enum(['upcoming', 'completed', 'postponed']),
     round_name: z.string().nullable(),
@@ -125,17 +129,63 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .where('deleted_at', 'is', null)
                     .executeTakeFirstOrThrow();
 
+                const scoreByFixture = db
+                    .selectFrom('rubbers')
+                    .select([
+                        'fixture_id',
+                        sql<number>`
+                            (
+                                SUM(
+                                    CASE
+                                        WHEN home_games_won > away_games_won THEN 1
+                                        ELSE 0
+                                    END
+                                )
+                            )::int
+                        `.as('home_score'),
+                        sql<number>`
+                            (
+                                SUM(
+                                    CASE
+                                        WHEN away_games_won > home_games_won THEN 1
+                                        ELSE 0
+                                    END
+                                )
+                            )::int
+                        `.as('away_score'),
+                    ])
+                    .where('deleted_at', 'is', null)
+                    .groupBy('fixture_id')
+                    .as('score_by_fixture');
+
                 const rows = await db
-                    .selectFrom('fixtures')
-                    .selectAll()
+                    .selectFrom('fixtures as f')
+                    .leftJoin('teams as home', 'home.id', 'f.home_team_id')
+                    .leftJoin('teams as away', 'away.id', 'f.away_team_id')
+                    .leftJoin(scoreByFixture, 'score_by_fixture.fixture_id', 'f.id')
+                    .select([
+                        'f.id',
+                        'f.competition_id',
+                        'f.external_id',
+                        'f.home_team_id',
+                        'f.away_team_id',
+                        'f.date_played',
+                        'f.status',
+                        'f.round_name',
+                        'f.round_order',
+                        sql<string | null>`home.name`.as('home_team_name'),
+                        sql<string | null>`away.name`.as('away_team_name'),
+                        sql<number | null>`score_by_fixture.home_score`.as('home_score'),
+                        sql<number | null>`score_by_fixture.away_score`.as('away_score'),
+                    ])
                     .where((eb) =>
                         eb.or([
-                            eb('home_team_id', '=', id),
-                            eb('away_team_id', '=', id),
+                            eb('f.home_team_id', '=', id),
+                            eb('f.away_team_id', '=', id),
                         ])
                     )
-                    .where('deleted_at', 'is', null)
-                    .orderBy('date_played', 'asc')
+                    .where('f.deleted_at', 'is', null)
+                    .orderBy('f.date_played', 'asc')
                     .limit(limit)
                     .offset(offset)
                     .execute();

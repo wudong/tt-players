@@ -46,7 +46,7 @@
 - Type: issue
 - Priority: high
 - Area: Team Hub UI data mapping
-- Status: pending
+- Status: done
 
 ### MV-008 - Quick H2H actions from nemesis and most-played-opponents
 - Type: improvement
@@ -89,3 +89,4 @@
 - 2026-03-05: Repository checkpoint committed (`47e357c`) before continuing task-by-task implementation.
 - Policy: commit after each completed MV task.
 - 2026-03-05: `MV-005` complete. Updated TT365 parser to derive rubber game counts from `Games` column with fallback to `Score`, updated parser tests, and reprocessed fixture `458455` from raw log `7fc80737-eb27-4b86-bae1-57123a8f46cc`.
+- 2026-03-05: `MV-007` complete. `/teams/:id/fixtures` now returns `home_team_name`, `away_team_name`, `home_score`, and `away_score`; Team Hub recent matches now renders readable names and team-perspective result text (e.g. `W 7-3`). Verified with targeted API/web tests and playwright-cli snapshot.
