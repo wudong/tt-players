@@ -6,6 +6,7 @@ import { PlayerPage } from './views/PlayerPage';
 import { FixtureDetailsView } from './views/FixtureDetailsView';
 import { TeamPage } from './views/TeamPage';
 import { H2HView } from './views/H2HView';
+import { LeagueSelectionPage } from './views/LeagueSelectionPage';
 
 export default function App() {
     return (
@@ -18,6 +19,7 @@ export default function App() {
 
                 {/* ── Leagues tab ──────────────────────────────────────── */}
                 <Route path="/leagues" element={<LeaguesHubView />} />
+                <Route path="/leagues/select" element={<LeagueSelectionPage />} />
 
                 {/* ── Player profile (overlay-style page) ──────────────── */}
                 {/* /players/:playerId → reads param via useParams() inside PlayerPage */}

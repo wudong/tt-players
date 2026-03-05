@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LeaguesHubView } from '../views/LeaguesHubView';
 
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => vi.fn(),
+    };
+});
+
 vi.mock('../context/LeaguePreferencesContext', () => ({
     useLeaguePreferences: () => ({
         selectedLeagues: [
@@ -20,10 +28,6 @@ vi.mock('../context/LeaguePreferencesContext', () => ({
 
 vi.mock('../views/LeagueTable', () => ({
     LeagueTable: () => <div data-testid="league-table">League Table</div>,
-}));
-
-vi.mock('../components/LeagueSelectionSheet', () => ({
-    LeagueSelectionSheet: () => null,
 }));
 
 const useLeadersMock = vi.fn((..._args: [unknown, unknown, unknown, unknown]) => ({

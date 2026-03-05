@@ -1,10 +1,10 @@
-import { Search, Filter, TrendingUp, ChevronRight, Medal, Flame } from 'lucide-react';
+import { Search, TrendingUp, ChevronRight, Medal, Flame } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
 import { PlayerSearchItem } from '../types';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
-import { LeagueSelectionSheet } from '../components/LeagueSelectionSheet';
+import { LeagueFilterButton } from '../components/LeagueFilterButton';
 
 function getInitials(name: string) {
     const parts = name.split(' ');
@@ -49,7 +49,6 @@ function PlayerCard({ player, onClick }: { player: PlayerSearchItem & { played?:
 
 export function HomeView() {
     const [query, setQuery] = useState('');
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const navigate = useNavigate();
     const {
         selectedLeagueIds,
@@ -71,13 +70,10 @@ export function HomeView() {
                         <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">TT Hub</h1>
                         <p className="mt-1 text-sm font-medium text-emerald-100/90 tracking-wide">Table tennis stats & analysis</p>
                     </div>
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all hover:bg-white/30 hover:scale-105 active:scale-95 shadow-sm"
-                        aria-label="Select leagues"
-                    >
-                        <Filter size={20} />
-                    </button>
+                    <LeagueFilterButton
+                        count={selectedLeagueIds.length}
+                        onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
+                    />
                 </div>
 
                 <div className="relative group">
@@ -95,6 +91,9 @@ export function HomeView() {
                         />
                     </div>
                 </div>
+                <p className="mt-2 text-xs font-semibold text-emerald-100/90">
+                    Type at least 3 characters to search. Otherwise, showing trending players.
+                </p>
             </header>
 
             <main className="flex-1 px-5 pt-8 z-10 -mt-2">
@@ -106,6 +105,11 @@ export function HomeView() {
                         {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
                     </p>
                 </div>
+                {!isSearchMode && (
+                    <p className="mb-3 px-1 text-xs font-medium text-slate-500">
+                        Trending players are ranked by most matches played across selected leagues, then by wins.
+                    </p>
+                )}
 
                 {leaguePreferencesLoading ? (
                     <div className="flex justify-center p-8">
@@ -138,7 +142,6 @@ export function HomeView() {
                     </div>
                 )}
             </main>
-            <LeagueSelectionSheet isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
         </div>
     );
 }

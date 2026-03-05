@@ -6,21 +6,21 @@
 - Type: improvement
 - Priority: high
 - Area: League Central, TT Hub, routing
-- Status: pending
+- Status: done
 - Notes: Replace modal/overlay with route-based selector; support large lists and consistent trigger button.
 
 ### MV-002 - Region-based league selection
 - Type: improvement
 - Priority: high
 - Area: league filter model
-- Status: pending
+- Status: done
 - Notes: Region (e.g. Essex) can select multiple leagues; each league can belong to multiple regions.
 
 ### MV-003 - Persist league selections in local storage
 - Type: improvement
 - Priority: medium
 - Area: frontend state
-- Status: pending
+- Status: done
 
 ### MV-004 - Player page UX improvements
 - Type: improvement
@@ -40,7 +40,7 @@
 - Type: improvement
 - Priority: low
 - Area: home page search UI
-- Status: pending
+- Status: done
 
 ### MV-007 - Team Hub recent matches shows IDs instead of names/results
 - Type: issue
@@ -64,13 +64,13 @@
 - Type: issue
 - Priority: medium
 - Area: League Central filter controls
-- Status: pending
+- Status: done
 
 ### MV-011 - TT Hub trending players description clarity
 - Type: improvement
 - Priority: low
 - Area: TT Hub copy
-- Status: pending
+- Status: done
 
 ### MV-012 - Best Win eligibility/ranking rules
 - Type: improvement
@@ -92,3 +92,4 @@
 - 2026-03-05: `MV-007` complete. `/teams/:id/fixtures` now returns `home_team_name`, `away_team_name`, `home_score`, and `away_score`; Team Hub recent matches now renders readable names and team-perspective result text (e.g. `W 7-3`). Verified with targeted API/web tests and playwright-cli snapshot.
 - 2026-03-05: `MV-012` + `MV-013` complete. Leaders default remains `combined`; Best Win mode now requests top 10 rows with min-played=3 and server enforces a minimum 10-slot limit window for `win_pct` mode when available. Verified via targeted tests and playwright-cli (`Leaders` tab showed combined formula by default; `Best Win %` returned 10 rows and the expected ranking formula text).
 - 2026-03-05: `MV-004` + `MV-008` + `MV-009` complete. Player profile now keeps scroll position on `Load more matches`, provides quick H2H actions on Nemesis and Most Played Opponents cards, moves Current Season Teams & Leagues below Most Played Opponents, and uses grid-card layouts for both sections. H2H API now returns league + division labels (`League · Division`) for encounters; UI displays it in Past Encounters. Verified with targeted API tests and playwright-cli interaction snapshots.
+- 2026-03-05: `MV-001` + `MV-002` + `MV-003` + `MV-006` + `MV-010` + `MV-011` complete. Replaced modal league picker with dedicated `/leagues/select` route shared by TT Hub and League Central, added search + region bulk toggles (including Essex), retained localStorage-backed league preferences, unified both pages on the same filter button pattern, replaced League Central native dropdown selectors with app-consistent league/division button chips, added home-page search guidance (`type at least 3 characters`), and added a clear trending-list logic description. Verified with web type-check, targeted tests, and playwright-cli navigation snapshots.
