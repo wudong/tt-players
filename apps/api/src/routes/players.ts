@@ -120,6 +120,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
             },
             async (request, reply) => {
                 const { mode, limit, min_played: minPlayed } = request.query;
+                const effectiveLimit = mode === 'win_pct' ? Math.max(limit, 10) : limit;
                 const leagueCsv = (request.query.league_ids ?? '')
                     .split(',')
                     .map((id) => id.trim())
@@ -227,7 +228,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                             || a.player_name.localeCompare(b.player_name));
                 }
 
-                const data = ranked.slice(0, limit).map((row, index) => ({
+                const data = ranked.slice(0, effectiveLimit).map((row, index) => ({
                     rank: index + 1,
                     ...row,
                 }));

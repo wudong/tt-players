@@ -18,7 +18,13 @@ export function LeaguesHubView() {
     const [selectedLeague, setSelectedLeague] = useState<LeagueWithDivisions | null>(null);
     const [selectedDivisionId, setSelectedDivisionId] = useState<string | null>(null);
     const [leadersMode, setLeadersMode] = useState<LeaderboardMode>('combined');
-    const { data: leadersData, isLoading: leadersLoading } = useLeaders(leadersMode, selectedLeagueIds);
+    const leadersLimit = leadersMode === 'win_pct' ? 10 : 20;
+    const { data: leadersData, isLoading: leadersLoading } = useLeaders(
+        leadersMode,
+        selectedLeagueIds,
+        leadersLimit,
+        3,
+    );
 
     // Initialise selection
     useEffect(() => {

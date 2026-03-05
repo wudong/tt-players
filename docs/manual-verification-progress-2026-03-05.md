@@ -76,17 +76,18 @@
 - Type: improvement
 - Priority: medium
 - Area: player analytics query/UI
-- Status: pending
-- Notes: Minimum 10 matches to appear; ranked by win rate; minimum 3 wins; tie-breakers: played then wins.
+- Status: done
+- Notes: Show top 10 entries when available; ranked by win rate; minimum 3 matches; tie-breakers: played then wins.
 
 ### MV-013 - Default selection should be Combined
 - Type: improvement
 - Priority: low
 - Area: analytics filter defaults
-- Status: pending
+- Status: done
 
 ## Execution Notes
 - 2026-03-05: Repository checkpoint committed (`47e357c`) before continuing task-by-task implementation.
 - Policy: commit after each completed MV task.
 - 2026-03-05: `MV-005` complete. Updated TT365 parser to derive rubber game counts from `Games` column with fallback to `Score`, updated parser tests, and reprocessed fixture `458455` from raw log `7fc80737-eb27-4b86-bae1-57123a8f46cc`.
 - 2026-03-05: `MV-007` complete. `/teams/:id/fixtures` now returns `home_team_name`, `away_team_name`, `home_score`, and `away_score`; Team Hub recent matches now renders readable names and team-perspective result text (e.g. `W 7-3`). Verified with targeted API/web tests and playwright-cli snapshot.
+- 2026-03-05: `MV-012` + `MV-013` complete. Leaders default remains `combined`; Best Win mode now requests top 10 rows with min-played=3 and server enforces a minimum 10-slot limit window for `win_pct` mode when available. Verified via targeted tests and playwright-cli (`Leaders` tab showed combined formula by default; `Best Win %` returned 10 rows and the expected ranking formula text).
