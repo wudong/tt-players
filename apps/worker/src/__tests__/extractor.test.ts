@@ -9,6 +9,7 @@ import * as m001 from '@tt-players/db/src/migrations/001_create_enums.js';
 import * as m002 from '@tt-players/db/src/migrations/002_create_core_tables.js';
 import * as m003 from '@tt-players/db/src/migrations/003_create_match_tables.js';
 import * as m004 from '@tt-players/db/src/migrations/004_create_raw_scrape_logs.js';
+import * as m006 from '@tt-players/db/src/migrations/006_add_canonical_player_id_to_external_players.js';
 
 import type { Database } from '@tt-players/db';
 
@@ -31,6 +32,7 @@ class StaticMigrationProvider implements MigrationProvider {
             '002_create_core_tables': m002,
             '003_create_match_tables': m003,
             '004_create_raw_scrape_logs': m004,
+            '006_add_canonical_player_id_to_external_players': m006,
         };
     }
 }

@@ -30,10 +30,23 @@ const scheduleScrapeTasks = async (_payload: unknown, helpers: { addJob: Functio
             platformId: target.platformId,
             platformType: target.platformType,
             competitionId: target.competitionId,
+            tt365DataType: target.platformType === 'tt365' ? 'standings' : undefined,
         });
         helpers.logger.info(`  → Queued standings: ${target.leagueName} - ${target.divisionName}`);
 
-        // 2. Queue matches scrape for TT Leagues divisions
+        // 2. Queue fixtures scrape for TT365 divisions
+        if (target.platformType === 'tt365' && target.fixturesUrl) {
+            await helpers.addJob('scrapeUrlTask', {
+                url: target.fixturesUrl,
+                platformId: target.platformId,
+                platformType: target.platformType,
+                competitionId: target.competitionId,
+                tt365DataType: 'fixtures',
+            });
+            helpers.logger.info(`  → Queued fixtures:  ${target.leagueName} - ${target.divisionName}`);
+        }
+
+        // 3. Queue matches scrape for TT Leagues divisions
         if (target.platformType === 'ttleagues' && target.divisionExtId) {
             await helpers.addJob('scrapeMatchesTask', {
                 divisionId: target.divisionExtId,

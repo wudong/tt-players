@@ -38,6 +38,15 @@ function extractTeamSlugFromHref(href: string): string {
     return segments[segments.length - 1];
 }
 
+/**
+ * Extract TT365 numeric match ID from a MatchCard URL path.
+ * URL pattern: /Brentwood/Results/Winter_2025/Premier_Division/MatchCard/458829
+ */
+function extractMatchIdFromHref(href: string): string | null {
+    const match = href.match(/\/matchcard\/(\d+)(?:[/?#]|$)/i);
+    return match?.[1] ?? null;
+}
+
 // ─── Standings Parser ─────────────────────────────────────────────────────────
 
 export function parseTT365Standings(html: string): {
@@ -87,6 +96,38 @@ export function parseTT365Standings(html: string): {
     return { teams, standings };
 }
 
+// ─── Fixtures Page Parser ────────────────────────────────────────────────────
+
+export interface TT365MatchCardTarget {
+    matchExternalId: string;
+    url: string;
+}
+
+export function parseTT365FixtureMatchCards(
+    html: string,
+    fixturesPageUrl: string,
+): TT365MatchCardTarget[] {
+    const $ = cheerio.load(html);
+
+    const seenMatchIds = new Set<string>();
+    const targets: TT365MatchCardTarget[] = [];
+
+    // Scope to the fixtures container and pull every MatchCard link.
+    $('#Fixtures a[href*="/MatchCard/"], #Fixtures a[href*="/matchcard/"]').each((_i, a) => {
+        const href = $(a).attr('href');
+        if (!href) return;
+
+        const matchExternalId = extractMatchIdFromHref(href);
+        if (!matchExternalId || seenMatchIds.has(matchExternalId)) return;
+
+        const url = new URL(href, fixturesPageUrl).toString();
+        seenMatchIds.add(matchExternalId);
+        targets.push({ matchExternalId, url });
+    });
+
+    return targets;
+}
+
 // ─── Match Card Parser ────────────────────────────────────────────────────────
 
 export function parseTT365MatchCard(
@@ -101,8 +142,13 @@ export function parseTT365MatchCard(
     const $ = cheerio.load(html);
 
     // ── Extract teams from the fixture header ─────────────────────────────
-    const fixtureHeader = $('.fixture-header');
-    const teamLinks = fixtureHeader.find('a');
+    // TT365 has at least two variants:
+    // 1) static .fixture-header (used in local fixtures)
+    // 2) ajax fragment under #CardSummary .teamNames
+    let teamLinks = $('.fixture-header').find('a');
+    if (teamLinks.length < 2) {
+        teamLinks = $('#CardSummary .teamNames a');
+    }
 
     const homeTeamName = normalizeText($(teamLinks[0]).text());
     const homeTeamHref = $(teamLinks[0]).attr('href') || '';

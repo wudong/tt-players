@@ -82,6 +82,7 @@ export interface ExternalPlayersTable {
     id: Generated<string>;
     platform_id: string;
     external_id: string | null;
+    canonical_player_id: string | null;
     name: string;
     created_at: Generated<Date>;
     updated_at: ColumnType<Date, Date | undefined, Date>;

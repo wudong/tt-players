@@ -8,6 +8,8 @@ import * as m001 from '../migrations/001_create_enums.js';
 import * as m002 from '../migrations/002_create_core_tables.js';
 import * as m003 from '../migrations/003_create_match_tables.js';
 import * as m004 from '../migrations/004_create_raw_scrape_logs.js';
+import * as m005 from '../migrations/005_make_rubber_players_nullable.js';
+import * as m006 from '../migrations/006_add_canonical_player_id_to_external_players.js';
 
 const { Pool } = pg;
 
@@ -29,6 +31,8 @@ class StaticMigrationProvider implements MigrationProvider {
             '002_create_core_tables': m002,
             '003_create_match_tables': m003,
             '004_create_raw_scrape_logs': m004,
+            '005_make_rubber_players_nullable': m005,
+            '006_add_canonical_player_id_to_external_players': m006,
         };
     }
 }
@@ -436,7 +440,7 @@ describe('Database Schema Integration Tests', () => {
             expect(colNames).toEqual(
                 expect.arrayContaining([
                     'id', 'platform_id', 'external_id', 'name',
-                    'created_at', 'updated_at', 'deleted_at',
+                    'canonical_player_id', 'created_at', 'updated_at', 'deleted_at',
                 ])
             );
         });
@@ -450,6 +454,12 @@ describe('Database Schema Integration Tests', () => {
             const col = columns.find((c) => c.column_name === 'updated_at');
             expect(col).toBeTruthy();
             expect(col?.data_type).toBe('timestamp without time zone');
+        });
+
+        it('should have nullable canonical_player_id UUID column', () => {
+            const col = columns.find((c) => c.column_name === 'canonical_player_id');
+            expect(col?.udt_name).toBe('uuid');
+            expect(col?.is_nullable).toBe('YES');
         });
     });
 

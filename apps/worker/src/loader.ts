@@ -87,12 +87,15 @@ export async function loadTTLeaguesData(
                                     updated_at: new Date(),
                                 }),
                         )
-                        .returning(['id', 'external_id'])
+                        .returning(['id', 'external_id', 'canonical_player_id'])
                         .execute();
 
                     for (const row of playerRows) {
                         if (row.external_id) {
-                            playerIdMap.set(row.external_id, row.id);
+                            playerIdMap.set(
+                                row.external_id,
+                                row.canonical_player_id ?? row.id,
+                            );
                         }
                     }
                 }
@@ -109,12 +112,15 @@ export async function loadTTLeaguesData(
                                 updated_at: new Date(),
                             })),
                         )
-                        .returning(['id', 'name'])
+                        .returning(['id', 'name', 'canonical_player_id'])
                         .execute();
 
                     // Map by name as fallback for unnamed players
                     for (const row of playerRows) {
-                        playerIdMap.set(`unnamed_${row.name}`, row.id);
+                        playerIdMap.set(
+                            `unnamed_${row.name}`,
+                            row.canonical_player_id ?? row.id,
+                        );
                     }
                 }
             }

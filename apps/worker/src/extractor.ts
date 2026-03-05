@@ -1,6 +1,34 @@
 import { createHash } from 'node:crypto';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import type { Database } from '@tt-players/db';
+
+export async function storeScrapePayload(
+    url: string,
+    platformId: string,
+    body: string,
+    db: Kysely<Database>,
+): Promise<string> {
+    const hash = createHash('sha256').update(body).digest('hex');
+
+    const result = await db
+        .insertInto('raw_scrape_logs')
+        .values({
+            platform_id: platformId,
+            endpoint_url: url,
+            raw_payload: body,
+            payload_hash: hash,
+            status: 'pending',
+        })
+        .onConflict((oc) =>
+            oc.columns(['endpoint_url', 'payload_hash']).doUpdateSet({
+                scraped_at: sql`now()`,
+            }),
+        )
+        .returning('id')
+        .executeTakeFirstOrThrow();
+
+    return result.id;
+}
 
 /**
  * Fetches data from the given URL, hashes the response body (SHA256),
@@ -25,30 +53,9 @@ export async function extractAndStore(
         );
     }
 
-    // 3. Read body and compute SHA256 hash
+    // 3. Read body
     const body = await response.text();
-    const hash = createHash('sha256').update(body).digest('hex');
 
     // 4. UPSERT into raw_scrape_logs
-    //    UNIQUE constraint is on (endpoint_url, payload_hash).
-    //    - Same URL + same hash → update scraped_at
-    //    - Different URL + same hash → new row (no conflict)
-    const result = await db
-        .insertInto('raw_scrape_logs')
-        .values({
-            platform_id: platformId,
-            endpoint_url: url,
-            raw_payload: body,
-            payload_hash: hash,
-            status: 'pending',
-        })
-        .onConflict((oc) =>
-            oc.columns(['endpoint_url', 'payload_hash']).doUpdateSet({
-                scraped_at: new Date(),
-            }),
-        )
-        .returning('id')
-        .executeTakeFirstOrThrow();
-
-    return result.id;
+    return storeScrapePayload(url, platformId, body, db);
 }

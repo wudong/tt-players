@@ -30,7 +30,19 @@ async function main() {
             platformId: target.platformId,
             platformType: target.platformType,
             competitionId: target.competitionId,
+            tt365DataType: target.platformType === 'tt365' ? 'standings' : undefined,
         });
+
+        if (target.platformType === 'tt365' && target.fixturesUrl) {
+            console.log(`  → Queuing fixtures:  ${target.leagueName} - ${target.divisionName}`);
+            await quickAddJob({ connectionString: DATABASE_URL }, 'scrapeUrlTask', {
+                url: target.fixturesUrl,
+                platformId: target.platformId,
+                platformType: target.platformType,
+                competitionId: target.competitionId,
+                tt365DataType: 'fixtures',
+            });
+        }
 
         if (target.platformType === 'ttleagues' && target.divisionExtId) {
             console.log(`  → Queuing matches:   ${target.leagueName} - ${target.divisionName}`);

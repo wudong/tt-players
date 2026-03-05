@@ -13,6 +13,7 @@ export interface ScrapeMatchesPayload {
 }
 
 const TTL_API_BASE = 'https://ttleagues-api.azurewebsites.net/api';
+const TTL_RECHECK_COMPLETED_MS = 7 * 24 * 60 * 60 * 1000; // 7d
 
 function hash(body: string): string {
     return createHash('sha256').update(body).digest('hex');
@@ -40,14 +41,39 @@ export const scrapeMatchesTask: Task = async (payload, helpers) => {
     // Parse to find completed matches
     const matchesData = MatchesResponseSchema.parse(matchesJson);
     const completedMatches = matchesData.matches.filter((m) => m.hasResults);
+    const completedMatchIds = completedMatches.map((m) => String(m.id));
+
+    // Only re-fetch sets for matches that are missing or stale.
+    const existingFixtures = completedMatchIds.length
+        ? await db
+            .selectFrom('fixtures')
+            .select(['external_id', 'status', 'updated_at'])
+            .where('competition_id', '=', competitionId)
+            .where('external_id', 'in', completedMatchIds)
+            .execute()
+        : [];
+
+    const existingFixtureMap = new Map(
+        existingFixtures.map((f) => [f.external_id, f]),
+    );
+
+    const nowMs = Date.now();
+    const matchesNeedingSets = completedMatches.filter((match) => {
+        const fixture = existingFixtureMap.get(String(match.id));
+        if (!fixture) return true;
+        if (fixture.status !== 'completed') return true;
+
+        const ageMs = nowMs - new Date(fixture.updated_at).getTime();
+        return ageMs >= TTL_RECHECK_COMPLETED_MS;
+    });
 
     helpers.logger.info(
-        `scrapeMatchesTask: ${matchesData.matches.length} matches, ${completedMatches.length} with results`,
+        `scrapeMatchesTask: ${matchesData.matches.length} matches, ${completedMatches.length} with results, ${matchesNeedingSets.length} sets fetches required`,
     );
 
     // 2. Fetch sets for each completed match (with rate limiting)
     const setsMap: Record<string, unknown> = {};
-    for (const match of completedMatches) {
+    for (const match of matchesNeedingSets) {
         const setsUrl = `${TTL_API_BASE}/matches/${match.id}/sets`;
         try {
             const setsRes = await fetch(setsUrl);

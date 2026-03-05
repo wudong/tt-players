@@ -38,6 +38,7 @@ interface LeagueConfig {
 
 export interface ScrapeTarget {
     url: string;
+    fixturesUrl: string | null;
     platformId: string;
     platformType: 'tt365' | 'ttleagues';
     competitionId: string;
@@ -79,22 +80,25 @@ export async function bootstrap(db: Kysely<Database>): Promise<ScrapeTarget[]> {
         // ── 4. Upsert each Division → Competition ────────────────────────
         for (const div of league.divisions) {
             let divExtId: string;
-            let scrapeUrl: string;
+            let standingsUrl: string;
+            let fixturesUrl: string | null = null;
 
             if (league.platform === 'tt365') {
                 const d = div as TT365Division;
                 divExtId = d.slug.toLowerCase();
-                scrapeUrl = `${league.baseUrl}/Tables/${d.season}/${d.slug}`;
+                standingsUrl = `${league.baseUrl}/Tables/${d.season}/${d.slug}`;
+                fixturesUrl = `${league.baseUrl}/Fixtures/${d.season}/${d.slug}`;
             } else {
                 const d = div as TTLeaguesDivision;
                 divExtId = String(d.divisionId);
-                scrapeUrl = `${TTL_API_BASE}/divisions/${d.divisionId}/standings`;
+                standingsUrl = `${TTL_API_BASE}/divisions/${d.divisionId}/standings`;
             }
 
             const competitionId = await upsertCompetition(db, seasonId, divExtId, div.name);
 
             targets.push({
-                url: scrapeUrl,
+                url: standingsUrl,
+                fixturesUrl,
                 platformId,
                 platformType: league.platform,
                 competitionId,

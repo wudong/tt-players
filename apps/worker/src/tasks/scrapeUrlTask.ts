@@ -1,12 +1,78 @@
 import type { Task } from 'graphile-worker';
 import { db } from '@tt-players/db';
-import { extractAndStore } from '../extractor.js';
+import { extractAndStore, storeScrapePayload } from '../extractor.js';
 
 export interface ScrapeUrlPayload {
     url: string;
     platformId: string;
     platformType: 'tt365' | 'ttleagues';
     competitionId: string;
+    tt365DataType?: 'standings' | 'fixtures' | 'matchcard';
+    matchExternalId?: string;
+}
+
+function extractAntiForgeryToken(html: string): string | null {
+    const tokenMatch = html.match(
+        /name="__RequestVerificationToken"[^>]*value="([^"]+)"/i,
+    );
+    return tokenMatch?.[1] ?? null;
+}
+
+function extractAjaxMatchCardPath(html: string): string | null {
+    const pathMatch = html.match(
+        /['"]url['"]\s*:\s*['"]([^'"]*\/Results\/Ajax\/[^'"]*\/MatchCard\/\d+)['"]/i,
+    );
+    return pathMatch?.[1] ?? null;
+}
+
+function buildCookieHeader(setCookies: string[]): string {
+    return setCookies
+        .map((cookie) => cookie.split(';', 1)[0])
+        .filter(Boolean)
+        .join('; ');
+}
+
+async function extractAndStoreTT365MatchCard(url: string, platformId: string): Promise<string> {
+    const pageRes = await fetch(url);
+    if (!pageRes.ok) {
+        throw new Error(`HTTP ${pageRes.status} ${pageRes.statusText} when fetching ${url}`);
+    }
+
+    const pageHtml = await pageRes.text();
+    const token = extractAntiForgeryToken(pageHtml);
+    const ajaxPath = extractAjaxMatchCardPath(pageHtml);
+
+    if (!token || !ajaxPath) {
+        throw new Error(`Could not resolve TT365 match-card ajax endpoint for ${url}`);
+    }
+
+    const ajaxUrl = new URL(ajaxPath, url).toString();
+    const setCookies = pageRes.headers.getSetCookie?.() ?? [];
+    const cookieHeader = buildCookieHeader(setCookies);
+
+    const ajaxRes = await fetch(ajaxUrl, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'x-requested-with': 'XMLHttpRequest',
+            referer: url,
+            ...(cookieHeader ? { cookie: cookieHeader } : {}),
+        },
+        body: new URLSearchParams({
+            __RequestVerificationToken: token,
+        }),
+    });
+
+    if (!ajaxRes.ok) {
+        throw new Error(`HTTP ${ajaxRes.status} ${ajaxRes.statusText} when fetching ${ajaxUrl}`);
+    }
+
+    const ajaxHtml = await ajaxRes.text();
+    if (!ajaxHtml.includes('CardSummary') || !ajaxHtml.includes('CardResults')) {
+        throw new Error(`TT365 ajax match-card payload not found for ${url}`);
+    }
+
+    return storeScrapePayload(url, platformId, ajaxHtml, db);
 }
 
 /**
@@ -16,12 +82,24 @@ export interface ScrapeUrlPayload {
  * then chains a processLogTask for the resulting log row.
  */
 export const scrapeUrlTask: Task = async (payload, helpers) => {
-    const { url, platformId, platformType, competitionId } = payload as ScrapeUrlPayload;
+    const {
+        url,
+        platformId,
+        platformType,
+        competitionId,
+        tt365DataType,
+        matchExternalId,
+    } = payload as ScrapeUrlPayload;
 
     helpers.logger.info(`scrapeUrlTask: fetching ${url}`);
 
+    const isTT365MatchCard =
+        platformType === 'tt365' && tt365DataType === 'matchcard';
+
     // Run the extractor (returns the upserted log ID)
-    const logId = await extractAndStore(url, platformId, db);
+    const logId = isTT365MatchCard
+        ? await extractAndStoreTT365MatchCard(url, platformId)
+        : await extractAndStore(url, platformId, db);
 
     helpers.logger.info(`scrapeUrlTask: stored log ${logId}, queuing processLogTask`);
 
@@ -31,5 +109,7 @@ export const scrapeUrlTask: Task = async (payload, helpers) => {
         competitionId,
         platformId,
         platformType,
+        tt365DataType,
+        matchExternalId,
     });
 };

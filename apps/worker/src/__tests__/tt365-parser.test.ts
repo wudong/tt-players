@@ -23,6 +23,14 @@ const matchCardHtml = readFileSync(
     join(FIXTURES_DIR, 'tt365_matchcard.html'),
     'utf-8',
 );
+const matchCardAjaxHtml = readFileSync(
+    join(FIXTURES_DIR, 'tt365_matchcard_ajax.html'),
+    'utf-8',
+);
+const fixturesHtml = readFileSync(
+    join(FIXTURES_DIR, 'tt365_fixtures.html'),
+    'utf-8',
+);
 
 // ─── The module-under-test will be ../../tt365-parser.ts ──────────────────────
 // It will export:
@@ -102,6 +110,39 @@ describe('TT365 Cheerio Parser', () => {
                 lost: 8,
                 points: 67,
             });
+        });
+    });
+
+    // ── Fixtures Page Parser ────────────────────────────────────────────────
+
+    describe('parseTT365FixtureMatchCards()', () => {
+        const FIXTURES_PAGE_URL =
+            'https://www.tabletennis365.com/Brentwood/Fixtures/Winter_2025/Premier_Division';
+
+        it('should extract unique match-card targets from the fixtures page', async () => {
+            const { parseTT365FixtureMatchCards } = await import('../tt365-parser.js');
+
+            const targets = parseTT365FixtureMatchCards(fixturesHtml, FIXTURES_PAGE_URL);
+
+            expect(targets).toHaveLength(2);
+            expect(targets).toEqual([
+                {
+                    matchExternalId: '448193',
+                    url: 'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/448193',
+                },
+                {
+                    matchExternalId: '448195',
+                    url: 'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/448195',
+                },
+            ]);
+        });
+
+        it('should return an empty array when there are no match-card links', async () => {
+            const { parseTT365FixtureMatchCards } = await import('../tt365-parser.js');
+
+            const targets = parseTT365FixtureMatchCards('<html><body><div id="Fixtures"></div></body></html>', FIXTURES_PAGE_URL);
+
+            expect(targets).toEqual([]);
         });
     });
 
@@ -264,6 +305,25 @@ describe('TT365 Cheerio Parser', () => {
             const doubles = result.rubbers[9];
             expect(doubles.homePlayers).toEqual(['401745', '395890']); // Chandler, Ward
             expect(doubles.awayPlayers).toEqual(['400934', '395882']); // Bajraktari, Klein
+        });
+    });
+
+    describe('parseTT365MatchCard() - AJAX variant', () => {
+        it('should parse teams and rubbers from TT365 AJAX fragment markup', async () => {
+            const { parseTT365MatchCard } = await import('../tt365-parser.js');
+
+            const result = parseTT365MatchCard(matchCardAjaxHtml, '448193');
+
+            expect(result.fixture.externalId).toBe('448193');
+            expect(result.fixture.homeTeamExternalId).toBe('Billericay_A');
+            expect(result.fixture.awayTeamExternalId).toBe('Brentwood_A');
+            expect(result.fixture.datePlayed).toBe('2025-09-08');
+            expect(result.fixture.status).toBe('completed');
+
+            expect(result.rubbers).toHaveLength(1);
+            expect(result.rubbers[0].externalId).toBe('448193-1');
+            expect(result.rubbers[0].homePlayers).toEqual(['395865']);
+            expect(result.rubbers[0].awayPlayers).toEqual(['395870']);
         });
     });
 });
