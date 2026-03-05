@@ -301,12 +301,13 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     query = query.where('ep.name', 'ilike', `%${normalizedQuery}%`);
                     query = query.orderBy('ep.name', 'asc');
                 } else {
+                    query = query.where(sql<boolean>`f.date_played >= NOW() - INTERVAL '1 month'`);
                     query = query.orderBy('played', 'desc');
                     query = query.orderBy('wins', 'desc');
                     query = query.orderBy('ep.name', 'asc');
                 }
 
-                const rows = await query.limit(20).execute();
+                const rows = await query.limit(normalizedQuery ? 20 : 10).execute();
 
                 return reply.send({
                     data: rows.map(r => ({

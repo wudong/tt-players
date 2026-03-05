@@ -1,10 +1,11 @@
-import { Search, TrendingUp, ChevronRight } from 'lucide-react';
+import { Search, TrendingUp, ChevronRight, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
 import { PlayerSearchItem } from '../types';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
 import { LeagueFilterButton } from '../components/LeagueFilterButton';
+import { useFavouritePlayers } from '../hooks/useFavouritePlayers';
 
 function getInitials(name: string) {
     const parts = name.split(' ');
@@ -50,6 +51,7 @@ function PlayerCard({
 export function HomeView() {
     const [query, setQuery] = useState('');
     const navigate = useNavigate();
+    const { favouritePlayers } = useFavouritePlayers();
     const {
         selectedLeagueIds,
         isLoading: leaguePreferencesLoading,
@@ -60,6 +62,7 @@ export function HomeView() {
     });
     const normalizedQuery = query.trim();
     const isSearchMode = normalizedQuery.length > 2;
+    const showResultsSection = normalizedQuery.length === 0 || isSearchMode;
 
     return (
         <div className="flex min-h-screen flex-col bg-transparent pb-28">
@@ -90,48 +93,80 @@ export function HomeView() {
             </header>
 
             <main className="flex-1 px-5 pt-6">
-                <div className="tt-card p-4">
+                <div className="tt-card mb-4 p-4">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="tt-title-lg flex items-center gap-2">
-                            {isSearchMode ? <Search size={18} className="text-[#2869fe]" /> : <TrendingUp size={18} className="text-[#2869fe]" />}
-                            {isSearchMode ? 'Search Results' : 'Trending Players'}
+                            <Star size={18} className="text-[#2869fe]" />
+                            Favourite Players
                         </h2>
                         <p className="tt-meta font-bold">
-                            {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
+                            {favouritePlayers.length} saved
                         </p>
                     </div>
-
-                    {leaguePreferencesLoading ? (
-                        <div className="flex justify-center p-8">
-                            <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
-                        </div>
-                    ) : !hasSelectedLeagues ? (
+                    {favouritePlayers.length === 0 ? (
                         <div className="rounded-xl bg-[#f5f8ff] p-4 tt-body-sm">
-                            Select at least one league to view trending players.
-                        </div>
-                    ) : isLoading ? (
-                        <div className="flex justify-center p-8">
-                            <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
+                            Open a player profile and tap Favourite to pin quick links here.
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2.5">
-                            {searchResults?.data?.map((player) => (
+                            {favouritePlayers.map((player) => (
                                 <PlayerCard
                                     key={player.id}
                                     player={player}
                                     onClick={() => navigate(`/players/${player.id}`)}
                                 />
                             ))}
-                            {searchResults?.data?.length === 0 && (
-                                <div className="rounded-xl bg-[#f5f8ff] p-5 text-center tt-body-sm text-slate-500">
-                                    {isSearchMode
-                                        ? `No players found matching "${normalizedQuery}"`
-                                        : 'No trending players available yet.'}
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
+
+                {showResultsSection && (
+                    <div className="tt-card p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="tt-title-lg flex items-center gap-2">
+                                {isSearchMode ? <Search size={18} className="text-[#2869fe]" /> : <TrendingUp size={18} className="text-[#2869fe]" />}
+                                {isSearchMode ? 'Search Results' : 'Trending Players'}
+                            </h2>
+                            <p className="tt-meta font-bold">
+                                {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
+                            </p>
+                        </div>
+                        {normalizedQuery.length === 0 && (
+                            <p className="tt-meta mb-3">Most played in the past month</p>
+                        )}
+
+                        {leaguePreferencesLoading ? (
+                            <div className="flex justify-center p-8">
+                                <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
+                            </div>
+                        ) : !hasSelectedLeagues ? (
+                            <div className="rounded-xl bg-[#f5f8ff] p-4 tt-body-sm">
+                                Select at least one league to view trending players.
+                            </div>
+                        ) : isLoading ? (
+                            <div className="flex justify-center p-8">
+                                <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2.5">
+                                {searchResults?.data?.map((player) => (
+                                    <PlayerCard
+                                        key={player.id}
+                                        player={player}
+                                        onClick={() => navigate(`/players/${player.id}`)}
+                                    />
+                                ))}
+                                {searchResults?.data?.length === 0 && (
+                                    <div className="rounded-xl bg-[#f5f8ff] p-5 text-center tt-body-sm text-slate-500">
+                                        {isSearchMode
+                                            ? `No players found matching "${normalizedQuery}"`
+                                            : 'No trending players available yet.'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </main>
         </div>
     );

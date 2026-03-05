@@ -1,10 +1,11 @@
-import { MapPin, Swords, Shield, Zap, Calendar, Building2 } from 'lucide-react';
+import { MapPin, Swords, Shield, Zap, Calendar, Building2, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePlayerExtendedStats } from '../hooks/usePlayerExtendedStats';
 import { usePlayerRubbers } from '../hooks/usePlayerRubbers';
 import { usePlayerCurrentSeasonAffiliations } from '../hooks/usePlayerCurrentSeasonAffiliations';
 import { winPercentage } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { useFavouritePlayers } from '../hooks/useFavouritePlayers';
 
 interface Props {
     playerId: string;
@@ -19,6 +20,7 @@ function getInitials(name: string) {
 export function PlayerProfile({ playerId }: Props) {
     const PAGE_SIZE = 20;
     const navigate = useNavigate();
+    const { isFavouritePlayer, toggleFavouritePlayer } = useFavouritePlayers();
     const { data: stats, isLoading: statsLoading, isError: statsError } = usePlayerExtendedStats(playerId);
     const { data: affiliationsData, isLoading: affiliationsLoading } = usePlayerCurrentSeasonAffiliations(playerId);
     const [offset, setOffset] = useState(0);
@@ -87,6 +89,7 @@ export function PlayerProfile({ playerId }: Props) {
     const affiliations = affiliationsData?.data ?? [];
     const nemesisName = stats.nemesis ? stats.nemesis.split(' (')[0] : '';
     const mostPlayedOpponents = stats.most_played_opponents.slice(0, 6);
+    const isFavourited = isFavouritePlayer(stats.player_id);
 
     const openH2H = (opponentId: string, opponentName: string) => {
         navigate('/h2h', {
@@ -110,25 +113,46 @@ export function PlayerProfile({ playerId }: Props) {
     return (
         <div className="flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
             <header className="tt-hero tt-hero-player px-4 pb-8 pt-12 text-white">
-                <div className="relative flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold backdrop-blur-md ring-1 ring-white/40 shadow-inner">
                             {getInitials(stats.player_name)}
                         </div>
-                        <div>
-                            <h2 className="tt-hero-title !text-[2rem]">{stats.player_name}</h2>
+                        <div className="min-w-0">
+                            <h2 className="tt-hero-title !text-[2rem] truncate">{stats.player_name}</h2>
                             <div className="tt-hero-subtitle mt-1 flex items-center gap-1.5 !text-sm !font-medium">
-                                <MapPin size={14} /> <span>Local League</span>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleFavouritePlayer({
+                                        id: stats.player_id,
+                                        name: stats.player_name,
+                                        played: stats.total,
+                                        wins: stats.wins,
+                                    })}
+                                    className={`mr-1 inline-flex h-6 w-6 items-center justify-center rounded-full ring-1 transition ${
+                                        isFavourited
+                                            ? 'bg-white text-[#2869fe] ring-white'
+                                            : 'bg-white/15 text-white ring-white/50'
+                                    }`}
+                                    aria-label={isFavourited ? 'Remove from favourites' : 'Add to favourites'}
+                                    title={isFavourited ? 'Saved favourite' : 'Add favourite'}
+                                >
+                                    <Star size={11} fill={isFavourited ? 'currentColor' : 'none'} />
+                                </button>
+                                <MapPin size={14} />
+                                <span>Local League</span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-white text-[#2869fe] shadow-lg ring-1 ring-[#b9cdff]">
-                        <span className="text-lg tt-num">{pct}%</span>
-                        <span className="tt-kicker !text-[9px] text-[#2869fe]/70">Win Rate</span>
+                    <div className="flex w-[92px] flex-col items-end">
+                        <div className="flex h-16 flex-col items-center justify-center rounded-2xl bg-white text-[#2869fe] shadow-lg ring-1 ring-[#b9cdff]">
+                            <span className="text-xl tt-num">{pct}%</span>
+                            <span className="tt-kicker !text-[9px] text-[#2869fe]/70">Win Rate</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-3">
+                <div className="mt-6 grid grid-cols-3 gap-2">
                     <div className="flex flex-col items-center justify-center rounded-xl bg-black/10 py-2 backdrop-blur-sm">
                         <span data-testid="stat-total" className="text-lg tt-num">{stats.total}</span>
                         <span className="tt-kicker !text-[10px] text-blue-100">Played</span>

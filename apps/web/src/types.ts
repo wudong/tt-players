@@ -71,6 +71,13 @@ export interface PlayerSearchResponse {
     data: PlayerSearchItem[];
 }
 
+export interface FavouritePlayer {
+    id: string;
+    name: string;
+    played: number;
+    wins: number;
+}
+
 export type LeaderboardMode = 'win_pct' | 'most_played' | 'combined';
 
 export interface LeaderboardItem {
