@@ -5,21 +5,21 @@ import type { FixtureItem } from '../types';
 
 interface Props {
     teamId: string;
-    teamName?: string | null;
     limit?: number;
     offset?: number;
+    showHeading?: boolean;
 }
 
 function FixtureStatusBadge({ status }: { status: FixtureItem['status'] }) {
     const styles = {
-        completed: 'bg-slate-100 text-slate-600',
-        upcoming: 'bg-emerald-50 text-emerald-700',
+        completed: 'bg-[#edf3ff] text-[#1e53d7]',
+        upcoming: 'bg-[#f4f7ff] text-[#4b5d84]',
         postponed: 'bg-red-50 text-red-600',
     } as const;
 
     return (
         <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${styles[status]}`}
+            className={`inline-flex items-center rounded-full px-2 py-0.5 tt-meta !font-bold capitalize ${styles[status]}`}
         >
             {status}
         </span>
@@ -29,11 +29,9 @@ function FixtureStatusBadge({ status }: { status: FixtureItem['status'] }) {
 function FixtureCard({
     fixture,
     teamId,
-    teamNameFallback,
 }: {
     fixture: FixtureItem;
     teamId: string;
-    teamNameFallback?: string | null;
 }) {
     const date = new Date(fixture.date_played);
     const formattedDate = date.toLocaleDateString('en-GB', {
@@ -43,9 +41,7 @@ function FixtureCard({
     });
     const navigate = useNavigate();
     const isHome = fixture.home_team_id === teamId;
-    const teamName = isHome ? fixture.home_team_name : fixture.away_team_name;
     const opponentName = isHome ? fixture.away_team_name : fixture.home_team_name;
-    const teamLabel = teamName ?? teamNameFallback ?? 'Team';
     const opponentFallback = fixture.status === 'upcoming' ? 'TBD' : 'Unknown opponent';
     const opponentLabel = opponentName ?? opponentFallback;
     const hasScore =
@@ -70,41 +66,32 @@ function FixtureCard({
         <button
             onClick={() => navigate(`/fixtures/${fixture.id}`)}
             data-testid="fixture-item"
-            className="flex items-center gap-3 w-full text-left rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100 transition-all hover:shadow-md active:scale-[0.98]"
+            className="flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left ring-1 ring-[#dbe4fa] shadow-[0_8px_24px_rgba(18,25,39,0.06)] transition-all hover:-translate-y-0.5 active:scale-[0.98]"
         >
-            {/* Date */}
-            <div className="flex shrink-0 flex-col items-center rounded-xl bg-slate-50 px-3 py-2 text-center">
-                <CalendarDays size={14} className="mb-1 text-slate-400" />
+            <div className="flex shrink-0 flex-col items-center rounded-xl bg-[#f4f7ff] px-3 py-2 text-center">
+                <CalendarDays size={14} className="mb-1 text-[#2869fe]" />
                 <span
                     data-testid="fixture-date"
-                    className="text-xs font-semibold text-slate-600"
+                    className="tt-meta !font-bold text-slate-600"
                 >
                     {formattedDate}
                 </span>
             </div>
 
-            {/* Teams */}
             <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="truncate text-xs font-medium text-slate-500">
-                        {teamLabel}
-                    </span>
-                    <span className="shrink-0 text-xs font-bold text-slate-300">vs</span>
-                    <span className="truncate text-right text-xs font-medium text-slate-500">
-                        {opponentLabel}
-                    </span>
+                <div className="truncate tt-title-md !text-sm !text-slate-600">
+                    {opponentLabel}
                 </div>
 
-                {/* Round + status */}
                 <div className="mt-1.5 flex items-center justify-between">
                     <div className="flex flex-col">
                         {fixture.round_name && (
-                            <span className="text-xs text-slate-400">{fixture.round_name}</span>
+                            <span className="tt-caption">{fixture.round_name}</span>
                         )}
                         {hasScore && (
                             <span
                                 data-testid="fixture-result"
-                                className="text-xs font-semibold text-slate-600"
+                                className="tt-meta text-slate-600"
                             >
                                 {outcomeLabel} {teamScore}-{opponentScore}
                             </span>
@@ -117,7 +104,7 @@ function FixtureCard({
     );
 }
 
-export function Dashboard({ teamId, teamName = null, limit = 20, offset = 0 }: Props) {
+export function Dashboard({ teamId, limit = 20, offset = 0, showHeading = true }: Props) {
     const { data, isLoading, isError, error } = useFixtures(teamId, { limit, offset });
     const fixtures = data?.data ?? [];
 
@@ -160,7 +147,7 @@ export function Dashboard({ teamId, teamName = null, limit = 20, offset = 0 }: P
         return (
             <div className="flex flex-col items-center justify-center gap-2 p-12 text-slate-400">
                 <CalendarDays size={32} strokeWidth={1.5} />
-                <p className="text-sm font-medium">
+                <p className="tt-body-sm text-center">
                     {data?.availability === 'source_data_missing'
                         ? 'Match data is not available for this source yet'
                         : 'No recent matches found'}
@@ -171,22 +158,21 @@ export function Dashboard({ teamId, teamName = null, limit = 20, offset = 0 }: P
 
     return (
         <section className="p-4">
-            {/* Header */}
-            <div className="mb-3 flex items-center gap-2">
-                <CalendarDays size={18} className="text-emerald-600" />
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-                    Recent Matches
-                </h2>
-            </div>
+            {showHeading && (
+                <div className="mb-3 flex items-center gap-2">
+                    <CalendarDays size={18} className="text-[#2869fe]" />
+                    <h2 className="tt-section-title !mb-0">
+                        Recent Matches
+                    </h2>
+                </div>
+            )}
 
-            {/* Fixture list */}
             <div className="flex flex-col gap-3">
                 {fixtures.map((fixture) => (
                     <FixtureCard
                         key={fixture.id}
                         fixture={fixture}
                         teamId={teamId}
-                        teamNameFallback={teamName}
                     />
                 ))}
             </div>

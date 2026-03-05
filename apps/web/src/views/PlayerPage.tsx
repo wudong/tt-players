@@ -7,7 +7,7 @@ export function PlayerPage() {
     const { playerId = '' } = useParams<{ playerId: string }>();
 
     return (
-        <div className="flex min-h-screen flex-col pb-28 bg-slate-50">
+        <div className="flex min-h-screen flex-col bg-transparent pb-28">
             <PlayerProfile playerId={playerId} />
         </div>
     );

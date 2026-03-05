@@ -530,7 +530,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                       AND ep.deleted_at IS NULL
                     GROUP BY ep.id, ep.name
                     ORDER BY COUNT(*) DESC, SUM(o.is_win) DESC, ep.name ASC
-                    LIMIT 5
+                    LIMIT 6
                 `.execute(db);
 
                 // calculate streak string

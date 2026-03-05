@@ -55,7 +55,7 @@ export function PlayerProfile({ playerId }: Props) {
 
     if (statsLoading) {
         return (
-            <div className="flex flex-col gap-6 p-4 animate-pulse">
+            <div role="status" aria-label="Loading player profile" className="flex flex-col gap-6 p-4 animate-pulse">
                 <div className="h-48 rounded-[2rem] bg-slate-200" />
                 <div className="grid grid-cols-2 gap-4">
                     <div className="h-28 rounded-3xl bg-slate-200" />
@@ -73,7 +73,7 @@ export function PlayerProfile({ playerId }: Props) {
     if (statsError || !stats) {
         return (
             <div className="p-4">
-                <div className="flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-red-700">
+                <div role="alert" className="flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-red-700">
                     <span>⚠</span>
                     <p>Failed to load player profile.</p>
                 </div>
@@ -86,6 +86,7 @@ export function PlayerProfile({ playerId }: Props) {
     const hasMoreRubbers = rubbers.length < totalRubbers;
     const affiliations = affiliationsData?.data ?? [];
     const nemesisName = stats.nemesis ? stats.nemesis.split(' (')[0] : '';
+    const mostPlayedOpponents = stats.most_played_opponents.slice(0, 6);
 
     const openH2H = (opponentId: string, opponentName: string) => {
         navigate('/h2h', {
@@ -108,46 +109,44 @@ export function PlayerProfile({ playerId }: Props) {
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
-            {/* Header with player summary */}
-            <header className="relative overflow-hidden rounded-b-[2.5rem] bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-800 px-4 pb-8 pt-12 text-white shadow-lg">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+            <header className="tt-hero tt-hero-player px-4 pb-8 pt-12 text-white">
                 <div className="relative flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold backdrop-blur-md ring-1 ring-white/40 shadow-inner">
                             {getInitials(stats.player_name)}
                         </div>
                         <div>
-                            <h2 className="text-2xl font-extrabold tracking-tight">{stats.player_name}</h2>
-                            <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-emerald-100/90">
+                            <h2 className="tt-hero-title !text-[2rem]">{stats.player_name}</h2>
+                            <div className="tt-hero-subtitle mt-1 flex items-center gap-1.5 !text-sm !font-medium">
                                 <MapPin size={14} /> <span>Local League</span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-lg ring-1 ring-emerald-500/20">
-                        <span className="text-lg font-black">{pct}%</span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/70">Win Rate</span>
+                    <div className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-white text-[#2869fe] shadow-lg ring-1 ring-[#b9cdff]">
+                        <span className="text-lg tt-num">{pct}%</span>
+                        <span className="tt-kicker !text-[9px] text-[#2869fe]/70">Win Rate</span>
                     </div>
                 </div>
 
-                {/* Quick Stats Grid */}
                 <div className="mt-6 grid grid-cols-3 gap-3">
                     <div className="flex flex-col items-center justify-center rounded-xl bg-black/10 py-2 backdrop-blur-sm">
-                        <span className="text-lg font-bold">{stats.total}</span>
-                        <span className="text-[10px] font-semibold tracking-wider text-emerald-100">PLAYED</span>
+                        <span data-testid="stat-total" className="text-lg tt-num">{stats.total}</span>
+                        <span className="tt-kicker !text-[10px] text-blue-100">Played</span>
                     </div>
                     <div className="flex flex-col items-center justify-center rounded-xl bg-black/10 py-2 backdrop-blur-sm">
-                        <span className="text-lg font-bold">{stats.streak || '-'}</span>
-                        <span className="text-[10px] font-semibold tracking-wider text-emerald-100">STREAK</span>
+                        <span className="text-lg tt-num">{stats.streak || '-'}</span>
+                        <span className="tt-kicker !text-[10px] text-blue-100">Streak</span>
                     </div>
                     <div className="flex flex-col items-center justify-center rounded-xl bg-black/10 py-2 backdrop-blur-sm">
-                        <span className="text-lg font-bold">{stats.wins}W {stats.losses}L</span>
-                        <span className="text-[10px] font-semibold tracking-wider text-emerald-100">W/L</span>
+                        <span className="text-lg tt-num">
+                            <span data-testid="stat-wins">{stats.wins}</span>W <span data-testid="stat-losses">{stats.losses}</span>L
+                        </span>
+                        <span className="tt-kicker !text-[10px] text-blue-100">W/L</span>
                     </div>
                 </div>
             </header>
 
-            {/* Nemesis & Duo Cards */}
-            <div className="grid grid-cols-1 gap-3 px-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 px-4">
                 <button
                     type="button"
                     disabled={!stats.nemesis_id}
@@ -162,68 +161,64 @@ export function PlayerProfile({ playerId }: Props) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500">
                             <Swords size={16} />
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-red-600">Nemesis</span>
+                        <span className="tt-kicker !text-[10px] text-red-600">Nemesis</span>
                     </div>
-                    <p className="font-bold text-slate-800 leading-tight">
+                    <p className="tt-title-md leading-tight">
                         {nemesisName || 'None'}
                     </p>
                     {stats.nemesis && (
-                        <p className="mt-1 text-xs font-semibold text-red-500">{stats.nemesis.split('(')[1]?.replace(')', '')}</p>
+                        <p className="mt-1 tt-meta !text-red-500">{stats.nemesis.split('(')[1]?.replace(')', '')}</p>
                     )}
-                    <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-600">
-                        {stats.nemesis_id ? 'Tap for H2H' : 'No H2H data'}
-                    </p>
                 </button>
 
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 p-4 ring-1 ring-emerald-100 shadow-sm transition hover:shadow-md">
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#eef3ff] to-[#e9efff] p-4 ring-1 ring-[#d8e2ff] shadow-sm transition hover:shadow-md">
                     <div className="mb-2 flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#dce7ff] text-[#2869fe]">
                             <Shield size={16} />
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Dynamic Duo</span>
+                        <span className="tt-kicker !text-[10px] text-[#2869fe]">Dynamic Duo</span>
                     </div>
-                    <p className="font-bold text-slate-800 leading-tight">
+                    <p className="tt-title-md leading-tight">
                         {stats.duo ? stats.duo.split(' (')[0] : 'None'}
                     </p>
                     {stats.duo && (
-                        <p className="mt-1 text-xs font-semibold text-emerald-600">{stats.duo.split('(')[1]?.replace(')', '')}</p>
+                        <p className="mt-1 tt-meta !text-[#2869fe]">{stats.duo.split('(')[1]?.replace(')', '')}</p>
                     )}
                 </div>
             </div>
 
-            {/* Most played opponents */}
             <section className="px-4">
                 <div className="mb-3 flex items-center gap-2">
-                    <Swords size={18} className="text-indigo-500" />
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                    <Swords size={18} className="text-[#2869fe]" />
+                    <h3 className="tt-section-title !mb-0">
                         Most Played Opponents
                     </h3>
                 </div>
 
-                {stats.most_played_opponents.length === 0 ? (
-                    <div className="rounded-3xl bg-white p-5 text-sm text-slate-500 ring-1 ring-slate-100">
+                {mostPlayedOpponents.length === 0 ? (
+                    <div className="tt-card p-5 tt-body-sm text-slate-500">
                         No opponent history available yet.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {stats.most_played_opponents.map((opponent) => (
+                    <div className="grid grid-cols-2 gap-3">
+                        {mostPlayedOpponents.map((opponent) => (
                             <button
                                 key={opponent.opponent_id}
                                 type="button"
                                 onClick={() => openH2H(opponent.opponent_id, opponent.opponent_name)}
-                                className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left ring-1 ring-slate-100 shadow-sm transition hover:shadow-md"
+                                className="tt-card flex items-center justify-between px-4 py-3 text-left transition hover:-translate-y-0.5"
                             >
                                 <div>
-                                    <p className="text-sm font-bold text-slate-800">{opponent.opponent_name}</p>
-                                    <p className="text-xs font-semibold text-slate-500">
+                                    <p className="tt-title-md !text-sm">{opponent.opponent_name}</p>
+                                    <p className="tt-meta">
                                         {opponent.wins}W-{opponent.losses}L • {opponent.played} played
                                     </p>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <span className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700">
+                                    <span className="rounded-lg bg-[#edf3ff] px-2 py-1 tt-meta !font-extrabold !text-[#2869fe]">
                                         {opponent.win_rate}% WR
                                     </span>
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+                                    <span className="tt-kicker !text-[10px] text-[#2869fe]">
                                         H2H
                                     </span>
                                 </div>
@@ -233,35 +228,34 @@ export function PlayerProfile({ playerId }: Props) {
                 )}
             </section>
 
-            {/* Current season affiliations */}
             <section className="px-4">
                 <div className="mb-3 flex items-center gap-2">
-                    <Building2 size={18} className="text-emerald-600" />
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                    <Building2 size={18} className="text-[#2869fe]" />
+                    <h3 className="tt-section-title !mb-0">
                         Current Season Teams & Leagues
                     </h3>
                 </div>
 
                 {affiliationsLoading ? (
                     <div className="flex justify-center p-4">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500"></div>
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-[#2869fe]"></div>
                     </div>
                 ) : affiliations.length === 0 ? (
-                    <div className="rounded-3xl bg-white p-5 text-sm text-slate-500 ring-1 ring-slate-100">
+                    <div className="tt-card p-5 tt-body-sm text-slate-500">
                         No active-season affiliations found.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-3">
                         {affiliations.map((affiliation) => (
                             <div
                                 key={`${affiliation.team_id}-${affiliation.competition_name}`}
-                                className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm"
+                                className="tt-card p-4"
                             >
-                                <p className="font-bold text-slate-800">{affiliation.team_name}</p>
-                                <p className="mt-1 text-xs font-semibold text-slate-500">
+                                <p className="tt-title-md">{affiliation.team_name}</p>
+                                <p className="mt-1 tt-meta">
                                     {affiliation.league_name} · {affiliation.competition_name}
                                 </p>
-                                <p className="mt-0.5 text-[11px] font-medium text-slate-400">
+                                <p className="mt-0.5 tt-caption">
                                     {affiliation.season_name}
                                 </p>
                             </div>
@@ -270,18 +264,17 @@ export function PlayerProfile({ playerId }: Props) {
                 )}
             </section>
 
-            {/* Recent Matches */}
             <section className="mt-2 px-4">
                 <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <Calendar size={20} className="text-emerald-500" /> Match History
+                    <h3 className="tt-title-lg !mb-0 flex items-center gap-2">
+                        <Calendar size={20} className="text-[#2869fe]" /> Match History
                     </h3>
                 </div>
 
                 {rubbersLoading && rubbers.length === 0 ? (
-                    <div className="flex justify-center p-4"><div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500"></div></div>
+                    <div className="flex justify-center p-4"><div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-[#2869fe]"></div></div>
                 ) : rubbers.length === 0 ? (
-                    <div className="text-center p-6 text-sm text-slate-500 bg-white rounded-3xl ring-1 ring-slate-100 shadow-sm">
+                    <div className="tt-card p-6 text-center tt-body-sm text-slate-500">
                         No recent matches found.
                     </div>
                 ) : (
@@ -289,30 +282,30 @@ export function PlayerProfile({ playerId }: Props) {
                         {rubbers.map((rubber: import('../types').RubberItem) => (
                             <div
                                 key={rubber.id}
-                                className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-100"
+                                className="tt-card flex items-center justify-between gap-3 p-4"
                             >
                                 <button
                                     onClick={() => navigate(`/fixtures/${rubber.fixture_id}`)}
                                     className="flex flex-1 items-center gap-4 text-left transition hover:opacity-85"
                                 >
-                                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-inner ${rubber.isWin ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600' : 'bg-gradient-to-br from-red-50 to-red-100 text-red-500'
+                                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-inner ${rubber.isWin ? 'bg-gradient-to-br from-[#edf3ff] to-[#dce7ff] text-[#2869fe]' : 'bg-gradient-to-br from-red-50 to-red-100 text-red-500'
                                         }`}>
-                                        <Zap size={20} className={rubber.isWin ? 'text-emerald-500' : 'text-red-400 rotate-180'} />
+                                        <Zap size={20} className={rubber.isWin ? 'text-[#2869fe]' : 'text-red-400 rotate-180'} />
                                     </div>
                                     <div className="text-left">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${rubber.isWin ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                            <span className={`tt-kicker !text-[10px] px-1.5 py-0.5 rounded ${rubber.isWin ? 'bg-[#dce7ff] text-[#245feb]' : 'bg-red-100 text-red-700'
                                                 }`}>
                                                 {rubber.isWin ? 'W' : 'L'}
                                             </span>
-                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{rubber.date}</span>
+                                            <span className="tt-caption uppercase">{rubber.date}</span>
                                         </div>
-                                        <h4 className="mt-1 font-bold text-slate-800">vs {rubber.opponent}</h4>
-                                        <p className="text-[11px] font-semibold text-slate-400 truncate max-w-[160px]">{rubber.league}</p>
+                                        <h4 className="mt-1 tt-title-md">vs {rubber.opponent}</h4>
+                                        <p className="truncate max-w-[160px] tt-caption">{rubber.league}</p>
                                     </div>
                                 </button>
                                 <div className="flex flex-col items-end gap-2">
-                                    <span className={`font-black tracking-tight ${rubber.isWin ? 'text-emerald-600' : 'text-slate-700'}`}>
+                                    <span className={`tt-num ${rubber.isWin ? 'text-[#2869fe]' : 'text-slate-700'}`}>
                                         {rubber.result.replace('Won ', '').replace('Lost ', '')}
                                     </span>
                                     {rubber.opponent_id && (
@@ -322,7 +315,7 @@ export function PlayerProfile({ playerId }: Props) {
                                                     openH2H(rubber.opponent_id, rubber.opponent);
                                                 }
                                             }}
-                                            className="rounded-xl bg-indigo-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700"
+                                            className="rounded-xl bg-[#edf3ff] px-2 py-1 tt-kicker !text-[10px] text-[#2869fe]"
                                         >
                                             H2H
                                         </button>
@@ -337,7 +330,7 @@ export function PlayerProfile({ playerId }: Props) {
                                     setOffset((prev) => prev + PAGE_SIZE);
                                 }}
                                 disabled={rubbersFetching}
-                                className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="rounded-2xl bg-slate-100 px-4 py-3 tt-body-sm !font-bold !text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {rubbersFetching ? 'Loading...' : 'Load more matches'}
                             </button>

@@ -1,4 +1,4 @@
-import { Search, TrendingUp, ChevronRight, Medal, Flame } from 'lucide-react';
+import { Search, TrendingUp, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
@@ -12,7 +12,13 @@ function getInitials(name: string) {
     return name.slice(0, 2).toUpperCase();
 }
 
-function PlayerCard({ player, onClick }: { player: PlayerSearchItem & { played?: number; wins?: number }; onClick: () => void }) {
+function PlayerCard({
+    player,
+    onClick,
+}: {
+    player: PlayerSearchItem & { played?: number; wins?: number };
+    onClick: () => void;
+}) {
     const played = player.played ?? 0;
     const wins = player.wins ?? 0;
     const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
@@ -20,28 +26,22 @@ function PlayerCard({ player, onClick }: { player: PlayerSearchItem & { played?:
     return (
         <button
             onClick={onClick}
-            className="flex w-full items-center justify-between rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all hover:scale-[1.02] hover:shadow-md"
+            className="tt-card flex w-full items-center justify-between p-4 text-left transition hover:-translate-y-0.5"
         >
-            <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-inner">
-                    <span className="text-lg font-bold text-white tracking-widest">{getInitials(player.name)}</span>
+            <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#2869fe] to-[#7c66ff] text-sm font-extrabold tracking-wide text-white">
+                    {getInitials(player.name)}
                 </div>
-                <div className="text-left">
-                    <h3 className="font-bold text-slate-800">{player.name}</h3>
-                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold">
-                        <span className={`rounded-md px-2 py-0.5 ${winRate >= 70 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                            {winRate}% WR
-                        </span>
-                        <span className="text-slate-400 font-medium">{played} matches</span>
-                    </div>
+                <div>
+                    <h3 className="tt-title-md">{player.name}</h3>
+                    <p className="tt-meta mt-0.5">
+                        {winRate}% WR • {played} matches
+                    </p>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
-                {winRate >= 80 && played >= 10 && <Medal className="text-amber-400 drop-shadow-sm" size={20} />}
-                {wins >= 5 && <Flame className="text-orange-500 max-sm:hidden" size={18} />}
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <ChevronRight size={18} />
-                </div>
+            <div className="flex items-center gap-2">
+                <span className="tt-chip-active">Open</span>
+                <ChevronRight size={16} className="text-slate-400" />
             </div>
         </button>
     );
@@ -62,85 +62,76 @@ export function HomeView() {
     const isSearchMode = normalizedQuery.length > 2;
 
     return (
-        <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 pb-28">
-            <header className="relative w-full rounded-b-[2.5rem] bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-800 px-6 pb-8 pt-16 shadow-lg">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-                <div className="relative mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">TT Hub</h1>
-                        <p className="mt-1 text-sm font-medium text-emerald-100/90 tracking-wide">Table tennis stats & analysis</p>
-                    </div>
-                    <LeagueFilterButton
-                        count={selectedLeagueIds.length}
-                        onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
-                    />
-                </div>
-
-                <div className="relative group">
-                    <div className="absolute inset-0 rounded-2xl bg-emerald-400/20 blur transition-all group-focus-within:bg-emerald-400/30"></div>
-                    <div className="relative flex items-center rounded-2xl bg-white/95 p-1.5 shadow-xl backdrop-blur-xl ring-1 ring-white/50 transition-all focus-within:ring-p-500">
-                        <div className="flex h-10 w-10 items-center justify-center text-emerald-600/70">
-                            <Search size={20} strokeWidth={2.5} />
+        <div className="flex min-h-screen flex-col bg-transparent pb-28">
+            <header className="tt-hero tt-hero-home">
+                <div className="relative z-10">
+                    <div className="mb-5 flex items-start justify-between gap-3">
+                        <div>
+                            <p className="tt-kicker text-blue-100">Welcome Back</p>
+                            <h1 className="tt-hero-title mt-1">TT Hub</h1>
+                            <p className="tt-hero-subtitle mt-2">Find players, trends and league performance</p>
                         </div>
+                        <LeagueFilterButton
+                            count={selectedLeagueIds.length}
+                            onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
+                        />
+                    </div>
+                    <div className="tt-search-shell">
+                        <Search size={18} className="text-slate-400" />
                         <input
                             type="search"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Find players, clubs, or leagues..."
-                            className="w-full bg-transparent px-2 py-2 text-[15px] font-semibold text-slate-800 placeholder:font-medium placeholder:text-slate-400 focus:outline-none"
+                            placeholder="Search players..."
+                            className="tt-input"
                         />
                     </div>
                 </div>
-                <p className="mt-2 text-xs font-semibold text-emerald-100/90">
-                    Type at least 3 characters to search. Otherwise, showing trending players.
-                </p>
             </header>
 
-            <main className="flex-1 px-5 pt-8 z-10 -mt-2">
-                <div className="mb-4 flex items-end justify-between px-1">
-                    <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                        {isSearchMode ? <><Search size={20} className="text-emerald-500" /> Search Results</> : <><TrendingUp size={20} className="text-emerald-500" /> Trending Players</>}
-                    </h2>
-                    <p className="text-xs font-semibold text-slate-500">
-                        {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
-                    </p>
-                </div>
-                {!isSearchMode && (
-                    <p className="mb-3 px-1 text-xs font-medium text-slate-500">
-                        Trending players are ranked by most matches played across selected leagues, then by wins.
-                    </p>
-                )}
+            <main className="flex-1 px-5 pt-6">
+                <div className="tt-card p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                        <h2 className="tt-title-lg flex items-center gap-2">
+                            {isSearchMode ? <Search size={18} className="text-[#2869fe]" /> : <TrendingUp size={18} className="text-[#2869fe]" />}
+                            {isSearchMode ? 'Search Results' : 'Trending Players'}
+                        </h2>
+                        <p className="tt-meta font-bold">
+                            {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
+                        </p>
+                    </div>
 
-                {leaguePreferencesLoading ? (
-                    <div className="flex justify-center p-8">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
-                    </div>
-                ) : !hasSelectedLeagues ? (
-                    <div className="rounded-3xl bg-white p-6 text-center text-sm text-slate-600 ring-1 ring-slate-100">
-                        Select at least one league to view trending players.
-                    </div>
-                ) : isLoading ? (
-                    <div className="flex justify-center p-8">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-3">
-                        {searchResults?.data?.map((player) => (
-                            <PlayerCard
-                                key={player.id}
-                                player={player}
-                                onClick={() => navigate(`/players/${player.id}`)}
-                            />
-                        ))}
-                        {searchResults?.data?.length === 0 && (
-                            <div className="text-center p-8 text-slate-500">
-                                {isSearchMode
-                                    ? `No players found matching "${normalizedQuery}"`
-                                    : 'No trending players available yet.'}
-                            </div>
-                        )}
-                    </div>
-                )}
+                    {leaguePreferencesLoading ? (
+                        <div className="flex justify-center p-8">
+                            <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
+                        </div>
+                    ) : !hasSelectedLeagues ? (
+                        <div className="rounded-xl bg-[#f5f8ff] p-4 tt-body-sm">
+                            Select at least one league to view trending players.
+                        </div>
+                    ) : isLoading ? (
+                        <div className="flex justify-center p-8">
+                            <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-2.5">
+                            {searchResults?.data?.map((player) => (
+                                <PlayerCard
+                                    key={player.id}
+                                    player={player}
+                                    onClick={() => navigate(`/players/${player.id}`)}
+                                />
+                            ))}
+                            {searchResults?.data?.length === 0 && (
+                                <div className="rounded-xl bg-[#f5f8ff] p-5 text-center tt-body-sm text-slate-500">
+                                    {isSearchMode
+                                        ? `No players found matching "${normalizedQuery}"`
+                                        : 'No trending players available yet.'}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     );

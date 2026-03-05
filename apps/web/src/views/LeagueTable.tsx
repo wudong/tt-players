@@ -51,26 +51,24 @@ export function LeagueTable({ competitionId }: Props) {
         return (
             <div className="flex flex-col items-center justify-center gap-2 p-12 text-slate-400">
                 <Trophy size={32} strokeWidth={1.5} />
-                <p className="text-sm font-medium">No standings available yet</p>
+                <p className="tt-body-sm">No standings available yet</p>
             </div>
         );
     }
 
     return (
         <section className="p-4">
-            {/* Section header */}
             <div className="mb-3 flex items-center gap-2">
-                <Trophy size={18} className="text-emerald-600" />
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+                <Trophy size={18} className="text-[#2869fe]" />
+                <h2 className="tt-section-title !mb-0">
                     League Table
                 </h2>
             </div>
 
-            {/* Table card */}
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+            <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-[#dbe4fa] shadow-[0_8px_24px_rgba(18,25,39,0.06)]">
                 <table className="w-full border-collapse text-sm" aria-label="League standings">
                     <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        <tr className="border-b border-[#e9efff] bg-[#f4f7ff] text-xs font-extrabold uppercase tracking-[0.11em] text-slate-500">
                             <th className="px-4 py-3 text-left">#</th>
                             <th className="px-4 py-3 text-left">Team</th>
                             <th className="px-2 py-3 text-center">W</th>
@@ -83,37 +81,32 @@ export function LeagueTable({ competitionId }: Props) {
                             <tr
                                 key={row.team_id}
                                 onClick={() => navigate(`/teams/${row.team_id}`)}
-                                className={`group cursor-pointer border-b border-slate-50 transition-colors hover:bg-emerald-50/50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                className={`group cursor-pointer border-b border-[#edf2ff] transition-colors hover:bg-[#eef4ff] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#fafcff]'
                                     }`}
                             >
-                                {/* Position */}
-                                <td className="px-4 py-3 font-bold text-slate-400">
+                                <td className="px-4 py-3 tt-num !text-sm text-slate-400">
                                     {row.position}
                                 </td>
 
-                                {/* Team name */}
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                                        <span className="tt-title-md !text-sm group-hover:text-[#2869fe] transition-colors">
                                             {row.team_name}
                                         </span>
                                         <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
                                     </div>
                                 </td>
 
-                                {/* Won */}
-                                <td className="px-2 py-3 text-center font-medium text-emerald-600">
+                                <td className="px-2 py-3 text-center tt-num !text-sm text-[#2869fe]">
                                     {row.won}
                                 </td>
 
-                                {/* Lost */}
-                                <td className="px-2 py-3 text-center font-medium text-red-500">
+                                <td className="px-2 py-3 text-center tt-num !text-sm text-red-500">
                                     {row.lost}
                                 </td>
 
-                                {/* Points */}
                                 <td className="px-2 py-3 text-center">
-                                    <span className="inline-flex min-w-[2rem] items-center justify-center rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                                    <span className="inline-flex min-w-[2rem] items-center justify-center rounded-lg bg-[#edf3ff] px-2 py-0.5 tt-num !text-xs text-[#1f57de]">
                                         {row.points}
                                     </span>
                                 </td>
