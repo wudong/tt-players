@@ -33,7 +33,7 @@
 - Type: issue
 - Priority: high
 - Area: worker TT365 parser + ingestion
-- Status: in_progress
+- Status: done
 - Notes: Current data suggests 0-1 for all rubbers due to parsing `Score` column instead of per-game `Games` column.
 
 ### MV-006 - Home search box should show minimum-character hint
@@ -88,3 +88,4 @@
 ## Execution Notes
 - 2026-03-05: Repository checkpoint committed (`47e357c`) before continuing task-by-task implementation.
 - Policy: commit after each completed MV task.
+- 2026-03-05: `MV-005` complete. Updated TT365 parser to derive rubber game counts from `Games` column with fallback to `Score`, updated parser tests, and reprocessed fixture `458455` from raw log `7fc80737-eb27-4b86-bae1-57123a8f46cc`.

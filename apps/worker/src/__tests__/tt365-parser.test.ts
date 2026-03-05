@@ -263,27 +263,27 @@ describe('TT365 Cheerio Parser', () => {
             expect(doubles.externalId).toBe('458829-10');
         });
 
-        it('should correctly parse the set score for a normal singles rubber', () => {
-            // Rubber 2: Gary Ward vs Bajraktari Indrit → Score 1-0
+        it('should correctly parse game counts for a normal singles rubber', () => {
+            // Rubber 2 games: 4-11, 11-8, 11-13, 11-7, 13-11 -> 3-2
             const rubber2 = result.rubbers[1];
-            expect(rubber2.homeGamesWon).toBe(1);
-            expect(rubber2.awayGamesWon).toBe(0);
+            expect(rubber2.homeGamesWon).toBe(3);
+            expect(rubber2.awayGamesWon).toBe(2);
             expect(rubber2.outcomeType).toBe('normal');
         });
 
         it('should correctly parse a loss for the home player', () => {
-            // Rubber 3: John Parodi vs Rick Klein → Score 0-1
+            // Rubber 3 games: 2-11, 2-11, 7-11 -> 0-3
             const rubber3 = result.rubbers[2];
             expect(rubber3.homeGamesWon).toBe(0);
-            expect(rubber3.awayGamesWon).toBe(1);
+            expect(rubber3.awayGamesWon).toBe(3);
         });
 
         it('should correctly parse the doubles rubber score', () => {
-            // Rubber 10: Chandler/Ward vs Bajraktari/Klein → Score 0-1
+            // Rubber 10 games: 7-11, 11-4, 6-11, 5-11 -> 1-3
             const doubles = result.rubbers[9];
             expect(doubles.isDoubles).toBe(true);
-            expect(doubles.homeGamesWon).toBe(0);
-            expect(doubles.awayGamesWon).toBe(1);
+            expect(doubles.homeGamesWon).toBe(1);
+            expect(doubles.awayGamesWon).toBe(3);
         });
 
         it('should use player externalIds (numeric IDs) in rubber homePlayers/awayPlayers arrays', () => {
@@ -324,6 +324,36 @@ describe('TT365 Cheerio Parser', () => {
             expect(result.rubbers[0].externalId).toBe('448193-1');
             expect(result.rubbers[0].homePlayers).toEqual(['395865']);
             expect(result.rubbers[0].awayPlayers).toEqual(['395870']);
+            expect(result.rubbers[0].homeGamesWon).toBe(3);
+            expect(result.rubbers[0].awayGamesWon).toBe(0);
+        });
+
+        it('should fallback to Score column when game rows are unavailable', async () => {
+            const { parseTT365MatchCard } = await import('../tt365-parser.js');
+            const html = `
+                <div id="CardSummary">
+                  <div class="teamNames">
+                    <a href="/League/Results/Team/Statistics/S1/D1/Home_A">Home A</a>
+                    <a href="/League/Results/Team/Statistics/S1/D1/Away_B">Away B</a>
+                  </div>
+                  <time datetime="2025-09-08"></time>
+                </div>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="/League/Results/Player/Statistics/S1/Home_Player/1001">Home Player</a></td>
+                      <td><a href="/League/Results/Player/Statistics/S1/Away_Player/2002">Away Player</a></td>
+                      <td></td>
+                      <td>1-0</td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const result = parseTT365MatchCard(html, '12345');
+            expect(result.rubbers).toHaveLength(1);
+            expect(result.rubbers[0].homeGamesWon).toBe(1);
+            expect(result.rubbers[0].awayGamesWon).toBe(0);
         });
     });
 });

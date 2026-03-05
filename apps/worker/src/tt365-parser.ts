@@ -47,6 +47,31 @@ function extractMatchIdFromHref(href: string): string | null {
     return match?.[1] ?? null;
 }
 
+/**
+ * Parse TT365 game-by-game scores and return won game counts.
+ * Input examples:
+ * - "11-9 9-11 11-7 11-8"
+ * - "<div>11-9</div><div>9-11</div>..."
+ */
+function parseGameCountsFromCellText(cellText: string): { homeGamesWon: number; awayGamesWon: number } | null {
+    const gamePattern = /(\d+)\s*-\s*(\d+)/g;
+    let homeGamesWon = 0;
+    let awayGamesWon = 0;
+    let gameCount = 0;
+
+    for (const match of cellText.matchAll(gamePattern)) {
+        const home = parseInt(match[1], 10);
+        const away = parseInt(match[2], 10);
+        if (Number.isNaN(home) || Number.isNaN(away)) continue;
+        gameCount += 1;
+        if (home > away) homeGamesWon += 1;
+        else if (away > home) awayGamesWon += 1;
+    }
+
+    if (gameCount === 0) return null;
+    return { homeGamesWon, awayGamesWon };
+}
+
 // ─── Standings Parser ─────────────────────────────────────────────────────────
 
 export function parseTT365Standings(html: string): {
@@ -220,10 +245,14 @@ export function parseTT365MatchCard(
         }
 
         // ── Score ─────────────────────────────────────────────────────────
-        const scoreText = $(cells[3]).text().trim(); // e.g. "1-0" or "0-1"
+        // TT365 "Score" is winner points (1-0/0-1); the "Games" column carries set-level detail.
+        // We parse game counts from Games first, then fallback to Score if Games cannot be parsed.
+        const gamesCellText = normalizeText($(cells[2]).text());
+        const parsedGames = parseGameCountsFromCellText(gamesCellText);
+        const scoreText = normalizeText($(cells[3]).text()); // fallback (e.g. "1-0")
         const scoreParts = scoreText.split('-').map((s) => parseInt(s.trim(), 10));
-        const homeGamesWon = scoreParts[0] || 0;
-        const awayGamesWon = scoreParts[1] || 0;
+        const homeGamesWon = parsedGames?.homeGamesWon ?? scoreParts[0] ?? 0;
+        const awayGamesWon = parsedGames?.awayGamesWon ?? scoreParts[1] ?? 0;
 
         // ── Doubles detection ─────────────────────────────────────────────
         const isDoubles = homePlayers.length > 1 || awayPlayers.length > 1;
