@@ -26,7 +26,7 @@
 - Type: improvement
 - Priority: medium
 - Area: player detail page
-- Status: pending
+- Status: done
 - Notes: Keep scroll position on "load more"; redesign nemesis/opponents/current season teams sections as cards and reorder sections.
 
 ### MV-005 - TT365 match-result scores parsed incorrectly
@@ -52,13 +52,13 @@
 - Type: improvement
 - Priority: medium
 - Area: player page cards
-- Status: pending
+- Status: done
 
 ### MV-009 - H2H past encounters should include league name
 - Type: improvement
 - Priority: medium
 - Area: head-to-head UI/API payload
-- Status: pending
+- Status: done
 
 ### MV-010 - League/Division dropdown visuals inconsistent with app design
 - Type: issue
@@ -91,3 +91,4 @@
 - 2026-03-05: `MV-005` complete. Updated TT365 parser to derive rubber game counts from `Games` column with fallback to `Score`, updated parser tests, and reprocessed fixture `458455` from raw log `7fc80737-eb27-4b86-bae1-57123a8f46cc`.
 - 2026-03-05: `MV-007` complete. `/teams/:id/fixtures` now returns `home_team_name`, `away_team_name`, `home_score`, and `away_score`; Team Hub recent matches now renders readable names and team-perspective result text (e.g. `W 7-3`). Verified with targeted API/web tests and playwright-cli snapshot.
 - 2026-03-05: `MV-012` + `MV-013` complete. Leaders default remains `combined`; Best Win mode now requests top 10 rows with min-played=3 and server enforces a minimum 10-slot limit window for `win_pct` mode when available. Verified via targeted tests and playwright-cli (`Leaders` tab showed combined formula by default; `Best Win %` returned 10 rows and the expected ranking formula text).
+- 2026-03-05: `MV-004` + `MV-008` + `MV-009` complete. Player profile now keeps scroll position on `Load more matches`, provides quick H2H actions on Nemesis and Most Played Opponents cards, moves Current Season Teams & Leagues below Most Played Opponents, and uses grid-card layouts for both sections. H2H API now returns league + division labels (`League · Division`) for encounters; UI displays it in Past Encounters. Verified with targeted API tests and playwright-cli interaction snapshots.

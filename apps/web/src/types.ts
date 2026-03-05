@@ -92,6 +92,7 @@ export interface LeadersResponse {
 }
 
 export interface ExtendedPlayerStats extends PlayerStats {
+    nemesis_id: string | null;
     nemesis: string;
     duo: string;
     streak: string;

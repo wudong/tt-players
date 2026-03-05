@@ -1,5 +1,5 @@
 import { MapPin, Swords, Shield, Zap, Calendar, Building2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePlayerExtendedStats } from '../hooks/usePlayerExtendedStats';
 import { usePlayerRubbers } from '../hooks/usePlayerRubbers';
 import { usePlayerCurrentSeasonAffiliations } from '../hooks/usePlayerCurrentSeasonAffiliations';
@@ -28,6 +28,7 @@ export function PlayerProfile({ playerId }: Props) {
         isLoading: rubbersLoading,
         isFetching: rubbersFetching,
     } = usePlayerRubbers(playerId, { limit: PAGE_SIZE, offset });
+    const loadMoreScrollYRef = useRef<number | null>(null);
 
     useEffect(() => {
         setOffset(0);
@@ -42,6 +43,14 @@ export function PlayerProfile({ playerId }: Props) {
             const next = rubbersData.data.filter((item) => !existingIds.has(item.id));
             return [...prev, ...next];
         });
+
+        if (offset > 0 && loadMoreScrollYRef.current !== null) {
+            const scrollY = loadMoreScrollYRef.current;
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: scrollY, behavior: 'auto' });
+            });
+            loadMoreScrollYRef.current = null;
+        }
     }, [rubbersData, offset]);
 
     if (statsLoading) {
@@ -76,6 +85,26 @@ export function PlayerProfile({ playerId }: Props) {
     const totalRubbers = rubbersData?.total ?? 0;
     const hasMoreRubbers = rubbers.length < totalRubbers;
     const affiliations = affiliationsData?.data ?? [];
+    const nemesisName = stats.nemesis ? stats.nemesis.split(' (')[0] : '';
+
+    const openH2H = (opponentId: string, opponentName: string) => {
+        navigate('/h2h', {
+            state: {
+                playerA: {
+                    id: stats.player_id,
+                    name: stats.player_name,
+                    played: stats.total,
+                    wins: stats.wins,
+                },
+                playerB: {
+                    id: opponentId,
+                    name: opponentName,
+                    played: 0,
+                    wins: 0,
+                },
+            },
+        });
+    };
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in zoom-in duration-300">
@@ -117,46 +146,18 @@ export function PlayerProfile({ playerId }: Props) {
                 </div>
             </header>
 
-            {/* Current season affiliations */}
-            <section className="px-4">
-                <div className="mb-3 flex items-center gap-2">
-                    <Building2 size={18} className="text-emerald-600" />
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
-                        Current Season Teams & Leagues
-                    </h3>
-                </div>
-
-                {affiliationsLoading ? (
-                    <div className="flex justify-center p-4">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500"></div>
-                    </div>
-                ) : affiliations.length === 0 ? (
-                    <div className="rounded-3xl bg-white p-5 text-sm text-slate-500 ring-1 ring-slate-100">
-                        No active-season affiliations found.
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-2">
-                        {affiliations.map((affiliation) => (
-                            <div
-                                key={`${affiliation.team_id}-${affiliation.competition_name}`}
-                                className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm"
-                            >
-                                <p className="font-bold text-slate-800">{affiliation.team_name}</p>
-                                <p className="mt-1 text-xs font-semibold text-slate-500">
-                                    {affiliation.league_name} · {affiliation.competition_name}
-                                </p>
-                                <p className="mt-0.5 text-[11px] font-medium text-slate-400">
-                                    {affiliation.season_name}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </section>
-
             {/* Nemesis & Duo Cards */}
-            <div className="grid grid-cols-2 gap-4 px-4">
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-50 to-orange-50 p-4 ring-1 ring-red-100 shadow-sm transition hover:shadow-md">
+            <div className="grid grid-cols-1 gap-3 px-4 sm:grid-cols-2">
+                <button
+                    type="button"
+                    disabled={!stats.nemesis_id}
+                    onClick={() => {
+                        if (stats.nemesis_id && nemesisName) {
+                            openH2H(stats.nemesis_id, nemesisName);
+                        }
+                    }}
+                    className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-50 to-orange-50 p-4 text-left ring-1 ring-red-100 shadow-sm transition hover:shadow-md disabled:cursor-default disabled:opacity-80"
+                >
                     <div className="mb-2 flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500">
                             <Swords size={16} />
@@ -164,12 +165,15 @@ export function PlayerProfile({ playerId }: Props) {
                         <span className="text-xs font-bold uppercase tracking-wider text-red-600">Nemesis</span>
                     </div>
                     <p className="font-bold text-slate-800 leading-tight">
-                        {stats.nemesis ? stats.nemesis.split(' (')[0] : 'None'}
+                        {nemesisName || 'None'}
                     </p>
                     {stats.nemesis && (
                         <p className="mt-1 text-xs font-semibold text-red-500">{stats.nemesis.split('(')[1]?.replace(')', '')}</p>
                     )}
-                </div>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-600">
+                        {stats.nemesis_id ? 'Tap for H2H' : 'No H2H data'}
+                    </p>
+                </button>
 
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 p-4 ring-1 ring-emerald-100 shadow-sm transition hover:shadow-md">
                     <div className="mb-2 flex items-center gap-2">
@@ -201,11 +205,13 @@ export function PlayerProfile({ playerId }: Props) {
                         No opponent history available yet.
                     </div>
                 ) : (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {stats.most_played_opponents.map((opponent) => (
-                            <div
+                            <button
                                 key={opponent.opponent_id}
-                                className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-100 shadow-sm"
+                                type="button"
+                                onClick={() => openH2H(opponent.opponent_id, opponent.opponent_name)}
+                                className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left ring-1 ring-slate-100 shadow-sm transition hover:shadow-md"
                             >
                                 <div>
                                     <p className="text-sm font-bold text-slate-800">{opponent.opponent_name}</p>
@@ -213,9 +219,51 @@ export function PlayerProfile({ playerId }: Props) {
                                         {opponent.wins}W-{opponent.losses}L • {opponent.played} played
                                     </p>
                                 </div>
-                                <span className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700">
-                                    {opponent.win_rate}% WR
-                                </span>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700">
+                                        {opponent.win_rate}% WR
+                                    </span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+                                        H2H
+                                    </span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* Current season affiliations */}
+            <section className="px-4">
+                <div className="mb-3 flex items-center gap-2">
+                    <Building2 size={18} className="text-emerald-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                        Current Season Teams & Leagues
+                    </h3>
+                </div>
+
+                {affiliationsLoading ? (
+                    <div className="flex justify-center p-4">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500"></div>
+                    </div>
+                ) : affiliations.length === 0 ? (
+                    <div className="rounded-3xl bg-white p-5 text-sm text-slate-500 ring-1 ring-slate-100">
+                        No active-season affiliations found.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {affiliations.map((affiliation) => (
+                            <div
+                                key={`${affiliation.team_id}-${affiliation.competition_name}`}
+                                className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm"
+                            >
+                                <p className="font-bold text-slate-800">{affiliation.team_name}</p>
+                                <p className="mt-1 text-xs font-semibold text-slate-500">
+                                    {affiliation.league_name} · {affiliation.competition_name}
+                                </p>
+                                <p className="mt-0.5 text-[11px] font-medium text-slate-400">
+                                    {affiliation.season_name}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -230,7 +278,7 @@ export function PlayerProfile({ playerId }: Props) {
                     </h3>
                 </div>
 
-                {rubbersLoading ? (
+                {rubbersLoading && rubbers.length === 0 ? (
                     <div className="flex justify-center p-4"><div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500"></div></div>
                 ) : rubbers.length === 0 ? (
                     <div className="text-center p-6 text-sm text-slate-500 bg-white rounded-3xl ring-1 ring-slate-100 shadow-sm">
@@ -269,22 +317,11 @@ export function PlayerProfile({ playerId }: Props) {
                                     </span>
                                     {rubber.opponent_id && (
                                         <button
-                                            onClick={() => navigate('/h2h', {
-                                                state: {
-                                                    playerA: {
-                                                        id: stats.player_id,
-                                                        name: stats.player_name,
-                                                        played: stats.total,
-                                                        wins: stats.wins,
-                                                    },
-                                                    playerB: {
-                                                        id: rubber.opponent_id,
-                                                        name: rubber.opponent,
-                                                        played: 0,
-                                                        wins: 0,
-                                                    },
-                                                },
-                                            })}
+                                            onClick={() => {
+                                                if (rubber.opponent_id) {
+                                                    openH2H(rubber.opponent_id, rubber.opponent);
+                                                }
+                                            }}
                                             className="rounded-xl bg-indigo-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700"
                                         >
                                             H2H
@@ -295,7 +332,10 @@ export function PlayerProfile({ playerId }: Props) {
                         ))}
                         {hasMoreRubbers && (
                             <button
-                                onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
+                                onClick={() => {
+                                    loadMoreScrollYRef.current = window.scrollY;
+                                    setOffset((prev) => prev + PAGE_SIZE);
+                                }}
                                 disabled={rubbersFetching}
                                 className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                             >

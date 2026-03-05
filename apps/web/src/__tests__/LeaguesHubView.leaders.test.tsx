@@ -26,7 +26,7 @@ vi.mock('../components/LeagueSelectionSheet', () => ({
     LeagueSelectionSheet: () => null,
 }));
 
-const useLeadersMock = vi.fn(() => ({
+const useLeadersMock = vi.fn((..._args: [unknown, unknown, unknown, unknown]) => ({
     data: {
         formula: 'Ranked by combined score.',
         data: [],
@@ -35,7 +35,7 @@ const useLeadersMock = vi.fn(() => ({
 }));
 
 vi.mock('../hooks/useLeaders', () => ({
-    useLeaders: (...args: unknown[]) => useLeadersMock(...args),
+    useLeaders: (...args: [unknown, unknown, unknown, unknown]) => useLeadersMock(...args),
 }));
 
 describe('LeaguesHubView leaders behavior', () => {

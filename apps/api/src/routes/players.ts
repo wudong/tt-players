@@ -46,6 +46,7 @@ const ResponseSchema = z.object({
 });
 
 const ExtendedResponseSchema = ResponseSchema.extend({
+    nemesis_id: z.string().uuid().nullable(),
     nemesis: z.string(),
     duo: z.string(),
     streak: z.string(),
@@ -427,7 +428,12 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .executeTakeFirstOrThrow();
 
                 // 1. Nemesis query
-                const nemesisRes = await sql<{ opponent_name: string, losses: number, wins: number }>`
+                const nemesisRes = await sql<{
+                    opponent_id: string;
+                    opponent_name: string;
+                    losses: number;
+                    wins: number;
+                }>`
                     WITH opponents AS (
                         SELECT 
                             CASE WHEN home_player_1_id = ${id} THEN away_player_1_id ELSE home_player_1_id END as opp_id,
@@ -436,10 +442,10 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         FROM rubbers
                         WHERE (home_player_1_id = ${id} OR away_player_1_id = ${id}) AND is_doubles = false AND deleted_at IS NULL AND outcome_type != 'walkover'
                     )
-                    SELECT ep.name as opponent_name, SUM(is_loss) as losses, SUM(is_win) as wins
+                    SELECT ep.id as opponent_id, ep.name as opponent_name, SUM(is_loss) as losses, SUM(is_win) as wins
                     FROM opponents o
                     JOIN external_players ep ON ep.id = o.opp_id
-                    GROUP BY o.opp_id, ep.name
+                    GROUP BY o.opp_id, ep.id, ep.name
                     HAVING SUM(is_loss) > 0
                     ORDER BY SUM(is_loss) DESC, SUM(is_win) ASC
                     LIMIT 1
@@ -540,8 +546,10 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 }
 
                 let nemesisStr = 'None';
+                let nemesisId: string | null = null;
                 if (nemesisRes.rows.length > 0) {
                     const r = nemesisRes.rows[0];
+                    nemesisId = r.opponent_id;
                     nemesisStr = `${r.opponent_name} (${r.wins}W-${r.losses}L)`;
                 }
 
@@ -569,6 +577,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     wins: Number(wins),
                     losses: Number(losses),
                     total: Number(total),
+                    nemesis_id: nemesisId,
                     nemesis: nemesisStr,
                     duo: duoStr,
                     streak: streakStr,
@@ -716,7 +725,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         r.id,
                         r.fixture_id,
                         f.date_played as date,
-                        c.name as league,
+                        CONCAT(l.name, ' · ', c.name) as league,
                         CASE WHEN r.home_player_1_id = ${id} THEN r.away_player_1_id ELSE r.home_player_1_id END as opponent_id,
                         CASE WHEN r.home_player_1_id = ${id} THEN ep_away.name ELSE ep_home.name END as opponent,
                         CASE 
@@ -735,6 +744,8 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     FROM rubbers r
                     JOIN fixtures f ON f.id = r.fixture_id
                     JOIN competitions c ON c.id = f.competition_id
+                    JOIN seasons s ON s.id = c.season_id
+                    JOIN leagues l ON l.id = s.league_id
                     LEFT JOIN external_players ep_home ON ep_home.id = r.home_player_1_id
                     LEFT JOIN external_players ep_away ON ep_away.id = r.away_player_1_id
                     WHERE (r.home_player_1_id = ${id} OR r.away_player_1_id = ${id})
@@ -792,7 +803,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         r.id,
                         r.fixture_id,
                         f.date_played as date,
-                        c.name as league,
+                        CONCAT(l.name, ' · ', c.name) as league,
                         CASE WHEN r.home_player_1_id = ${id} THEN r.away_player_1_id ELSE r.home_player_1_id END as opponent_id,
                         CASE WHEN r.home_player_1_id = ${id} THEN ep_away.name ELSE ep_home.name END as opponent,
                         CASE 
@@ -811,6 +822,8 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     FROM rubbers r
                     JOIN fixtures f ON f.id = r.fixture_id
                     JOIN competitions c ON c.id = f.competition_id
+                    JOIN seasons s ON s.id = c.season_id
+                    JOIN leagues l ON l.id = s.league_id
                     LEFT JOIN external_players ep_home ON ep_home.id = r.home_player_1_id
                     LEFT JOIN external_players ep_away ON ep_away.id = r.away_player_1_id
                     WHERE ((r.home_player_1_id = ${id} AND r.away_player_1_id = ${opponentId}) 
