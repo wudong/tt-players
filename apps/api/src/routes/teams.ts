@@ -35,6 +35,17 @@ const FormResponseSchema = z.object({
     points: z.number().int().nullable(),
 });
 
+const TeamSummaryResponseSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    league_id: z.string().uuid().nullable(),
+    league_name: z.string().nullable(),
+    season_id: z.string().uuid().nullable(),
+    season_name: z.string().nullable(),
+    competition_id: z.string().uuid().nullable(),
+    competition_name: z.string().nullable(),
+});
+
 const FixtureItemSchema = z.object({
     id: z.string().uuid(),
     competition_id: z.string().uuid(),
@@ -83,6 +94,51 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
             }
             return 'no_matches_yet';
         }
+
+        app.get(
+            '/:id/summary',
+            {
+                schema: {
+                    params: ParamsSchema,
+                    response: {
+                        200: TeamSummaryResponseSchema,
+                        404: ErrorSchema,
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (request, reply) => {
+                const { id } = request.params;
+
+                const row = await db
+                    .selectFrom('teams as t')
+                    .leftJoin('competitions as c', 'c.id', 't.competition_id')
+                    .leftJoin('seasons as s', 's.id', 'c.season_id')
+                    .leftJoin('leagues as l', 'l.id', 's.league_id')
+                    .select([
+                        't.id',
+                        't.name',
+                        sql<string | null>`l.id`.as('league_id'),
+                        sql<string | null>`l.name`.as('league_name'),
+                        sql<string | null>`s.id`.as('season_id'),
+                        sql<string | null>`s.name`.as('season_name'),
+                        sql<string | null>`c.id`.as('competition_id'),
+                        sql<string | null>`c.name`.as('competition_name'),
+                    ])
+                    .where('t.id', '=', id)
+                    .where('t.deleted_at', 'is', null)
+                    .executeTakeFirst();
+
+                if (!row) {
+                    return reply.status(404).send({
+                        error: `Team ${id} not found`,
+                        statusCode: 404,
+                    });
+                }
+
+                return reply.send(row);
+            }
+        );
 
         app.get(
             '/:id/fixtures',

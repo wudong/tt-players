@@ -132,6 +132,13 @@ describe('Dashboard', () => {
             expect(screen.getByTestId('fixture-result')).toHaveTextContent('W 6-4');
         });
 
+        it('uses provided teamName fallback when fixture team label is missing', () => {
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
+            render(<Dashboard teamId="different-team-id" teamName="Matchpoint A" />);
+
+            expect(screen.getByText('Matchpoint A')).toBeInTheDocument();
+        });
+
         it('shows an empty-state when fixtures list is empty', () => {
             mockHook({ data: makeFixturesResponse([], 'no_matches_yet'), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);

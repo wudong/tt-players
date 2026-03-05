@@ -93,6 +93,10 @@ export function fetchTeamForm(teamId: string) {
     return apiFetch<import('../types').TeamFormResponse>(`/teams/${teamId}/form`);
 }
 
+export function fetchTeamSummary(teamId: string) {
+    return apiFetch<import('../types').TeamSummaryResponse>(`/teams/${teamId}/summary`);
+}
+
 export function fetchFixtureRubbers(fixtureId: string) {
     return apiFetch<import('../types').FixtureRubbersResponse>(`/fixtures/${fixtureId}/rubbers`);
 }

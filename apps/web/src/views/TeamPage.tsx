@@ -3,6 +3,7 @@ import { Shield, ArrowLeft, Users, ChevronRight, ActivitySquare } from 'lucide-r
 import { Dashboard } from './Dashboard';
 import { useTeamRoster } from '../hooks/useTeamRoster';
 import { useTeamForm } from '../hooks/useTeamForm';
+import { useTeamSummary } from '../hooks/useTeamSummary';
 import { RosterItem } from '../types';
 
 export function TeamPage() {
@@ -11,10 +12,12 @@ export function TeamPage() {
 
     const { data: rosterData, isLoading: rosterLoading } = useTeamRoster(teamId);
     const { data: formData, isLoading: formLoading } = useTeamForm(teamId);
+    const { data: summary } = useTeamSummary(teamId);
 
     const roster = rosterData?.data || [];
     const rosterAvailability = rosterData?.availability;
     const form = formData || null;
+    const teamName = summary?.name ?? 'Team Hub';
 
     return (
         <div className="flex flex-col pb-28 min-h-screen bg-slate-50">
@@ -37,8 +40,28 @@ export function TeamPage() {
                         Team Profile
                     </span>
                     <h1 className="text-2xl font-extrabold text-white drop-shadow-md">
-                        Team Hub
+                        {teamName}
                     </h1>
+                    <div className="mt-3 grid w-full max-w-xl grid-cols-3 gap-2 text-left">
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-sm">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">League</div>
+                            <div className="truncate text-xs font-semibold text-white">
+                                {summary?.league_name ?? '-'}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-sm">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Division</div>
+                            <div className="truncate text-xs font-semibold text-white">
+                                {summary?.competition_name ?? '-'}
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-sm">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Season</div>
+                            <div className="truncate text-xs font-semibold text-white">
+                                {summary?.season_name ?? '-'}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Performance Highlights Bar */}
@@ -139,7 +162,7 @@ export function TeamPage() {
 
                 {/* Fixtures Feed */}
                 <section className="animate-in slide-in-from-bottom-4 duration-500 delay-200 mt-2">
-                    <Dashboard teamId={teamId} />
+                    <Dashboard teamId={teamId} teamName={summary?.name ?? null} />
                 </section>
             </div>
         </div>

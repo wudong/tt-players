@@ -163,6 +163,17 @@ export interface TeamFormResponse {
     points: number | null;
 }
 
+export interface TeamSummaryResponse {
+    id: string;
+    name: string;
+    league_id: string | null;
+    league_name: string | null;
+    season_id: string | null;
+    season_name: string | null;
+    competition_id: string | null;
+    competition_name: string | null;
+}
+
 export interface FixtureRubberItem {
     id: string;
     fixture_id: string;

@@ -5,6 +5,7 @@ import type { FixtureItem } from '../types';
 
 interface Props {
     teamId: string;
+    teamName?: string | null;
     limit?: number;
     offset?: number;
 }
@@ -25,7 +26,15 @@ function FixtureStatusBadge({ status }: { status: FixtureItem['status'] }) {
     );
 }
 
-function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string }) {
+function FixtureCard({
+    fixture,
+    teamId,
+    teamNameFallback,
+}: {
+    fixture: FixtureItem;
+    teamId: string;
+    teamNameFallback?: string | null;
+}) {
     const date = new Date(fixture.date_played);
     const formattedDate = date.toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -36,6 +45,9 @@ function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string
     const isHome = fixture.home_team_id === teamId;
     const teamName = isHome ? fixture.home_team_name : fixture.away_team_name;
     const opponentName = isHome ? fixture.away_team_name : fixture.home_team_name;
+    const teamLabel = teamName ?? teamNameFallback ?? 'Team';
+    const opponentFallback = fixture.status === 'upcoming' ? 'TBD' : 'Unknown opponent';
+    const opponentLabel = opponentName ?? opponentFallback;
     const hasScore =
         fixture.home_score != null &&
         fixture.away_score != null &&
@@ -75,11 +87,11 @@ function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string
             <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="truncate text-xs font-medium text-slate-500">
-                        {teamName ?? 'Your Team'}
+                        {teamLabel}
                     </span>
                     <span className="shrink-0 text-xs font-bold text-slate-300">vs</span>
                     <span className="truncate text-right text-xs font-medium text-slate-500">
-                        {opponentName ?? 'TBD'}
+                        {opponentLabel}
                     </span>
                 </div>
 
@@ -105,7 +117,7 @@ function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string
     );
 }
 
-export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
+export function Dashboard({ teamId, teamName = null, limit = 20, offset = 0 }: Props) {
     const { data, isLoading, isError, error } = useFixtures(teamId, { limit, offset });
     const fixtures = data?.data ?? [];
 
@@ -170,7 +182,12 @@ export function Dashboard({ teamId, limit = 20, offset = 0 }: Props) {
             {/* Fixture list */}
             <div className="flex flex-col gap-3">
                 {fixtures.map((fixture) => (
-                    <FixtureCard key={fixture.id} fixture={fixture} teamId={teamId} />
+                    <FixtureCard
+                        key={fixture.id}
+                        fixture={fixture}
+                        teamId={teamId}
+                        teamNameFallback={teamName}
+                    />
                 ))}
             </div>
         </section>
