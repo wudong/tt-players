@@ -1,11 +1,19 @@
 import { Swords, Search, X, Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import {
+    ComboBox,
+    Input,
+    ListBox,
+    ListBoxItem,
+    Popover,
+} from 'react-aria-components';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
 import { usePlayerH2H } from '../hooks/usePlayerH2H';
 import { usePlayerStats } from '../hooks/usePlayerStats';
 import { PlayerSearchItem, RubberItem } from '../types';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
+import { PressButton } from '../ui/PressButton';
 
 interface H2HPrefillState {
     playerA?: PlayerSearchItem;
@@ -197,8 +205,19 @@ function toneClasses(tone: AutocompleteProps['tone']) {
 function PlayerAutocomplete({ label, selected, onSelect, excludeId, leagueIds, tone }: AutocompleteProps) {
     const [query, setQuery] = useState('');
     const [isFocused, setIsFocused] = useState(false);
-    const { data } = usePlayerSearch(query, leagueIds);
-    const results = (data?.data || []).filter((p) => p.id !== excludeId);
+    const normalizedQuery = query.trim();
+    const shouldSearch = normalizedQuery.length > 2;
+    const { data } = usePlayerSearch(query, leagueIds, {
+        enabled: shouldSearch,
+    });
+    const results = useMemo(
+        () => (data?.data || []).filter((player) => player.id !== excludeId),
+        [data?.data, excludeId],
+    );
+    const playersById = useMemo(
+        () => new Map(results.map((player) => [player.id, player])),
+        [results],
+    );
     const toneStyle = toneClasses(tone);
 
     if (selected) {
@@ -213,41 +232,52 @@ function PlayerAutocomplete({ label, selected, onSelect, excludeId, leagueIds, t
                         <p className="tt-title-md !text-sm">{selected.name}</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => onSelect(null)}
+                <PressButton
+                    onPress={() => onSelect(null)}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-400 ring-1 ring-[#dbe4fa]"
                 >
                     <X size={15} />
-                </button>
+                </PressButton>
             </div>
         );
     }
 
     return (
-        <div className={`relative ${isFocused ? 'z-20' : ''}`}>
+        <ComboBox
+            aria-label={label}
+            items={shouldSearch ? results : []}
+            menuTrigger="input"
+            inputValue={query}
+            onInputChange={setQuery}
+            onSelectionChange={(key) => {
+                if (key == null) return;
+                const chosen = playersById.get(String(key));
+                if (!chosen) return;
+                onSelect(chosen);
+                setQuery('');
+            }}
+            className={`relative ${isFocused ? 'z-20' : ''}`}
+        >
             <div className={`flex items-center gap-3 rounded-xl bg-[#f5f8ff] px-3 ring-1 ring-[#dbe4fa] ${toneStyle.focus}`}>
                 <Search size={17} className={isFocused ? toneStyle.icon : 'text-slate-400'} />
-                <input
-                    type="text"
+                <Input
                     placeholder={`Search ${label}...`}
                     className="tt-input h-12"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                 />
             </div>
 
-            {isFocused && query.length > 2 && results.length > 0 && (
-                <div className="absolute top-full z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl bg-white p-2 shadow-xl ring-1 ring-[#dbe4fa]">
-                    {results.map((player) => (
-                        <button
-                            key={player.id}
-                            onClick={() => {
-                                onSelect(player);
-                                setQuery('');
-                            }}
-                            className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition hover:bg-[#f5f8ff]"
+            <Popover
+                offset={8}
+                className="z-50 max-h-60 w-[var(--trigger-width)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl ring-1 ring-[#dbe4fa]"
+            >
+                <ListBox<PlayerSearchItem> className="flex flex-col gap-1">
+                    {(player: PlayerSearchItem) => (
+                        <ListBoxItem
+                            id={player.id}
+                            textValue={player.name}
+                            className="flex cursor-pointer items-center gap-3 rounded-xl p-3 text-left transition data-[focused]:bg-[#f5f8ff] data-[hovered]:bg-[#f5f8ff]"
                         >
                             <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-extrabold ${toneStyle.avatar}`}>
                                 {player.name.slice(0, 2).toUpperCase()}
@@ -258,10 +288,10 @@ function PlayerAutocomplete({ label, selected, onSelect, excludeId, leagueIds, t
                                     {player.played > 0 ? Math.round((player.wins / player.played) * 100) : 0}% WR • {player.played} matches
                                 </p>
                             </div>
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
+                        </ListBoxItem>
+                    )}
+                </ListBox>
+            </Popover>
+        </ComboBox>
     );
 }

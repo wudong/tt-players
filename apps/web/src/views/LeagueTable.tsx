@@ -1,4 +1,4 @@
-import { Trophy, ChevronRight } from 'lucide-react';
+import { Trophy, ChevronRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStandings } from '../hooks/useStandings';
 
@@ -9,6 +9,8 @@ interface Props {
 export function LeagueTable({ competitionId }: Props) {
     const { data, isLoading, isError, error } = useStandings(competitionId);
     const navigate = useNavigate();
+    const standings = data?.data ?? [];
+    const sourceUrl = data?.source_url ?? null;
 
     if (isLoading) {
         return (
@@ -47,7 +49,7 @@ export function LeagueTable({ competitionId }: Props) {
         );
     }
 
-    if (!data || data.length === 0) {
+    if (standings.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center gap-2 p-12 text-slate-400">
                 <Trophy size={32} strokeWidth={1.5} />
@@ -63,6 +65,16 @@ export function LeagueTable({ competitionId }: Props) {
                 <h2 className="tt-section-title !mb-0">
                     League Table
                 </h2>
+                {sourceUrl && (
+                    <a
+                        href={sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-auto inline-flex items-center gap-1 rounded-lg bg-[#edf3ff] px-2 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#2869fe]"
+                    >
+                        Source <ExternalLink size={12} />
+                    </a>
+                )}
             </div>
 
             <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-[#dbe4fa] shadow-[0_8px_24px_rgba(18,25,39,0.06)]">
@@ -77,7 +89,7 @@ export function LeagueTable({ competitionId }: Props) {
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((row, idx) => (
+                        {standings.map((row, idx) => (
                             <tr
                                 key={row.team_id}
                                 onClick={() => navigate(`/teams/${row.team_id}`)}

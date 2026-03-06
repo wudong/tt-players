@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Trophy, Swords } from 'lucide-react';
 import React from 'react';
+import { PressButton } from '../ui/PressButton';
 
 const NAV_ITEMS = [
     { label: 'Home', icon: Search, path: '/' },
@@ -16,7 +17,7 @@ interface NavItemProps {
 }
 
 const NavItem = ({ icon: Icon, label, active, onClick }: NavItemProps) => (
-    <button
+    <PressButton
         onClick={onClick}
         className={`flex min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all duration-200 ${
             active
@@ -27,7 +28,7 @@ const NavItem = ({ icon: Icon, label, active, onClick }: NavItemProps) => (
     >
         <Icon size={18} strokeWidth={active ? 2.6 : 2.2} />
         <span className={`tt-kicker !text-[10px] !tracking-[0.1em] ${active ? 'text-[#2869fe]' : 'text-slate-500'}`}>{label}</span>
-    </button>
+    </PressButton>
 );
 
 export function BottomNav() {

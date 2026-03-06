@@ -13,6 +13,7 @@ export interface StandingItem {
 }
 
 export interface StandingsResponse {
+    source_url: string | null;
     data: StandingItem[];
 }
 
@@ -278,6 +279,7 @@ export interface FixtureMeta {
     division_name: string;
     home_team_name: string | null;
     away_team_name: string | null;
+    source_url: string | null;
 }
 
 export interface FixtureRubbersResponse {
@@ -302,10 +304,21 @@ export interface LeagueWithDivisions {
     id: string;
     name: string;
     platform: string;
+    season_id: string;
     season: string;
     divisions: DivisionItem[];
 }
 
 export interface LeaguesResponse {
     data: LeagueWithDivisions[];
+}
+
+export interface LeagueSeason {
+    id: string;
+    name: string;
+    is_active: boolean;
+}
+
+export interface LeagueSeasonsResponse {
+    data: LeagueSeason[];
 }

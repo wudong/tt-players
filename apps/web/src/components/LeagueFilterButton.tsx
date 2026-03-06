@@ -1,4 +1,5 @@
 import { SlidersHorizontal } from 'lucide-react';
+import { PressButton } from '../ui/PressButton';
 
 interface Props {
     count: number;
@@ -8,13 +9,13 @@ interface Props {
 
 export function LeagueFilterButton({ count, onClick, className = '' }: Props) {
     return (
-        <button
+        <PressButton
             onClick={onClick}
             className={`tt-soft-btn !rounded-full ${className}`}
             aria-label="Choose leagues"
         >
             <SlidersHorizontal size={14} />
             Filters ({count})
-        </button>
+        </PressButton>
     );
 }

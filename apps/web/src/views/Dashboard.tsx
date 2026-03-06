@@ -2,6 +2,7 @@ import { CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFixtures } from '../hooks/useFixtures';
 import type { FixtureItem } from '../types';
+import { PressButton } from '../ui/PressButton';
 
 interface Props {
     teamId: string;
@@ -63,7 +64,7 @@ function FixtureCard({
                 : 'D';
 
     return (
-        <button
+        <PressButton
             onClick={() => navigate(`/fixtures/${fixture.id}`)}
             data-testid="fixture-item"
             className="flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left ring-1 ring-[#dbe4fa] shadow-[0_8px_24px_rgba(18,25,39,0.06)] transition-all hover:-translate-y-0.5 active:scale-[0.98]"
@@ -100,7 +101,7 @@ function FixtureCard({
                     <FixtureStatusBadge status={fixture.status} />
                 </div>
             </div>
-        </button>
+        </PressButton>
     );
 }
 

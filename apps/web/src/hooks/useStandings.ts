@@ -1,14 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchStandings } from '../lib/api';
-import type { StandingItem } from '../types';
+import type { StandingsResponse } from '../types';
 
 export function useStandings(competitionId: string) {
-    return useQuery<StandingItem[]>({
+    return useQuery<StandingsResponse>({
         queryKey: ['standings', competitionId],
-        queryFn: async () => {
-            const res = await fetchStandings(competitionId);
-            return res.data;
-        },
+        queryFn: () => fetchStandings(competitionId),
         enabled: Boolean(competitionId),
     });
 }

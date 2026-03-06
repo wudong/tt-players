@@ -1,29 +1,60 @@
 import { Trophy, Activity, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Tab, TabList, Tabs } from 'react-aria-components';
 import { LeagueTable } from './LeagueTable';
 import { LeagueWithDivisions, LeaderboardMode } from '../types';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
 import { useLeaders } from '../hooks/useLeaders';
+import { useLeagues } from '../hooks/useLeagues';
+import { useLeagueSeasons } from '../hooks/useLeagueSeasons';
 import { useNavigate } from 'react-router-dom';
 import { LeagueFilterButton } from '../components/LeagueFilterButton';
+import { PressButton } from '../ui/PressButton';
 
 export function LeaguesHubView() {
     const navigate = useNavigate();
-    const [selectedTab, setSelectedTab] = useState<'tables' | 'cups' | 'leaders'>('tables');
+    const [selectedTab, setSelectedTab] = useState<'tables' | 'leaders'>('tables');
     const {
-        selectedLeagues: leagues,
         selectedLeagueIds,
-        isLoading,
+        isLoading: preferencesLoading,
     } = useLeaguePreferences();
+    const { data: seasonOptionsData, isLoading: seasonOptionsLoading } = useLeagueSeasons();
+    const seasonOptions = seasonOptionsData?.data ?? [];
+    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+    const {
+        data: leaguesData,
+        isLoading: leaguesLoading,
+    } = useLeagues(selectedSeasonId ?? undefined);
+
+    useEffect(() => {
+        if (seasonOptions.length === 0) return;
+        if (selectedSeasonId && seasonOptions.some((season) => season.id === selectedSeasonId)) return;
+
+        const activeSeason = seasonOptions.find((season) => season.is_active);
+        setSelectedSeasonId(activeSeason?.id ?? seasonOptions[0]!.id);
+    }, [seasonOptions, selectedSeasonId]);
+
+    const allSeasonLeagues = leaguesData?.data ?? [];
+    const leagues = useMemo(
+        () => allSeasonLeagues.filter((league) => selectedLeagueIds.includes(league.id)),
+        [allSeasonLeagues, selectedLeagueIds],
+    );
+    const visibleLeagueIds = useMemo(
+        () => leagues.map((league) => league.id),
+        [leagues],
+    );
+    const isLoading = preferencesLoading || seasonOptionsLoading || leaguesLoading;
+
     const [selectedLeague, setSelectedLeague] = useState<LeagueWithDivisions | null>(null);
     const [selectedDivisionId, setSelectedDivisionId] = useState<string | null>(null);
     const [leadersMode, setLeadersMode] = useState<LeaderboardMode>('combined');
     const leadersLimit = leadersMode === 'win_pct' ? 10 : 20;
     const { data: leadersData, isLoading: leadersLoading } = useLeaders(
         leadersMode,
-        selectedLeagueIds,
+        visibleLeagueIds,
         leadersLimit,
         3,
+        selectedSeasonId ?? undefined,
     );
 
     useEffect(() => {
@@ -61,18 +92,45 @@ export function LeaguesHubView() {
                             onClick={() => navigate('/leagues/select', { state: { returnTo: '/leagues' } })}
                         />
                     </div>
-
-                    <div className="flex items-center gap-2 rounded-2xl bg-black/15 p-1.5 ring-1 ring-white/20 backdrop-blur-sm">
-                        <button onClick={() => setSelectedTab('tables')} className={selectedTab === 'tables' ? 'tt-tab-active flex-1' : 'tt-tab flex-1'}>
-                            <FileText size={15} /> Tables
-                        </button>
-                        <button onClick={() => setSelectedTab('cups')} className={selectedTab === 'cups' ? 'tt-tab-active flex-1' : 'tt-tab flex-1'}>
-                            <Trophy size={15} /> Cups
-                        </button>
-                        <button onClick={() => setSelectedTab('leaders')} className={selectedTab === 'leaders' ? 'tt-tab-active flex-1' : 'tt-tab flex-1'}>
-                            <Activity size={15} /> Leaders
-                        </button>
+                    <div className="mb-4 flex items-center gap-2">
+                        <label className="tt-kicker text-blue-100">Season</label>
+                        <div className="ml-auto rounded-xl border border-white/35 bg-white/15 px-2 py-1 backdrop-blur-sm">
+                            <select
+                                value={selectedSeasonId ?? ''}
+                                onChange={(event) => setSelectedSeasonId(event.currentTarget.value)}
+                                className="bg-transparent text-sm font-bold text-white outline-none"
+                            >
+                                {seasonOptions.map((season) => (
+                                    <option key={season.id} value={season.id} className="text-slate-900">
+                                        {season.name}{season.is_active ? ' (Current)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+
+                    <Tabs
+                        selectedKey={selectedTab}
+                        onSelectionChange={(key) => setSelectedTab(key as typeof selectedTab)}
+                    >
+                        <TabList
+                            aria-label="League views"
+                            className="flex items-center gap-2 rounded-2xl bg-black/15 p-1.5 ring-1 ring-white/20 backdrop-blur-sm"
+                        >
+                            <Tab
+                                id="tables"
+                                className={({ isSelected }) => (isSelected ? 'tt-tab-active flex-1 min-w-0' : 'tt-tab flex-1 min-w-0')}
+                            >
+                                <FileText size={15} /> Tables
+                            </Tab>
+                            <Tab
+                                id="leaders"
+                                className={({ isSelected }) => (isSelected ? 'tt-tab-active flex-1 min-w-0' : 'tt-tab flex-1 min-w-0')}
+                            >
+                                <Activity size={15} /> Leaders
+                            </Tab>
+                        </TabList>
+                    </Tabs>
                 </div>
             </header>
 
@@ -86,12 +144,12 @@ export function LeaguesHubView() {
                         <Trophy size={30} strokeWidth={1.6} className="text-slate-300" />
                         <h3 className="tt-title-md !text-base text-slate-700">No leagues selected</h3>
                         <p className="tt-body-sm text-slate-500">Select leagues to show them in League Central.</p>
-                        <button
+                        <PressButton
                             onClick={() => navigate('/leagues/select', { state: { returnTo: '/leagues' } })}
                             className="tt-chip-active"
                         >
                             Choose leagues
-                        </button>
+                        </PressButton>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4">
@@ -101,20 +159,23 @@ export function LeaguesHubView() {
                                     <label className="tt-kicker mb-2 block text-slate-500">
                                         League
                                     </label>
-                                    <div className="mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                    <div
+                                        className="mb-4 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pr-1 hide-scrollbar"
+                                        style={{ WebkitOverflowScrolling: 'touch' }}
+                                    >
                                         {leagues.map((league) => {
                                             const isActive = selectedLeague?.id === league.id;
                                             return (
-                                                <button
+                                                <PressButton
                                                     key={league.id}
                                                     onClick={() => {
                                                         setSelectedLeague(league);
                                                         setSelectedDivisionId(league.divisions[0]?.id ?? null);
                                                     }}
-                                                    className={isActive ? 'tt-chip-active whitespace-nowrap' : 'tt-chip whitespace-nowrap'}
+                                                    className={isActive ? 'tt-chip-active shrink-0 snap-start whitespace-nowrap' : 'tt-chip shrink-0 snap-start whitespace-nowrap'}
                                                 >
                                                     {league.name}
-                                                </button>
+                                                </PressButton>
                                             );
                                         })}
                                     </div>
@@ -129,13 +190,13 @@ export function LeaguesHubView() {
                                             {selectedLeague.divisions.map((division) => {
                                                 const isActive = selectedDivisionId === division.id;
                                                 return (
-                                                    <button
+                                                    <PressButton
                                                         key={division.id}
                                                         onClick={() => setSelectedDivisionId(division.id)}
                                                         className={isActive ? 'tt-chip-active' : 'tt-chip'}
                                                     >
                                                         {division.name}
-                                                    </button>
+                                                    </PressButton>
                                                 );
                                             })}
                                         </div>
@@ -152,34 +213,27 @@ export function LeaguesHubView() {
                             </>
                         )}
 
-                        {selectedTab === 'cups' && (
-                            <div className="tt-card flex flex-col items-center gap-3 p-10 text-center text-slate-400">
-                                <Trophy size={30} />
-                                <p className="tt-body-sm font-semibold">Cups coming soon</p>
-                            </div>
-                        )}
-
                         {selectedTab === 'leaders' && (
                             <section className="tt-card p-4">
                                 <div className="mb-3 grid grid-cols-3 gap-2">
-                                    <button
+                                    <PressButton
                                         onClick={() => setLeadersMode('win_pct')}
                                         className={leadersMode === 'win_pct' ? 'tt-chip-active justify-center' : 'tt-chip justify-center'}
                                     >
                                         Best Win %
-                                    </button>
-                                    <button
+                                    </PressButton>
+                                    <PressButton
                                         onClick={() => setLeadersMode('most_played')}
                                         className={leadersMode === 'most_played' ? 'tt-chip-active justify-center' : 'tt-chip justify-center'}
                                     >
                                         Most Played
-                                    </button>
-                                    <button
+                                    </PressButton>
+                                    <PressButton
                                         onClick={() => setLeadersMode('combined')}
                                         className={leadersMode === 'combined' ? 'tt-chip-active justify-center' : 'tt-chip justify-center'}
                                     >
                                         Combined
-                                    </button>
+                                    </PressButton>
                                 </div>
 
                                 {leadersLoading ? (
@@ -195,9 +249,10 @@ export function LeaguesHubView() {
                                         <p className="tt-meta mb-3">{leadersData.formula}</p>
                                         <div className="space-y-2">
                                             {leadersData.data.map((row) => (
-                                                <div
+                                                <PressButton
                                                     key={row.player_id}
-                                                    className="flex items-center justify-between rounded-xl bg-[#f5f8ff] px-3 py-2 ring-1 ring-[#e7ecfa]"
+                                                    onClick={() => navigate(`/players/${row.player_id}`)}
+                                                    className="flex w-full items-center justify-between rounded-xl bg-[#f5f8ff] px-3 py-2 text-left ring-1 ring-[#e7ecfa] transition hover:-translate-y-0.5"
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-black text-[#2869fe] ring-1 ring-[#d7e1fa]">
@@ -218,7 +273,7 @@ export function LeaguesHubView() {
                                                             </p>
                                                         )}
                                                     </div>
-                                                </div>
+                                                </PressButton>
                                             ))}
                                         </div>
                                     </>

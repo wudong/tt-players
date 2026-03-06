@@ -5,6 +5,7 @@ import { useTeamRoster } from '../hooks/useTeamRoster';
 import { useTeamForm } from '../hooks/useTeamForm';
 import { useTeamSummary } from '../hooks/useTeamSummary';
 import { RosterItem } from '../types';
+import { PressButton } from '../ui/PressButton';
 
 export function TeamPage() {
     const { teamId = '' } = useParams<{ teamId: string }>();
@@ -118,7 +119,7 @@ export function TeamPage() {
                                 </div>
                             ) : (
                                 roster.map((player: RosterItem) => (
-                                    <button
+                                    <PressButton
                                         key={player.id}
                                         onClick={() => navigate(`/players/${player.id}`)}
                                         className="tt-card flex items-center justify-between p-4 transition hover:-translate-y-0.5 active:scale-[0.98]"
@@ -141,7 +142,7 @@ export function TeamPage() {
                                             </div>
                                             <ChevronRight className="text-slate-300" size={18} />
                                         </div>
-                                    </button>
+                                    </PressButton>
                                 ))
                             )}
                         </div>

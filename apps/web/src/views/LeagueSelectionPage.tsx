@@ -1,7 +1,9 @@
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Input, SearchField as AriaSearchField } from 'react-aria-components';
 import { buildRegionBuckets, leagueRegionLabels } from '../config/leagueRegions';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
+import { PressButton } from '../ui/PressButton';
 
 export function LeagueSelectionPage() {
     const [query, setQuery] = useState('');
@@ -47,23 +49,25 @@ export function LeagueSelectionPage() {
                     <p className="tt-hero-subtitle mt-2">
                         Search leagues or use regions to apply quick multi-select.
                     </p>
-                    <div className="tt-search-shell mt-4">
+                    <AriaSearchField
+                        aria-label="Search leagues or regions"
+                        value={query}
+                        onChange={setQuery}
+                        className="tt-search-shell mt-4"
+                    >
                         <Search size={18} className="text-slate-400" />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(event) => setQuery(event.target.value)}
+                        <Input
                             placeholder="Search leagues or regions..."
                             className="tt-input"
                         />
-                    </div>
+                    </AriaSearchField>
                 </div>
             </header>
 
             <main className="flex-1 px-5 pt-6">
                 <div className="tt-card mb-4 flex flex-wrap items-center gap-2 p-3">
-                    <button onClick={selectAllLeagues} className="tt-chip-active">Select all</button>
-                    <button onClick={clearSelectedLeagues} className="tt-chip">Clear all</button>
+                    <PressButton onClick={selectAllLeagues} className="tt-chip-active">Select all</PressButton>
+                    <PressButton onClick={clearSelectedLeagues} className="tt-chip">Clear all</PressButton>
                     <span className="ml-auto tt-meta font-extrabold tracking-wide">
                         {selectedLeagueIds.length} selected
                     </span>
@@ -75,13 +79,13 @@ export function LeagueSelectionPage() {
                         {regionBuckets.map((bucket) => {
                             const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
                             return (
-                                <button
+                                <PressButton
                                     key={bucket.id}
                                     onClick={() => toggleRegion(bucket.leagueIds)}
                                     className={allSelected ? 'tt-chip-active' : 'tt-chip'}
                                 >
                                     {bucket.label} ({bucket.leagueIds.length})
-                                </button>
+                                </PressButton>
                             );
                         })}
                     </div>
@@ -101,7 +105,7 @@ export function LeagueSelectionPage() {
                             const isSelected = selectedLeagueIds.includes(league.id);
                             const regionLabels = leagueRegionLabels(league.name);
                             return (
-                                <button
+                                <PressButton
                                     key={league.id}
                                     onClick={() => toggleLeague(league.id)}
                                     className={`tt-card w-full px-4 py-3 text-left ${
@@ -132,7 +136,7 @@ export function LeagueSelectionPage() {
                                             ✓
                                         </span>
                                     </div>
-                                </button>
+                                </PressButton>
                             );
                         })}
                     </div>

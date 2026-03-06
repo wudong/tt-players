@@ -1,6 +1,7 @@
-import { Swords, Loader2 } from 'lucide-react';
+import { Swords, Loader2, ExternalLink } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFixtureRubbers } from '../hooks/useFixtureRubbers';
+import { PressButton } from '../ui/PressButton';
 
 export function FixtureDetailsView() {
     const { fixtureId = '' } = useParams<{ fixtureId: string }>();
@@ -47,6 +48,16 @@ export function FixtureDetailsView() {
                             <p className="mt-1 tt-hero-subtitle !text-[11px] !font-medium">
                                 {playedAtLabel}
                             </p>
+                            {fixtureMeta.source_url && (
+                                <a
+                                    href={fixtureMeta.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-white/35 bg-white/20 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-blue-100"
+                                >
+                                    Source <ExternalLink size={11} />
+                                </a>
+                            )}
                         </>
                     )}
                 </div>
@@ -124,12 +135,12 @@ export function FixtureDetailsView() {
                                                 {resolvedHomePlayers.map((player, idx) => (
                                                     <div key={`${rubber.id}-home-${idx}`} className="flex items-center gap-1.5">
                                                         {player.id ? (
-                                                            <button
+                                                            <PressButton
                                                                 onClick={() => navigate(`/players/${player.id}`)}
                                                                 className={`tt-title-md !text-sm ${isHomeWin ? 'text-[#2869fe]' : 'text-slate-700'} hover:underline`}
                                                             >
                                                                 {player.name}
-                                                            </button>
+                                                            </PressButton>
                                                         ) : (
                                                             <span className={`tt-title-md !text-sm ${isHomeWin ? 'text-[#2869fe]' : 'text-slate-700'}`}>
                                                                 {player.name}
@@ -163,12 +174,12 @@ export function FixtureDetailsView() {
                                                             <span className="text-xs text-slate-300">&amp;</span>
                                                         )}
                                                         {player.id ? (
-                                                            <button
+                                                            <PressButton
                                                                 onClick={() => navigate(`/players/${player.id}`)}
                                                                 className={`tt-title-md !text-sm ${isAwayWin ? 'text-[#2869fe]' : 'text-slate-700'} hover:underline`}
                                                             >
                                                                 {player.name}
-                                                            </button>
+                                                            </PressButton>
                                                         ) : (
                                                             <span className={`tt-title-md !text-sm ${isAwayWin ? 'text-[#2869fe]' : 'text-slate-700'}`}>
                                                                 {player.name}

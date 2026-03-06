@@ -1,11 +1,13 @@
 import { Search, TrendingUp, ChevronRight, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Input, SearchField as AriaSearchField } from 'react-aria-components';
 import { usePlayerSearch } from '../hooks/usePlayerSearch';
 import { PlayerSearchItem } from '../types';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
 import { LeagueFilterButton } from '../components/LeagueFilterButton';
 import { useFavouritePlayers } from '../hooks/useFavouritePlayers';
+import { PressButton } from '../ui/PressButton';
 
 function getInitials(name: string) {
     const parts = name.split(' ');
@@ -25,7 +27,7 @@ function PlayerCard({
     const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
     return (
-        <button
+        <PressButton
             onClick={onClick}
             className="tt-card flex w-full items-center justify-between p-4 text-left transition hover:-translate-y-0.5"
         >
@@ -44,7 +46,7 @@ function PlayerCard({
                 <span className="tt-chip-active">Open</span>
                 <ChevronRight size={16} className="text-slate-400" />
             </div>
-        </button>
+        </PressButton>
     );
 }
 
@@ -79,16 +81,18 @@ export function HomeView() {
                             onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
                         />
                     </div>
-                    <div className="tt-search-shell">
+                    <AriaSearchField
+                        aria-label="Search players"
+                        value={query}
+                        onChange={setQuery}
+                        className="tt-search-shell"
+                    >
                         <Search size={18} className="text-slate-400" />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                        <Input
                             placeholder="Search players..."
                             className="tt-input"
                         />
-                    </div>
+                    </AriaSearchField>
                 </div>
             </header>
 
@@ -132,7 +136,7 @@ export function HomeView() {
                             </p>
                         </div>
                         {normalizedQuery.length === 0 && (
-                            <p className="tt-meta mb-3">Most played in the past month</p>
+                            <p className="tt-meta mb-3">Most played in the last 100 days</p>
                         )}
 
                         {leaguePreferencesLoading ? (

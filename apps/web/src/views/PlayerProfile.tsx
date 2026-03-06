@@ -7,6 +7,7 @@ import { usePlayerInsights } from '../hooks/usePlayerInsights';
 import { winPercentage } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useFavouritePlayers } from '../hooks/useFavouritePlayers';
+import { PressButton } from '../ui/PressButton';
 
 interface Props {
     playerId: string;
@@ -145,7 +146,7 @@ export function PlayerProfile({ playerId }: Props) {
                         <div className="min-w-0">
                             <h2 className="tt-hero-title !text-[2rem] truncate">{stats.player_name}</h2>
                             <div className="tt-hero-subtitle mt-1 flex items-center gap-1.5 !text-sm !font-medium">
-                                <button
+                                <PressButton
                                     type="button"
                                     onClick={() => toggleFavouritePlayer({
                                         id: stats.player_id,
@@ -159,10 +160,9 @@ export function PlayerProfile({ playerId }: Props) {
                                             : 'bg-white/15 text-white ring-white/50'
                                     }`}
                                     aria-label={isFavourited ? 'Remove from favourites' : 'Add to favourites'}
-                                    title={isFavourited ? 'Saved favourite' : 'Add favourite'}
                                 >
                                     <Star size={11} fill={isFavourited ? 'currentColor' : 'none'} />
-                                </button>
+                                </PressButton>
                                 <MapPin size={14} />
                                 <span>Local League</span>
                             </div>
@@ -199,7 +199,7 @@ export function PlayerProfile({ playerId }: Props) {
             </header>
 
             <div className="grid grid-cols-2 gap-3 px-4">
-                <button
+                <PressButton
                     type="button"
                     disabled={!stats.nemesis_id}
                     onClick={() => {
@@ -221,7 +221,7 @@ export function PlayerProfile({ playerId }: Props) {
                     {stats.nemesis && (
                         <p className="mt-1 tt-meta !text-red-500">{stats.nemesis.split('(')[1]?.replace(')', '')}</p>
                     )}
-                </button>
+                </PressButton>
 
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#eef3ff] to-[#e9efff] p-4 ring-1 ring-[#d8e2ff] shadow-sm transition hover:shadow-md">
                     <div className="mb-2 flex items-center gap-2">
@@ -254,7 +254,7 @@ export function PlayerProfile({ playerId }: Props) {
                 ) : (
                     <div className="grid grid-cols-2 gap-3">
                         {mostPlayedOpponents.map((opponent) => (
-                            <button
+                            <PressButton
                                 key={opponent.opponent_id}
                                 type="button"
                                 onClick={() => openH2H(opponent.opponent_id, opponent.opponent_name)}
@@ -274,7 +274,7 @@ export function PlayerProfile({ playerId }: Props) {
                                         H2H
                                     </span>
                                 </div>
-                            </button>
+                            </PressButton>
                         ))}
                     </div>
                 )}
@@ -482,7 +482,7 @@ export function PlayerProfile({ playerId }: Props) {
                                 key={rubber.id}
                                 className="tt-card flex items-center justify-between gap-3 p-4"
                             >
-                                <button
+                                <PressButton
                                     onClick={() => navigate(`/fixtures/${rubber.fixture_id}`)}
                                     className="flex flex-1 items-center gap-4 text-left transition hover:opacity-85"
                                 >
@@ -501,13 +501,13 @@ export function PlayerProfile({ playerId }: Props) {
                                         <h4 className="mt-1 tt-title-md">vs {rubber.opponent}</h4>
                                         <p className="truncate max-w-[160px] tt-caption">{rubber.league}</p>
                                     </div>
-                                </button>
+                                </PressButton>
                                 <div className="flex flex-col items-end gap-2">
                                     <span className={`tt-num ${rubber.isWin ? 'text-[#2869fe]' : 'text-slate-700'}`}>
                                         {rubber.result.replace('Won ', '').replace('Lost ', '')}
                                     </span>
                                     {rubber.opponent_id && (
-                                        <button
+                                        <PressButton
                                             onClick={() => {
                                                 if (rubber.opponent_id) {
                                                     openH2H(rubber.opponent_id, rubber.opponent);
@@ -516,13 +516,13 @@ export function PlayerProfile({ playerId }: Props) {
                                             className="rounded-xl bg-[#edf3ff] px-2 py-1 tt-kicker !text-[10px] text-[#2869fe]"
                                         >
                                             H2H
-                                        </button>
+                                        </PressButton>
                                     )}
                                 </div>
                             </div>
                         ))}
                         {hasMoreRubbers && (
-                            <button
+                            <PressButton
                                 onClick={() => {
                                     loadMoreScrollYRef.current = window.scrollY;
                                     setOffset((prev) => prev + PAGE_SIZE);
@@ -531,7 +531,7 @@ export function PlayerProfile({ playerId }: Props) {
                                 className="rounded-2xl bg-slate-100 px-4 py-3 tt-body-sm !font-bold !text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {rubbersFetching ? 'Loading...' : 'Load more matches'}
-                            </button>
+                            </PressButton>
                         )}
                     </div>
                 )}
