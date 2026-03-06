@@ -9,7 +9,9 @@
     "test": "pnpm --filter @tt-players/db run test",
     "api:test": "pnpm --filter @tt-players/api run test",
     "web:test": "pnpm --filter @tt-players/web run test",
-    "web:dev": "pnpm --filter @tt-players/web run dev"
+    "web:dev": "pnpm --filter @tt-players/web run dev",
+    "mobile:dev": "pnpm --filter @tt-players/mobile run dev",
+    "mobile:build": "pnpm --filter @tt-players/mobile run build"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
