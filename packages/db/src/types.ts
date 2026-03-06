@@ -168,6 +168,21 @@ export type RawScrapeLog = Selectable<RawScrapeLogsTable>;
 export type NewRawScrapeLog = Insertable<RawScrapeLogsTable>;
 export type RawScrapeLogUpdate = Updateable<RawScrapeLogsTable>;
 
+export interface CacheEntriesTable {
+    id: Generated<string>;
+    type: string;
+    cache_key: string;
+    content: unknown;
+    source_version: string | null;
+    expires_at: ColumnType<Date, Date | string, Date | string>;
+    created_at: Generated<Date>;
+    updated_at: ColumnType<Date, Date | undefined, Date>;
+}
+
+export type CacheEntry = Selectable<CacheEntriesTable>;
+export type NewCacheEntry = Insertable<CacheEntriesTable>;
+export type CacheEntryUpdate = Updateable<CacheEntriesTable>;
+
 // ─── Database Interface ───────────────────────────────────────────────────────
 
 export interface Database {
@@ -181,4 +196,5 @@ export interface Database {
     fixtures: FixturesTable;
     rubbers: RubbersTable;
     raw_scrape_logs: RawScrapeLogsTable;
+    cache_entries: CacheEntriesTable;
 }

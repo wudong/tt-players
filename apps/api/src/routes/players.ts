@@ -22,6 +22,7 @@ const SearchQuerySchema = z.object({
 const LeadersQuerySchema = z.object({
     mode: z.enum(['win_pct', 'most_played', 'combined']).default('combined'),
     league_ids: z.string().optional(),
+    season_id: z.string().uuid().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     min_played: z.coerce.number().int().min(1).max(100).default(3),
 });
@@ -214,6 +215,19 @@ const LeaderItemSchema = z.object({
     score: z.number().nullable(),
 });
 
+const PLAYER_INSIGHTS_CACHE_TTL_MS = Number(
+    process.env['PLAYER_INSIGHTS_CACHE_TTL_MS'] ?? `${30 * 60 * 1000}`,
+);
+
+const PLAYER_INSIGHTS_CACHE_TYPE = 'player-insights';
+
+function toEpochMs(value: Date | string | null | undefined): number {
+    if (!value) return 0;
+    const date = value instanceof Date ? value : new Date(String(value));
+    const time = date.getTime();
+    return Number.isNaN(time) ? 0 : time;
+}
+
 export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
     return async function (fastify) {
         const app = fastify.withTypeProvider<ZodTypeProvider>();
@@ -235,7 +249,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                 },
             },
             async (request, reply) => {
-                const { mode, limit, min_played: minPlayed } = request.query;
+                const { mode, limit, min_played: minPlayed, season_id: seasonId } = request.query;
                 const effectiveLimit = mode === 'win_pct' ? Math.max(limit, 10) : limit;
                 const leagueCsv = (request.query.league_ids ?? '')
                     .split(',')
@@ -263,7 +277,10 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                           AND r.deleted_at IS NULL
                           AND r.outcome_type != 'walkover'
                           AND r.home_player_1_id IS NOT NULL
-                          AND s.is_active = true
+                          AND (
+                              (${seasonId ?? null}::uuid IS NULL AND s.is_active = true)
+                              OR s.id = ${seasonId ?? null}::uuid
+                          )
                           AND (${leagueCsv} = '' OR s.league_id::text = ANY(string_to_array(${leagueCsv}, ',')))
 
                         UNION ALL
@@ -279,7 +296,10 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                           AND r.deleted_at IS NULL
                           AND r.outcome_type != 'walkover'
                           AND r.away_player_1_id IS NOT NULL
-                          AND s.is_active = true
+                          AND (
+                              (${seasonId ?? null}::uuid IS NULL AND s.is_active = true)
+                              OR s.id = ${seasonId ?? null}::uuid
+                          )
                           AND (${leagueCsv} = '' OR s.league_id::text = ANY(string_to_array(${leagueCsv}, ',')))
                     ),
                     aggregated AS (
@@ -418,7 +438,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     query = query.where('ep.name', 'ilike', `%${normalizedQuery}%`);
                     query = query.orderBy('ep.name', 'asc');
                 } else {
-                    query = query.where(sql<boolean>`f.date_played >= NOW() - INTERVAL '1 month'`);
+                    query = query.where(sql<boolean>`f.date_played >= NOW() - INTERVAL '100 days'`);
                     query = query.orderBy('played', 'desc');
                     query = query.orderBy('wins', 'desc');
                     query = query.orderBy('ep.name', 'asc');
@@ -733,8 +753,45 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     });
                 }
 
+                const dataVersionRes = await sql<{ data_version: Date | null }>`
+                    SELECT MAX(COALESCE(r.updated_at, r.created_at, f.updated_at, f.created_at)) AS data_version
+                    FROM rubbers r
+                    JOIN fixtures f ON f.id = r.fixture_id
+                    WHERE (
+                        r.home_player_1_id = ${id}
+                        OR r.away_player_1_id = ${id}
+                        OR r.home_player_2_id = ${id}
+                        OR r.away_player_2_id = ${id}
+                    )
+                      AND r.deleted_at IS NULL
+                      AND r.outcome_type != 'walkover'
+                      AND f.deleted_at IS NULL
+                `.execute(db);
+
+                const versionRaw = dataVersionRes.rows[0]?.data_version ?? null;
+                const dataVersion = versionRaw instanceof Date
+                    ? versionRaw.toISOString()
+                    : versionRaw
+                        ? new Date(String(versionRaw)).toISOString()
+                        : 'none';
+
+                const cached = await db
+                    .selectFrom('cache_entries')
+                    .select(['content', 'source_version', 'expires_at'])
+                    .where('type', '=', PLAYER_INSIGHTS_CACHE_TYPE)
+                    .where('cache_key', '=', id)
+                    .executeTakeFirst();
+
+                if (
+                    cached
+                    && toEpochMs(cached.expires_at) > Date.now()
+                    && cached.source_version === dataVersion
+                ) {
+                    return reply.send(cached.content as any);
+                }
+
                 const singlesRes = await sql<{
-                    date_played: Date | null;
+                    played_at: Date;
                     league_name: string;
                     division_name: string;
                     opponent_id: string | null;
@@ -746,7 +803,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     season_is_active: boolean;
                 }>`
                     SELECT
-                        f.date_played,
+                        COALESCE(f.date_played::timestamp, f.created_at) AS played_at,
                         l.name AS league_name,
                         c.name AS division_name,
                         CASE WHEN r.home_player_1_id = ${id} THEN r.away_player_1_id ELSE r.home_player_1_id END AS opponent_id,
@@ -775,8 +832,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                       AND c.deleted_at IS NULL
                       AND s.deleted_at IS NULL
                       AND l.deleted_at IS NULL
-                      AND f.date_played IS NOT NULL
-                    ORDER BY f.date_played ASC, r.id ASC
+                    ORDER BY COALESCE(f.date_played::timestamp, f.created_at) ASC, r.id ASC
                 `.execute(db);
 
                 const doublesRes = await sql<{
@@ -805,15 +861,13 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                       AND r.deleted_at IS NULL
                       AND r.outcome_type != 'walkover'
                       AND f.deleted_at IS NULL
-                      AND f.date_played IS NOT NULL
                 `.execute(db);
 
                 const singles = singlesRes.rows
-                    .filter((row) => row.date_played !== null)
                     .map((row) => {
-                        const date = row.date_played instanceof Date
-                            ? row.date_played
-                            : new Date(String(row.date_played));
+                        const date = row.played_at instanceof Date
+                            ? row.played_at
+                            : new Date(String(row.played_at));
                         if (Number.isNaN(date.getTime())) return null;
                         const year = date.getUTCFullYear();
                         const month = date.toISOString().slice(0, 7);
@@ -1049,7 +1103,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     return Math.max(currentSeasonMatches, Math.round((currentSeasonMatches / daysElapsed) * 365));
                 })();
 
-                return reply.send({
+                const payload = {
                     player_id: player.id,
                     player_name: player.name,
                     years_played: yearsSet.size,
@@ -1142,7 +1196,32 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         projected_matches: projectedMatches,
                         on_track_for_70_win_rate: currentSeasonWinRate >= 70,
                     },
-                });
+                };
+
+                const now = new Date();
+                const expiresAt = new Date(now.getTime() + PLAYER_INSIGHTS_CACHE_TTL_MS);
+
+                await db
+                    .insertInto('cache_entries')
+                    .values({
+                        type: PLAYER_INSIGHTS_CACHE_TYPE,
+                        cache_key: id,
+                        content: payload,
+                        source_version: dataVersion,
+                        expires_at: expiresAt,
+                        updated_at: now,
+                    })
+                    .onConflict((oc) =>
+                        oc.columns(['type', 'cache_key']).doUpdateSet({
+                            content: payload,
+                            source_version: dataVersion,
+                            expires_at: expiresAt,
+                            updated_at: now,
+                        }),
+                    )
+                    .execute();
+
+                return reply.send(payload);
             },
         );
 

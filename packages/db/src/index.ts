@@ -37,4 +37,7 @@ export type {
     RawScrapeLog,
     NewRawScrapeLog,
     RawScrapeLogUpdate,
+    CacheEntry,
+    NewCacheEntry,
+    CacheEntryUpdate,
 } from './types.js';

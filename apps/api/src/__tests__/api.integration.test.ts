@@ -40,6 +40,7 @@ describe('GET /competitions/:id/standings', () => {
             .expect(200);
 
         expect(res.body).toHaveProperty('data');
+        expect(res.body).toHaveProperty('source_url');
         expect(Array.isArray(res.body.data)).toBe(true);
         expect(res.body.data.length).toBeGreaterThanOrEqual(1);
 
@@ -190,6 +191,98 @@ describe('GET /teams/:id/fixtures', () => {
     });
 });
 
+// ─── /fixtures/:id/rubbers ───────────────────────────────────────────────────
+
+describe('GET /fixtures/:id/rubbers', () => {
+    it('orders rubbers by trailing numeric index in external_id', async () => {
+        const [fixture] = await db
+            .insertInto('fixtures')
+            .values({
+                competition_id: ids.competitionId,
+                external_id: 'ext-fixture-order',
+                home_team_id: ids.homeTeamId,
+                away_team_id: ids.awayTeamId,
+                date_played: '2025-02-01',
+                status: 'completed',
+                round_name: 'Round X',
+                round_order: 99,
+            })
+            .returning('id')
+            .execute();
+
+        const [orderHomePlayer] = await db
+            .insertInto('external_players')
+            .values({
+                platform_id: ids.platformId,
+                external_id: 'ext-order-home',
+                name: 'Order Home',
+                updated_at: new Date(),
+            })
+            .returning('id')
+            .execute();
+        const [orderAwayPlayer] = await db
+            .insertInto('external_players')
+            .values({
+                platform_id: ids.platformId,
+                external_id: 'ext-order-away',
+                name: 'Order Away',
+                updated_at: new Date(),
+            })
+            .returning('id')
+            .execute();
+
+        const fixedTs = new Date('2026-03-06T00:00:00.000Z');
+        await db
+            .insertInto('rubbers')
+            .values([
+                {
+                    fixture_id: fixture!.id,
+                    external_id: '458260-3',
+                    home_player_1_id: orderHomePlayer!.id,
+                    away_player_1_id: orderAwayPlayer!.id,
+                    home_games_won: 3,
+                    away_games_won: 0,
+                    outcome_type: 'normal',
+                    created_at: fixedTs,
+                    updated_at: fixedTs,
+                },
+                {
+                    fixture_id: fixture!.id,
+                    external_id: '458260-1',
+                    home_player_1_id: orderHomePlayer!.id,
+                    away_player_1_id: orderAwayPlayer!.id,
+                    home_games_won: 1,
+                    away_games_won: 0,
+                    outcome_type: 'normal',
+                    created_at: fixedTs,
+                    updated_at: fixedTs,
+                },
+                {
+                    fixture_id: fixture!.id,
+                    external_id: '458260-2',
+                    home_player_1_id: orderHomePlayer!.id,
+                    away_player_1_id: orderAwayPlayer!.id,
+                    home_games_won: 2,
+                    away_games_won: 0,
+                    outcome_type: 'normal',
+                    created_at: fixedTs,
+                    updated_at: fixedTs,
+                },
+            ])
+            .execute();
+
+        const res = await request
+            .get(`/api/fixtures/${fixture!.id}/rubbers`)
+            .expect(200);
+
+        expect(res.body.fixture).toHaveProperty('source_url');
+        const homeGamesWonOrder = res.body.data.map(
+            (rubber: { home_games_won: number }) => rubber.home_games_won,
+        );
+        expect(homeGamesWonOrder).toEqual([1, 2, 3]);
+    });
+});
+
 // ─── /players/:id/stats ───────────────────────────────────────────────────────
 
 describe('GET /players/:id/stats', () => {
@@ -268,6 +361,9 @@ describe('GET /players/:id/stats', () => {
 // ─── /players/:id/insights ───────────────────────────────────────────────────
 
 describe('GET /players/:id/insights', () => {
+    const cacheType = 'player-insights';
+    const toMs = (value: Date | string) => new Date(value).getTime();
+
     it('returns 200 with the expected insights shape', async () => {
         const res = await request
             .get(`/api/players/${ids.homePlayerId}/insights`)
@@ -301,6 +397,147 @@ describe('GET /players/:id/insights', () => {
         expect(res.body.milestones.total_matches).toBe(1);
         expect(res.body.projection.current_season_matches).toBe(1);
         expect(res.body.projection.current_season_win_rate).toBe(100);
+    });
+
+    it('includes matches with null date_played using created_at fallback', async () => {
+        const [fixture] = await db
+            .insertInto('fixtures')
+            .values({
+                competition_id: ids.competitionId,
+                external_id: 'ext-fixture-no-date',
+                home_team_id: ids.homeTeamId,
+                away_team_id: ids.awayTeamId,
+                date_played: null,
+                status: 'completed',
+                updated_at: new Date(),
+            })
+            .returning('id')
+            .execute();
+
+        await db
+            .insertInto('rubbers')
+            .values({
+                fixture_id: fixture!.id,
+                external_id: 'ext-rubber-no-date',
+                home_player_1_id: ids.homePlayerId,
+                away_player_1_id: ids.awayPlayerId,
+                home_games_won: 3,
+                away_games_won: 2,
+                outcome_type: 'normal',
+                updated_at: new Date(),
+            })
+            .execute();
+
+        const res = await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        expect(res.body.style.singles.played).toBe(2);
+        expect(res.body.milestones.total_matches).toBe(2);
+    });
+
+    it('writes and reuses cache entry when source data is unchanged', async () => {
+        await db.deleteFrom('cache_entries').execute();
+
+        const first = await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        const cachedAfterFirst = await db
+            .selectFrom('cache_entries')
+            .select(['source_version', 'expires_at', 'updated_at'])
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .executeTakeFirst();
+
+        expect(cachedAfterFirst).toBeDefined();
+        expect(cachedAfterFirst!.source_version).toBeTypeOf('string');
+        expect(toMs(cachedAfterFirst!.expires_at)).toBeGreaterThan(Date.now());
+        const firstUpdatedAt = toMs(cachedAfterFirst!.updated_at);
+
+        await new Promise((resolve) => setTimeout(resolve, 25));
+
+        const second = await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        expect(second.body).toEqual(first.body);
+
+        const cachedAfterSecond = await db
+            .selectFrom('cache_entries')
+            .select(['updated_at'])
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .executeTakeFirstOrThrow();
+
+        expect(toMs(cachedAfterSecond.updated_at)).toBe(firstUpdatedAt);
+    });
+
+    it('recomputes and refreshes cache when entry is expired', async () => {
+        await db.deleteFrom('cache_entries').execute();
+
+        await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        const staleUpdatedAt = new Date('2000-01-01T00:00:00.000Z');
+        await db
+            .updateTable('cache_entries')
+            .set({
+                expires_at: new Date('2000-01-01T00:00:00.000Z'),
+                updated_at: staleUpdatedAt,
+            })
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .execute();
+
+        await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        const refreshed = await db
+            .selectFrom('cache_entries')
+            .select(['expires_at', 'updated_at'])
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .executeTakeFirstOrThrow();
+
+        expect(toMs(refreshed.updated_at)).toBeGreaterThan(toMs(staleUpdatedAt));
+        expect(toMs(refreshed.expires_at)).toBeGreaterThan(Date.now());
+    });
+
+    it('recomputes cache when source data version changes', async () => {
+        await db.deleteFrom('cache_entries').execute();
+
+        await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        const cachedBeforeUpdate = await db
+            .selectFrom('cache_entries')
+            .select(['source_version'])
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .executeTakeFirstOrThrow();
+
+        await db
+            .updateTable('rubbers')
+            .set({ updated_at: new Date(Date.now() + 60_000) })
+            .where('id', '=', ids.normalRubberId)
+            .execute();
+
+        await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        const cachedAfterUpdate = await db
+            .selectFrom('cache_entries')
+            .select(['source_version'])
+            .where('type', '=', cacheType)
+            .where('cache_key', '=', ids.homePlayerId)
+            .executeTakeFirstOrThrow();
+
+        expect(cachedAfterUpdate.source_version).not.toBe(cachedBeforeUpdate.source_version);
     });
 
     it('returns 404 with error shape for unknown player', async () => {

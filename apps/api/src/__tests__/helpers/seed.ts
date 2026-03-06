@@ -9,6 +9,10 @@ import * as m001 from '../../../../../packages/db/src/migrations/001_create_enum
 import * as m002 from '../../../../../packages/db/src/migrations/002_create_core_tables.js';
 import * as m003 from '../../../../../packages/db/src/migrations/003_create_match_tables.js';
 import * as m004 from '../../../../../packages/db/src/migrations/004_create_raw_scrape_logs.js';
+import * as m005 from '../../../../../packages/db/src/migrations/005_make_rubber_players_nullable.js';
+import * as m006 from '../../../../../packages/db/src/migrations/006_add_canonical_player_id_to_external_players.js';
+import * as m007 from '../../../../../packages/db/src/migrations/007_add_performance_indexes.js';
+import * as m008 from '../../../../../packages/db/src/migrations/008_create_cache_entries.js';
 
 const { Pool } = pg;
 
@@ -23,6 +27,10 @@ class StaticMigrationProvider implements MigrationProvider {
             '002_create_core_tables': m002,
             '003_create_match_tables': m003,
             '004_create_raw_scrape_logs': m004,
+            '005_make_rubber_players_nullable': m005,
+            '006_add_canonical_player_id_to_external_players': m006,
+            '007_add_performance_indexes': m007,
+            '008_create_cache_entries': m008,
         };
     }
 }
