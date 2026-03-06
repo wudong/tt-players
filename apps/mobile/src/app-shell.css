@@ -41,3 +41,28 @@ body[data-gradient='body-midnight'] #page {
 .app-skeleton-short {
   width: 62%;
 }
+
+.tt-player-large-list a {
+  min-height: 72px;
+}
+
+.tt-player-large-list .tt-player-avatar {
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.tt-player-large-list .badge {
+  right: 28px;
+}
+
+.tt-player-search-list .tt-player-favourite-icon {
+  position: absolute;
+  right: 44px;
+  margin-top: 31px;
+  font-size: 16px;
+  line-height: 1 !important;
+}

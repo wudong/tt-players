@@ -33,6 +33,17 @@ type MenuConfig = {
   width?: number;
 };
 
+type PlayerSearchItem = {
+  id: string;
+  name: string;
+  played: number;
+  wins: number;
+};
+
+type PlayerSearchResponse = {
+  data: PlayerSearchItem[];
+};
+
 const footerTabs: FooterTab[] = [
   { id: 'dashboard', label: 'Dashboard', iconClassName: 'fa fa-chart-line', active: true },
   { id: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
@@ -67,22 +78,75 @@ const gradientOptions: { label: string; value: GradientName; iconClass: string }
   { label: 'Midnight', value: 'midnight', iconClass: 'gradient-dark' },
 ];
 
-const skeletonCards = Array.from({ length: 6 }, (_, index) => index + 1);
 const HEADER_SWITCH_SCROLL = 40;
+const SEARCH_DEBOUNCE_MS = 250;
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+
 const THEME_STORAGE_KEY = 'TTPlayers-Theme';
 const HIGHLIGHT_STORAGE_KEY = 'TTPlayers-Highlight';
 const GRADIENT_STORAGE_KEY = 'TTPlayers-Gradient';
+const FAVOURITES_STORAGE_KEY = 'tt_players_favourite_players';
+const FAVOURITES_UPDATED_EVENT = 'tt_players_favourite_players_updated';
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return (parts[0] ?? 'P').slice(0, 2).toUpperCase();
+}
+
+function getWinRate(player: Pick<PlayerSearchItem, 'wins' | 'played'>): number {
+  if (player.played <= 0) return 0;
+  return Math.round((player.wins / player.played) * 100);
+}
+
+function isValidFavouritePlayer(value: unknown): value is PlayerSearchItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.id === 'string'
+    && typeof item.name === 'string'
+    && typeof item.played === 'number'
+    && typeof item.wins === 'number';
+}
+
+function parseStoredFavouritePlayers(): PlayerSearchItem[] {
+  try {
+    const raw = localStorage.getItem(FAVOURITES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidFavouritePlayer);
+  } catch {
+    return [];
+  }
+}
+
+function persistFavouritePlayers(players: PlayerSearchItem[]) {
+  localStorage.setItem(FAVOURITES_STORAGE_KEY, JSON.stringify(players));
+  window.dispatchEvent(new Event(FAVOURITES_UPDATED_EVENT));
+}
 
 function App() {
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
   const [activeMenuId, setActiveMenuId] = useState<MenuId | null>(null);
+  const [favouritePlayers, setFavouritePlayers] = useState<PlayerSearchItem[]>(() => parseStoredFavouritePlayers());
   const [isBooting, setIsBooting] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<PlayerSearchItem[]>([]);
+
   const headerRef = useRef<HTMLElement | null>(null);
   const pageTitleRef = useRef<HTMLDivElement | null>(null);
 
+  const normalizedQuery = query.trim();
+  const isSearchMode = normalizedQuery.length > 2;
+  const shouldFetchPlayers = normalizedQuery.length === 0 || normalizedQuery.length > 2;
   const activeMenuConfig = activeMenuId ? menuConfigs[activeMenuId] : null;
+  const trendingPlayer = normalizedQuery.length === 0 ? (searchResults[0] ?? null) : null;
 
   const wrapperTransform = useMemo(() => {
     if (!activeMenuConfig || activeMenuConfig.effect === 'none') {
@@ -168,7 +232,6 @@ function App() {
       activateLightMode();
       return;
     }
-
     activateDarkMode();
   };
 
@@ -185,6 +248,21 @@ function App() {
       event.preventDefault();
       applyGradient(gradient);
     };
+
+  const isFavouritePlayer = (playerId: string) => (
+    favouritePlayers.some((player) => player.id === playerId)
+  );
+
+  const toggleFavouritePlayer = (player: PlayerSearchItem) => {
+    setFavouritePlayers((previous) => {
+      const exists = previous.some((item) => item.id === player.id);
+      const next = exists
+        ? previous.filter((item) => item.id !== player.id)
+        : [player, ...previous.filter((item) => item.id !== player.id)];
+      persistFavouritePlayers(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const timerId = window.setTimeout(() => setIsBooting(false), 350);
@@ -215,9 +293,67 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const syncFromStorage = () => {
+      setFavouritePlayers(parseStoredFavouritePlayers());
+    };
+
+    window.addEventListener('storage', syncFromStorage);
+    window.addEventListener(FAVOURITES_UPDATED_EVENT, syncFromStorage);
+    return () => {
+      window.removeEventListener('storage', syncFromStorage);
+      window.removeEventListener(FAVOURITES_UPDATED_EVENT, syncFromStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shouldFetchPlayers) {
+      setSearchResults([]);
+      setSearchError(null);
+      setIsSearchLoading(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+    const timerId = window.setTimeout(async () => {
+      try {
+        setIsSearchLoading(true);
+        setSearchError(null);
+
+        const params = new URLSearchParams();
+        if (normalizedQuery.length > 0) {
+          params.set('q', normalizedQuery);
+        }
+
+        const path = params.size > 0
+          ? `${API_BASE_URL}/players/search?${params.toString()}`
+          : `${API_BASE_URL}/players/search`;
+
+        const response = await fetch(path, { signal: abortController.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json() as PlayerSearchResponse;
+        setSearchResults(payload.data ?? []);
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return;
+        }
+        setSearchError((error as Error).message || 'Failed to search players');
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      abortController.abort();
+      window.clearTimeout(timerId);
+    };
+  }, [normalizedQuery, shouldFetchPlayers]);
+
+  useEffect(() => {
     const onScroll = () => {
-      const scrollTop =
-        window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
       if (headerRef.current) {
         if (scrollTop >= HEADER_SWITCH_SCROLL) {
@@ -264,6 +400,8 @@ function App() {
     whatsapp: `https://wa.me/?text=${pageTitle}%20${pageHref}`,
   };
 
+  const listItems = normalizedQuery.length === 0 ? searchResults.slice(1) : searchResults;
+
   return (
     <>
       {isBooting ? (
@@ -272,21 +410,11 @@ function App() {
         </div>
       ) : null}
 
-      <div
-        className={`menu-hider ${activeMenuId ? 'menu-active' : ''}`}
-        onClick={closeActiveMenu}
-        aria-hidden="true"
-      />
+      <div className={`menu-hider ${activeMenuId ? 'menu-active' : ''}`} onClick={closeActiveMenu} aria-hidden="true" />
 
       <div id="page" className="app-shell-page">
-        <header
-          ref={headerRef}
-          style={wrapperStyle}
-          className="header header-auto-show header-fixed header-logo-center"
-        >
-          <a href="#" className="header-title" onClick={onDummyLinkClick}>
-            TT Players
-          </a>
+        <header ref={headerRef} style={wrapperStyle} className="header header-auto-show header-fixed header-logo-center">
+          <a href="#" className="header-title" onClick={onDummyLinkClick}>TT Players</a>
           <a href="#" className="header-icon header-icon-1" data-menu="menu-main" onClick={onMenuTrigger('menu-main')}>
             <i className="fas fa-bars" />
           </a>
@@ -324,7 +452,7 @@ function App() {
         </nav>
 
         <div ref={pageTitleRef} className="page-title page-title-fixed">
-          <h1>TT Players</h1>
+          <h1>Home</h1>
           <a href="#" className="page-title-icon shadow-xl bg-theme color-theme" data-menu="menu-share" onClick={onMenuTrigger('menu-share')}>
             <i className="fa fa-share-alt" />
           </a>
@@ -340,65 +468,139 @@ function App() {
         </div>
         <div className="page-title-clear" />
 
-        <main className="page-content app-shell-content" style={wrapperStyle}>
-          <section className="card card-style shadow-xl">
-            <div className="content">
-              <p className="color-highlight font-600 mb-n1">AppKit Starter Structure</p>
-              <h1 className="font-700">Mobile App Shell</h1>
-              <p className="mb-3">
-                This screen follows the theme starter pattern: preloader, fixed header, footer bar,
-                and page-content canvas.
-              </p>
-              <a href="#" className="btn btn-full bg-highlight rounded-sm text-uppercase font-700" onClick={onDummyLinkClick}>
-                Connect API Next
-              </a>
+        <main className="page-content mt-n1 app-shell-content" style={wrapperStyle}>
+          <div className="content mt-n4 mb-3">
+            <div className="search-box search-dark shadow-sm border-0 mt-4 bg-theme rounded-sm bottom-0">
+              <i className="fa fa-search ms-1" />
+              <input
+                type="text"
+                className="border-0"
+                placeholder="Search players..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
             </div>
-          </section>
+          </div>
 
-          <section className="card card-style">
-            <div className="content">
-              <p className="font-600 mb-2">Skeleton Blocks</p>
-              <div className="app-skeleton-row" />
-              <div className="app-skeleton-row" />
-              <div className="app-skeleton-row app-skeleton-short" />
+          {favouritePlayers.length > 0 ? (
+            <div className="card card-style mt-2">
+              <div className="content mb-0">
+                <div className="d-flex mb-2">
+                  <div className="align-self-center">
+                    <h1 className="mb-0 font-16">Favourite Players</h1>
+                  </div>
+                  <div className="ms-auto align-self-center">
+                    <span className="font-11 opacity-60">{favouritePlayers.length} saved</span>
+                  </div>
+                </div>
+                <div className="favourites-scroll">
+                  <div className="list-group list-custom-large tt-player-large-list">
+                    {favouritePlayers.map((player) => (
+                      <a
+                        key={player.id}
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          toggleFavouritePlayer(player);
+                        }}
+                      >
+                        <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
+                        <span>{player.name}</span>
+                        <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
+                        <span className="badge bg-red-dark color-white">REMOVE</span>
+                        <i className="fa fa-angle-right" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </section>
+          ) : null}
 
-          <section className="card card-style">
+          {trendingPlayer ? (
+            <div className="card card-style tt-trending-card" data-card-height="210">
+              <div className="card-top px-3 py-3">
+                <span className="bg-white color-black rounded-sm btn btn-xs float-start font-700 font-12">Trending</span>
+                <a
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    toggleFavouritePlayer(trendingPlayer);
+                  }}
+                  className="bg-white rounded-sm icon icon-xs float-end"
+                >
+                  <i className={`fa ${isFavouritePlayer(trendingPlayer.id) ? 'fa-heart color-red-dark' : 'fa-heart'} `} />
+                </a>
+              </div>
+              <div className="card-bottom px-3 py-3">
+                <h1 className="color-white mb-1">{trendingPlayer.name}</h1>
+                <p className="color-white opacity-80 mb-0">
+                  {getWinRate(trendingPlayer)}% win rate • {trendingPlayer.played} matches played
+                </p>
+              </div>
+              <div className="card-overlay bg-gradient opacity-30" />
+              <div className="card-overlay bg-gradient" />
+            </div>
+          ) : null}
+
+          <div className="card card-style mt-2">
             <div className="content mb-0">
-              <div className="d-flex">
-                <div className="me-3">
-                  <span className="icon icon-m rounded-xl bg-highlight color-white">
-                    <i className="fa fa-table-tennis" />
-                  </span>
+              <div className="d-flex mb-2">
+                <div className="align-self-center">
+                  <h1 className="mb-0 font-16">{isSearchMode ? 'Search Results' : 'Trending Players'}</h1>
                 </div>
-                <div>
-                  <h4 className="mb-1">Ready for Feature Pages</h4>
-                  <p className="mb-0">
-                    Add routes for leagues, fixtures, players, and insights in this shell.
-                  </p>
+                <div className="ms-auto align-self-center">
+                  <span className="font-11 opacity-60">{listItems.length} players</span>
                 </div>
               </div>
+              {normalizedQuery.length === 0 ? (
+                <p className="mt-n1 mb-2 font-11 opacity-60">Most played in the last 100 days</p>
+              ) : null}
+              {normalizedQuery.length > 0 && normalizedQuery.length <= 2 ? (
+                <p className="mb-0">Type at least 3 characters to search players.</p>
+              ) : isSearchLoading ? (
+                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading players...</p>
+              ) : searchError ? (
+                <p className="mb-0 color-red-dark">Failed to load players: {searchError}</p>
+              ) : listItems.length === 0 ? (
+                <p className="mb-0">{isSearchMode ? `No players found matching "${normalizedQuery}"` : 'No trending players available yet.'}</p>
+              ) : (
+                <div className="list-group list-custom-large tt-player-large-list tt-player-search-list">
+                  {listItems.map((player) => {
+                    const isFavourite = isFavouritePlayer(player.id);
+                    return (
+                      <a
+                        key={player.id}
+                        href="#"
+                        data-filter-item
+                        onClick={onDummyLinkClick}
+                      >
+                        <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
+                        <span>{player.name}</span>
+                        <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
+                        <i
+                          className={`fa fa-heart tt-player-favourite-icon ${isFavourite ? 'color-red-dark' : 'color-theme opacity-40'}`}
+                          aria-label={isFavourite ? 'Remove favourite' : 'Add favourite'}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleFavouritePlayer(player);
+                          }}
+                        />
+                        <i className="fa fa-angle-right" />
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </section>
-
-          {skeletonCards.map((item) => (
-            <section key={item} className="card card-style">
-              <div className="content">
-                <p className="font-600 mb-2">Upcoming Fixture Block {item}</p>
-                <div className="app-skeleton-row" />
-                <div className="app-skeleton-row" />
-                <div className="app-skeleton-row app-skeleton-short" />
-              </div>
-            </section>
-          ))}
+          </div>
         </main>
 
         <div
           id="menu-main"
           className={`menu menu-box-left rounded-0 ${activeMenuId === 'menu-main' ? 'menu-active' : ''}`}
           data-menu-width={menuConfigs['menu-main'].width}
-          data-menu-effect={menuConfigs['menu-main'].effect === 'none' ? undefined : menuConfigs['menu-main'].effect}
           style={{ width: menuConfigs['menu-main'].width }}
         >
           <div className="card rounded-0 bg-highlight" data-card-height="140">
@@ -419,17 +621,12 @@ function App() {
           <div className="list-group list-custom-small list-menu">
             <a href="#" onClick={onCloseMenuClick}>
               <i className="fa fa-chart-line gradient-red color-white" />
-              <span>Dashboard</span>
+              <span>Home</span>
               <i className="fa fa-angle-right" />
             </a>
             <a href="#" onClick={onCloseMenuClick}>
               <i className="fa fa-table-tennis gradient-green color-white" />
               <span>Leagues</span>
-              <i className="fa fa-angle-right" />
-            </a>
-            <a href="#" onClick={onCloseMenuClick}>
-              <i className="fa fa-calendar-alt gradient-blue color-white" />
-              <span>Fixtures</span>
               <i className="fa fa-angle-right" />
             </a>
             <a href="#" onClick={onCloseMenuClick}>
@@ -455,10 +652,6 @@ function App() {
               </div>
             </a>
           </div>
-
-          <h6 className="menu-divider font-10 mt-4">
-            Built with <i className="fa fa-heart color-red-dark ps-1 pe-1" /> for TT Players
-          </h6>
         </div>
 
         <div
@@ -470,9 +663,7 @@ function App() {
           <div className="menu-title">
             <p className="color-highlight">Tap a link to</p>
             <h1>Share</h1>
-            <a href="#" className="close-menu" onClick={onCloseMenuClick}>
-              <i className="fa fa-times-circle" />
-            </a>
+            <a href="#" className="close-menu" onClick={onCloseMenuClick}><i className="fa fa-times-circle" /></a>
           </div>
           <div className="divider divider-margins mt-3 mb-0" />
           <div className="content mt-0">
@@ -515,9 +706,7 @@ function App() {
           <div className="menu-title">
             <p className="color-highlight font-600">Choose your Favorite</p>
             <h1>Highlight</h1>
-            <a href="#" className="close-menu" onClick={onCloseMenuClick}>
-              <i className="fa fa-times-circle" />
-            </a>
+            <a href="#" className="close-menu" onClick={onCloseMenuClick}><i className="fa fa-times-circle" /></a>
           </div>
 
           <div className="divider divider-margins mt-3 mb-2" />
@@ -578,11 +767,7 @@ function App() {
             </div>
           </div>
 
-          <a
-            href="#"
-            className="close-menu btn btn-margins btn-m font-13 rounded-s shadow-xl btn-full gradient-highlight border-0 font-700 text-uppercase"
-            onClick={onCloseMenuClick}
-          >
+          <a href="#" className="close-menu btn btn-margins btn-m font-13 rounded-s shadow-xl btn-full gradient-highlight border-0 font-700 text-uppercase" onClick={onCloseMenuClick}>
             Awesome
           </a>
         </div>
