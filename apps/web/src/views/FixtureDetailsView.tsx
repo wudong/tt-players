@@ -30,19 +30,19 @@ export function FixtureDetailsView() {
     });
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-fixture">
-                <p className="tt-eyebrow">Fixture Results</p>
+        <div>
+            <header>
+                <p>Fixture Results</p>
                 <h1>{fixtureMeta?.home_team_name ?? 'Home'} vs {fixtureMeta?.away_team_name ?? 'Away'}</h1>
-                <p className="tt-hero-sub">{fixtureMeta?.league_name} · {fixtureMeta?.division_name}</p>
-                <p className="tt-hero-sub">{playedAtLabel}</p>
+                <p>{fixtureMeta?.league_name} · {fixtureMeta?.division_name}</p>
+                <p>{playedAtLabel}</p>
                 {fixtureMeta?.source_url && (
                     <IonButton href={fixtureMeta.source_url} target="_blank" rel="noreferrer" size="small" fill="outline">
                         Source <IonIcon slot="end" icon={openOutline} />
                     </IonButton>
                 )}
                 {!isLoading && !isError && rubbers.length > 0 && (
-                    <div className="tt-score-row">
+                    <div>
                         <strong>{homeScore}</strong>
                         <span>VS</span>
                         <strong>{awayScore}</strong>
@@ -50,22 +50,22 @@ export function FixtureDetailsView() {
                 )}
             </header>
 
-            <main className="tt-content">
-                <IonCard className="tt-card">
+            <main>
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={peopleOutline} /> Match Breakdown</h2>
+                        <h2><IonIcon icon={peopleOutline} /> Match Breakdown</h2>
 
                         {isLoading ? (
-                            <div className="tt-state"><IonSpinner name="crescent" /></div>
+                            <div><IonSpinner name="crescent" /></div>
                         ) : isError ? (
-                            <div className="tt-alert" role="alert">
+                            <div role="alert">
                                 <IonIcon icon={warningOutline} />
                                 <p>Failed to load fixture details.</p>
                             </div>
                         ) : rubbers.length === 0 ? (
-                            <p className="tt-hint">No matches found for this fixture.</p>
+                            <p>No matches found for this fixture.</p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {rubbers.map((rubber) => {
                                     const isHomeWin = rubber.home_games_won > rubber.away_games_won;
                                     const homePlayers = [
@@ -78,7 +78,7 @@ export function FixtureDetailsView() {
                                     ].filter((player) => Boolean(player.name));
 
                                     return (
-                                        <IonItem key={rubber.id} className="tt-list-item" lines="none">
+                                        <IonItem key={rubber.id} lines="none">
                                             <IonLabel>
                                                 <h3>{rubber.is_doubles ? 'Doubles' : 'Singles'}</h3>
                                                 <p>
@@ -88,7 +88,7 @@ export function FixtureDetailsView() {
                                                     {rubber.home_games_won}-{rubber.away_games_won} ({isHomeWin ? 'Home win' : 'Away win'})
                                                 </p>
                                             </IonLabel>
-                                            <div className="tt-rubber-actions">
+                                            <div>
                                                 {homePlayers.map((p, idx) => (
                                                     p.id ? (
                                                         <IonButton key={`h-${idx}`} size="small" fill="clear" onClick={() => navigate(`/players/${p.id}`)}>{p.name?.split(' ')[0]}</IonButton>

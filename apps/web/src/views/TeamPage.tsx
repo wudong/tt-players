@@ -21,17 +21,17 @@ export function TeamPage() {
     const teamName = summary?.name ?? 'Team Hub';
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-team">
-                <p className="tt-eyebrow">Team Profile</p>
+        <div>
+            <header>
+                <p>Team Profile</p>
                 <h1><IonIcon icon={shieldOutline} /> {teamName}</h1>
-                <div className="tt-meta-grid">
+                <div>
                     <IonChip>{summary?.league_name ?? '-'}</IonChip>
                     <IonChip>{summary?.competition_name ?? '-'}</IonChip>
                     <IonChip>{summary?.season_name ?? '-'}</IonChip>
                 </div>
                 {!formLoading && form && (
-                    <div className="tt-hero-stats">
+                    <div>
                         <div>
                             <small>Position</small>
                             <strong>{form.position ?? '-'}</strong>
@@ -44,51 +44,56 @@ export function TeamPage() {
                 )}
             </header>
 
-            <main className="tt-content">
+            <main>
                 {!formLoading && form && form.form.length > 0 && (
-                    <IonCard className="tt-card">
+                    <IonCard>
                         <IonCardContent>
-                            <h2 className="tt-section-subtitle"><IonIcon icon={pulseOutline} /> Recent Form</h2>
-                            <div className="tt-form-row">
+                            <h2><IonIcon icon={pulseOutline} /> Recent Form</h2>
+                            <div>
                                 {form.form.map((result, idx) => (
-                                    <IonBadge key={idx} className={`tt-form-badge tt-form-${result.toLowerCase()}`}>{result}</IonBadge>
+                                    <IonBadge
+                                        key={idx}
+                                        color={result === 'W' ? 'success' : result === 'L' ? 'danger' : 'medium'}
+                                    >
+                                        {result}
+                                    </IonBadge>
                                 ))}
                             </div>
                         </IonCardContent>
                     </IonCard>
                 )}
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={peopleOutline} /> Squad Roster</h2>
+                        <h2><IonIcon icon={peopleOutline} /> Squad Roster</h2>
                         {rosterLoading ? (
-                            <div className="tt-state"><IonSpinner name="crescent" /></div>
+                            <div><IonSpinner name="crescent" /></div>
                         ) : roster.length === 0 ? (
-                            <p className="tt-hint">
+                            <p>
                                 {rosterAvailability === 'source_data_missing'
                                     ? 'Roster data is not available for this source yet.'
                                     : 'No players found for this team yet.'}
                             </p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {roster.map((player: RosterItem) => (
                                     <IonItem
                                         key={player.id}
                                         button
                                         detail={false}
-                                        className="tt-list-item"
+                                       
                                         onClick={() => navigate(`/players/${player.id}`)}
                                     >
-                                        <div className="tt-avatar">{player.name.slice(0, 2).toUpperCase()}</div>
+                                        <div>{player.name.slice(0, 2).toUpperCase()}</div>
                                         <IonLabel>
                                             <h3>{player.name}</h3>
                                             <p>{player.played} matches played</p>
                                         </IonLabel>
-                                        <div className="tt-right-meta">
+                                        <div>
                                             <strong>{player.winRate}%</strong>
                                             <small>Win Rate</small>
                                         </div>
-                                        <IonIcon icon={chevronForwardOutline} className="tt-item-arrow" />
+                                        <IonIcon icon={chevronForwardOutline} />
                                     </IonItem>
                                 ))}
                             </IonList>
@@ -96,9 +101,9 @@ export function TeamPage() {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={statsChartOutline} /> Recent Matches</h2>
+                        <h2><IonIcon icon={statsChartOutline} /> Recent Matches</h2>
                         <Dashboard teamId={teamId} showHeading={false} />
                     </IonCardContent>
                 </IonCard>

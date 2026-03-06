@@ -39,24 +39,24 @@ export function LeagueSelectionPage() {
     };
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-league-pick">
-                <p className="tt-eyebrow">Preferences</p>
+        <div>
+            <header>
+                <p>Preferences</p>
                 <h1>Choose Leagues</h1>
-                <p className="tt-hero-sub">Search leagues or use regions to apply quick multi-select.</p>
+                <p>Search leagues or use regions to apply quick multi-select.</p>
                 <IonSearchbar
                     value={query}
                     onIonInput={(e) => setQuery(e.detail.value ?? '')}
                     placeholder="Search leagues or regions..."
-                    className="tt-search"
+                   
                     showClearButton="focus"
                 />
             </header>
 
-            <main className="tt-content">
-                <IonCard className="tt-card">
+            <main>
+                <IonCard>
                     <IonCardContent>
-                        <div className="tt-action-row">
+                        <div>
                             <IonButton size="small" onClick={selectAllLeagues}>Select all</IonButton>
                             <IonButton size="small" fill="outline" onClick={clearSelectedLeagues}>Clear all</IonButton>
                             <IonBadge>{selectedLeagueIds.length} selected</IonBadge>
@@ -64,10 +64,10 @@ export function LeagueSelectionPage() {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle">Regions</h2>
-                        <div className="tt-chip-row">
+                        <h2>Regions</h2>
+                        <div>
                             {regionBuckets.map((bucket) => {
                                 const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
                                 return (
@@ -75,7 +75,7 @@ export function LeagueSelectionPage() {
                                         key={bucket.id}
                                         color={allSelected ? 'primary' : undefined}
                                         outline={!allSelected}
-                                        className="tt-chip"
+                                       
                                         onClick={() => toggleRegion(bucket.leagueIds)}
                                     >
                                         {bucket.label} ({bucket.leagueIds.length})
@@ -87,11 +87,11 @@ export function LeagueSelectionPage() {
                 </IonCard>
 
                 {isLoading ? (
-                    <div className="tt-state"><IonSpinner name="crescent" /></div>
+                    <div><IonSpinner name="crescent" /></div>
                 ) : filteredLeagues.length === 0 ? (
-                    <IonCard className="tt-card"><IonCardContent><p className="tt-hint">No leagues matched your search.</p></IonCardContent></IonCard>
+                    <IonCard><IonCardContent><p>No leagues matched your search.</p></IonCardContent></IonCard>
                 ) : (
-                    <IonList lines="none" className="tt-list">
+                    <IonList lines="none">
                         {filteredLeagues.map((league) => {
                             const isSelected = selectedLeagueIds.includes(league.id);
                             const regionLabels = leagueRegionLabels(league.name);
@@ -100,19 +100,18 @@ export function LeagueSelectionPage() {
                                     key={league.id}
                                     button
                                     detail={false}
-                                    className={isSelected ? 'tt-list-item tt-selected-item' : 'tt-list-item'}
                                     onClick={() => toggleLeague(league.id)}
                                 >
                                     <IonLabel>
                                         <h3>{league.name}</h3>
                                         <p>{league.divisions.length} division{league.divisions.length === 1 ? '' : 's'}</p>
-                                        <div className="tt-region-badges">
+                                        <div>
                                             {regionLabels.map((label) => (
-                                                <IonChip key={`${league.id}-${label}`} outline className="tt-mini-chip">{label}</IonChip>
+                                                <IonChip key={`${league.id}-${label}`} outline>{label}</IonChip>
                                             ))}
                                         </div>
                                     </IonLabel>
-                                    <IonIcon icon={isSelected ? checkmarkCircle : ellipseOutline} className={isSelected ? 'tt-check-on' : 'tt-check-off'} />
+                                    <IonIcon icon={isSelected ? checkmarkCircle : ellipseOutline} color={isSelected ? 'success' : 'medium'} />
                                 </IonItem>
                             );
                         })}

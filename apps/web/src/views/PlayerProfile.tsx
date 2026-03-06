@@ -70,7 +70,7 @@ export function PlayerProfile({ playerId }: Props) {
 
     if (statsLoading) {
         return (
-            <div role="status" aria-label="Loading player profile" className="tt-state">
+            <div role="status" aria-label="Loading player profile">
                 <IonSpinner name="crescent" />
             </div>
         );
@@ -78,7 +78,7 @@ export function PlayerProfile({ playerId }: Props) {
 
     if (statsError || !stats) {
         return (
-            <div className="tt-alert" role="alert">
+            <div role="alert">
                 <IonIcon icon={trophyOutline} />
                 <p>Failed to load player profile.</p>
             </div>
@@ -114,13 +114,13 @@ export function PlayerProfile({ playerId }: Props) {
 
     return (
         <div>
-            <header className="tt-hero tt-hero-player">
-                <p className="tt-eyebrow">Player Profile</p>
+            <header>
+                <p>Player Profile</p>
                 <h1>{stats.player_name}</h1>
-                <div className="tt-player-head-actions">
+                <div>
                     <IonButton
                         fill="clear"
-                        className="tt-fav-btn"
+                       
                         onClick={() => toggleFavouritePlayer({
                             id: stats.player_id,
                             name: stats.player_name,
@@ -134,7 +134,7 @@ export function PlayerProfile({ playerId }: Props) {
                     <IonChip>{stats.streak || '-'}</IonChip>
                 </div>
 
-                <div className="tt-hero-stats tt-hero-stats-four">
+                <div>
                     <div>
                         <small>Win Rate</small>
                         <strong data-testid="stat-win-rate">{pct}%</strong>
@@ -154,11 +154,11 @@ export function PlayerProfile({ playerId }: Props) {
                 </div>
             </header>
 
-            <main className="tt-content">
-                <IonCard className="tt-card">
+            <main>
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={gitCompareOutline} /> Matchups</h2>
-                        <div className="tt-two-col">
+                        <h2><IonIcon icon={gitCompareOutline} /> Matchups</h2>
+                        <div>
                             <div>
                                 <h4>Nemesis</h4>
                                 <p>{nemesis.name}</p>
@@ -178,17 +178,17 @@ export function PlayerProfile({ playerId }: Props) {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle">Career Timeline</h2>
+                        <h2>Career Timeline</h2>
                         {insightsLoading ? (
-                            <p className="tt-hint">Loading career insights...</p>
+                            <p>Loading career insights...</p>
                         ) : !insights || insights.career_by_year.length === 0 ? (
-                            <p className="tt-hint">Not enough history yet.</p>
+                            <p>Not enough history yet.</p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {insights.career_by_year.map((year) => (
-                                    <IonItem key={year.year} className="tt-list-item" lines="none">
+                                    <IonItem key={year.year} lines="none">
                                         <IonLabel>
                                             <h3>{year.year}</h3>
                                             <p>{year.played} played · {year.win_rate}% WR</p>
@@ -200,42 +200,42 @@ export function PlayerProfile({ playerId }: Props) {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle">Rival Intelligence</h2>
-                        <p className="tt-subtext">
+                        <h2>Rival Intelligence</h2>
+                        <p>
                             Toughest: {insights?.rivals.toughest ? `${insights.rivals.toughest.opponent_name} (${insights.rivals.toughest.win_rate}% WR)` : 'N/A'}
                         </p>
-                        <p className="tt-subtext">
+                        <p>
                             Easiest: {insights?.rivals.easiest ? `${insights.rivals.easiest.opponent_name} (${insights.rivals.easiest.win_rate}% WR)` : 'N/A'}
                         </p>
-                        <p className="tt-subtext">
+                        <p>
                             Improving vs: {insights?.rivals.improving_vs ? `${insights.rivals.improving_vs.opponent_name} (+${insights.rivals.improving_vs.delta_points} pts)` : 'N/A'}
                         </p>
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle">Form & Momentum</h2>
-                        <p className="tt-subtext">Rolling 10: {insights?.form.rolling_10_win_rate ?? 0}% WR</p>
-                        <p className="tt-subtext">Rolling 20: {insights?.form.rolling_20_win_rate ?? 0}% WR</p>
-                        <p className="tt-subtext">Momentum: {insights?.form.momentum ?? 'new'}</p>
-                        <p className="tt-subtext">Recent: {(insights?.form.recent_results ?? []).slice(0, 10).join(' ') || '-'}</p>
+                        <h2>Form & Momentum</h2>
+                        <p>Rolling 10: {insights?.form.rolling_10_win_rate ?? 0}% WR</p>
+                        <p>Rolling 20: {insights?.form.rolling_20_win_rate ?? 0}% WR</p>
+                        <p>Momentum: {insights?.form.momentum ?? 'new'}</p>
+                        <p>Recent: {(insights?.form.recent_results ?? []).slice(0, 10).join(' ') || '-'}</p>
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={flameOutline} /> Current Season</h2>
+                        <h2><IonIcon icon={flameOutline} /> Current Season</h2>
                         {affiliationsLoading ? (
-                            <div className="tt-state"><IonSpinner name="crescent" /></div>
+                            <div><IonSpinner name="crescent" /></div>
                         ) : affiliations.length === 0 ? (
-                            <p className="tt-hint">No active-season affiliations found.</p>
+                            <p>No active-season affiliations found.</p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {affiliations.map((affiliation) => (
-                                    <IonItem key={`${affiliation.team_id}-${affiliation.competition_name}`} className="tt-list-item" lines="none">
+                                    <IonItem key={`${affiliation.team_id}-${affiliation.competition_name}`} lines="none">
                                         <IonLabel>
                                             <h3>{affiliation.team_name}</h3>
                                             <p>{affiliation.league_name} · {affiliation.competition_name}</p>
@@ -248,17 +248,17 @@ export function PlayerProfile({ playerId }: Props) {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard className="tt-card">
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle"><IonIcon icon={calendarOutline} /> Match History</h2>
+                        <h2><IonIcon icon={calendarOutline} /> Match History</h2>
                         {rubbersLoading && rubbers.length === 0 ? (
-                            <div className="tt-state"><IonSpinner name="crescent" /></div>
+                            <div><IonSpinner name="crescent" /></div>
                         ) : rubbers.length === 0 ? (
-                            <p className="tt-hint">No recent matches found.</p>
+                            <p>No recent matches found.</p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {rubbers.map((rubber) => (
-                                    <IonItem key={rubber.id} className="tt-list-item" lines="none">
+                                    <IonItem key={rubber.id} lines="none">
                                         <IonLabel>
                                             <h3>vs {rubber.opponent}</h3>
                                             <p>{rubber.date} · {rubber.league}</p>

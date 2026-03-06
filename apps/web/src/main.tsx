@@ -35,7 +35,7 @@ if (!root) throw new Error('Root element not found');
 
 createRoot(root).render(
     <StrictMode>
-        <IonApp className="tt-ion-app">
+        <IonApp>
             <QueryClientProvider client={queryClient}>
                 <LeaguePreferencesProvider>
                     <BrowserRouter>

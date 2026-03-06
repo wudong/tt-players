@@ -11,9 +11,9 @@ import { TeamPage } from './views/TeamPage';
 
 export default function App() {
     return (
-        <IonPage className="tt-app-page">
-            <IonContent fullscreen className="tt-app-content" scrollY={false}>
-                <div className="tt-shell">
+        <IonPage>
+            <IonContent fullscreen scrollY={false}>
+                <div>
                     <Routes>
                         <Route path="/" element={<HomeView />} />
                         <Route path="/leagues" element={<LeaguesHubView />} />

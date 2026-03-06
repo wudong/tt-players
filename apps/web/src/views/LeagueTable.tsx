@@ -15,7 +15,7 @@ export function LeagueTable({ competitionId }: Props) {
 
     if (isLoading) {
         return (
-            <div className="tt-state" role="status" aria-label="Loading league table">
+            <div role="status" aria-label="Loading league table">
                 <IonSpinner name="crescent" />
             </div>
         );
@@ -23,7 +23,7 @@ export function LeagueTable({ competitionId }: Props) {
 
     if (isError) {
         return (
-            <div className="tt-alert" role="alert">
+            <div role="alert">
                 <IonIcon icon={warningOutline} />
                 <p>{error instanceof Error ? error.message : 'Failed to load standings. Please try again.'}</p>
             </div>
@@ -32,7 +32,7 @@ export function LeagueTable({ competitionId }: Props) {
 
     if (standings.length === 0) {
         return (
-            <div className="tt-state tt-state-muted">
+            <div>
                 <IonIcon icon={trophyOutline} />
                 <p>No standings available yet</p>
             </div>
@@ -40,8 +40,8 @@ export function LeagueTable({ competitionId }: Props) {
     }
 
     return (
-        <section className="tt-table-wrap">
-            <div className="tt-table-head">
+        <section>
+            <div>
                 <h2><IonIcon icon={trophyOutline} /> League Table</h2>
                 {sourceUrl && (
                     <IonButton href={sourceUrl} target="_blank" rel="noreferrer" size="small" fill="outline">
@@ -50,8 +50,8 @@ export function LeagueTable({ competitionId }: Props) {
                 )}
             </div>
 
-            <div className="tt-table-shell">
-                <table aria-label="League standings" className="tt-table">
+            <div>
+                <table aria-label="League standings">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -66,12 +66,12 @@ export function LeagueTable({ competitionId }: Props) {
                             <tr key={row.team_id} onClick={() => navigate(`/teams/${row.team_id}`)}>
                                 <td>{row.position}</td>
                                 <td>
-                                    <span className="tt-table-team">{row.team_name}</span>
+                                    <span>{row.team_name}</span>
                                     <IonIcon icon={chevronForwardOutline} />
                                 </td>
                                 <td>{row.won}</td>
                                 <td>{row.lost}</td>
-                                <td><span className="tt-points-pill">{row.points}</span></td>
+                                <td><span>{row.points}</span></td>
                             </tr>
                         ))}
                     </tbody>

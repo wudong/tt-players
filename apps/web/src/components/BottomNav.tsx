@@ -19,9 +19,9 @@ export function BottomNav() {
     }
 
     return (
-        <IonFooter translucent className="tt-bottom-nav-shell">
-            <IonToolbar className="tt-bottom-nav-toolbar">
-                <nav aria-label="Main navigation" className="tt-bottom-nav-track">
+        <IonFooter translucent>
+            <IonToolbar>
+                <nav aria-label="Main navigation">
                     {NAV_ITEMS.map(({ label, icon, path }) => {
                         const active = isActive(path);
                         return (
@@ -29,7 +29,6 @@ export function BottomNav() {
                                 key={path}
                                 fill="clear"
                                 onClick={() => navigate(path)}
-                                className={active ? 'tt-nav-btn tt-nav-btn-active' : 'tt-nav-btn'}
                                 aria-current={active ? 'page' : undefined}
                             >
                                 <IonIcon icon={icon} />

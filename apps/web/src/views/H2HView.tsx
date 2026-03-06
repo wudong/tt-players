@@ -53,7 +53,7 @@ function PlayerPicker({ label, selected, onSelect, excludeId, leagueIds }: Picke
 
     if (selected) {
         return (
-            <IonItem className="tt-list-item" lines="none">
+            <IonItem lines="none">
                 <IonLabel>
                     <h3>{label}</h3>
                     <p>{selected.name}</p>
@@ -66,25 +66,25 @@ function PlayerPicker({ label, selected, onSelect, excludeId, leagueIds }: Picke
     }
 
     return (
-        <div className="tt-picker-block">
+        <div>
             <IonSearchbar
                 value={query}
                 onIonInput={(e) => setQuery(e.detail.value ?? '')}
                 placeholder={`Search ${label}...`}
-                className="tt-search"
+               
                 showClearButton="focus"
             />
             {shouldSearch && (
-                <IonList lines="none" className="tt-list tt-picker-list">
+                <IonList lines="none">
                     {isLoading && (
-                        <div className="tt-state"><IonSpinner name="crescent" /></div>
+                        <div><IonSpinner name="crescent" /></div>
                     )}
                     {!isLoading && results.map((player) => (
                         <IonItem
                             key={player.id}
                             button
                             detail={false}
-                            className="tt-list-item"
+                           
                             onClick={() => {
                                 onSelect(player);
                                 setQuery('');
@@ -98,7 +98,7 @@ function PlayerPicker({ label, selected, onSelect, excludeId, leagueIds }: Picke
                         </IonItem>
                     ))}
                     {!isLoading && results.length === 0 && (
-                        <IonItem className="tt-list-item" lines="none">
+                        <IonItem lines="none">
                             <IonLabel>No players found</IonLabel>
                         </IonItem>
                     )}
@@ -129,17 +129,17 @@ export function H2HView() {
     const h2hTotal = h2h ? h2h.player1_wins + h2h.player2_wins : 0;
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-h2h">
-                <p className="tt-eyebrow">Compare</p>
+        <div>
+            <header>
+                <p>Compare</p>
                 <h1><IonIcon icon={gitCompareOutline} /> Head to Head</h1>
-                <p className="tt-hero-sub">Compare players and past encounters.</p>
+                <p>Compare players and past encounters.</p>
             </header>
 
-            <main className="tt-content">
-                <IonCard className="tt-card">
+            <main>
+                <IonCard>
                     <IonCardContent>
-                        <h2 className="tt-section-subtitle">Players</h2>
+                        <h2>Players</h2>
                         <PlayerPicker
                             label="Player A"
                             selected={playerA}
@@ -158,19 +158,19 @@ export function H2HView() {
                 </IonCard>
 
                 {!playerA || !playerB ? (
-                    <IonCard className="tt-card"><IonCardContent><p className="tt-hint">Select both players to see win split and encounter history.</p></IonCardContent></IonCard>
+                    <IonCard><IonCardContent><p>Select both players to see win split and encounter history.</p></IonCardContent></IonCard>
                 ) : null}
 
                 {h2hLoading && playerA && playerB && (
-                    <div className="tt-state"><IonSpinner name="crescent" /></div>
+                    <div><IonSpinner name="crescent" /></div>
                 )}
 
                 {h2h && playerA && playerB && (
                     <>
-                        <IonCard className="tt-card">
+                        <IonCard>
                             <IonCardContent>
-                                <h2 className="tt-section-subtitle">Matchups ({h2hTotal})</h2>
-                                <div className="tt-h2h-split">
+                                <h2>Matchups ({h2hTotal})</h2>
+                                <div>
                                     <div>
                                         <strong>{h2h.player1_wins}</strong>
                                         <span>{playerA.name}</span>
@@ -180,28 +180,28 @@ export function H2HView() {
                                         <span>{playerB.name}</span>
                                     </div>
                                 </div>
-                                <div className="tt-win-bar">
+                                <div>
                                     <div style={{ width: `${h2hTotal ? (h2h.player1_wins / h2hTotal) * 100 : 0}%` }} />
                                     <div style={{ width: `${h2hTotal ? (h2h.player2_wins / h2hTotal) * 100 : 0}%` }} />
                                 </div>
-                                <div className="tt-h2h-wr">
+                                <div>
                                     <IonChip>{overallWinRate(playerA, playerAStats?.total, playerAStats?.wins)}% WR</IonChip>
                                     <IonChip>{overallWinRate(playerB, playerBStats?.total, playerBStats?.wins)}% WR</IonChip>
                                 </div>
                             </IonCardContent>
                         </IonCard>
 
-                        <IonCard className="tt-card">
+                        <IonCard>
                             <IonCardContent>
-                                <h2 className="tt-section-subtitle">Past Encounters</h2>
+                                <h2>Past Encounters</h2>
                                 {h2h.encounters.length === 0 ? (
-                                    <p className="tt-hint">No past encounters found.</p>
+                                    <p>No past encounters found.</p>
                                 ) : (
-                                    <IonList lines="none" className="tt-list">
+                                    <IonList lines="none">
                                         {h2h.encounters.map((encounter: RubberItem) => {
                                             const winnerA = encounter.isWin;
                                             return (
-                                                <IonItem key={encounter.id} className="tt-list-item" lines="none">
+                                                <IonItem key={encounter.id} lines="none">
                                                     <IonLabel>
                                                         <h3>{encounter.league}</h3>
                                                         <p>{encounter.date} · {encounter.result.replace('Won ', '').replace('Lost ', '')}</p>

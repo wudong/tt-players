@@ -5,7 +5,7 @@ export function PlayerPage() {
     const { playerId = '' } = useParams<{ playerId: string }>();
 
     return (
-        <div className="tt-route-scroll">
+        <div>
             <PlayerProfile playerId={playerId} />
         </div>
     );

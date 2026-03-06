@@ -12,7 +12,12 @@ interface Props {
 }
 
 function FixtureStatusBadge({ status }: { status: FixtureItem['status'] }) {
-    return <IonBadge className={`tt-status tt-status-${status}`}>{status}</IonBadge>;
+    const color = status === 'completed'
+        ? 'success'
+        : status === 'upcoming'
+            ? 'primary'
+            : 'warning';
+    return <IonBadge color={color}>{status}</IonBadge>;
 }
 
 function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string }) {
@@ -49,9 +54,9 @@ function FixtureCard({ fixture, teamId }: { fixture: FixtureItem; teamId: string
             detail={false}
             onClick={() => navigate(`/fixtures/${fixture.id}`)}
             data-testid="fixture-item"
-            className="tt-list-item"
+           
         >
-            <div className="tt-fixture-datebox">
+            <div>
                 <IonIcon icon={calendarOutline} />
                 <span data-testid="fixture-date">{formattedDate}</span>
             </div>
@@ -75,7 +80,7 @@ export function Dashboard({ teamId, limit = 20, offset = 0, showHeading = true }
 
     if (isLoading) {
         return (
-            <div className="tt-state" role="status" aria-label="Loading recent matches">
+            <div role="status" aria-label="Loading recent matches">
                 <IonSpinner name="crescent" />
             </div>
         );
@@ -83,7 +88,7 @@ export function Dashboard({ teamId, limit = 20, offset = 0, showHeading = true }
 
     if (isError) {
         return (
-            <div className="tt-alert" role="alert">
+            <div role="alert">
                 <IonIcon icon={warningOutline} />
                 <p>{error instanceof Error ? error.message : 'Failed to load fixtures. Please try again.'}</p>
             </div>
@@ -92,7 +97,7 @@ export function Dashboard({ teamId, limit = 20, offset = 0, showHeading = true }
 
     if (!data || fixtures.length === 0) {
         return (
-            <div className="tt-state tt-state-muted">
+            <div>
                 <IonIcon icon={calendarOutline} />
                 <p>
                     {data?.availability === 'source_data_missing'
@@ -104,9 +109,9 @@ export function Dashboard({ teamId, limit = 20, offset = 0, showHeading = true }
     }
 
     return (
-        <section className="tt-section">
-            {showHeading && <h2 className="tt-section-title">Recent Matches</h2>}
-            <IonList lines="none" className="tt-list">
+        <section>
+            {showHeading && <h2>Recent Matches</h2>}
+            <IonList lines="none">
                 {fixtures.map((fixture) => (
                     <FixtureCard key={fixture.id} fixture={fixture} teamId={teamId} />
                 ))}

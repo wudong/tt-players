@@ -37,14 +37,14 @@ function PlayerRow({
     const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
     return (
-        <IonItem button detail={false} onClick={onClick} className="tt-list-item">
-            <div className="tt-avatar">{getInitials(player.name)}</div>
+        <IonItem button detail={false} onClick={onClick}>
+            <div>{getInitials(player.name)}</div>
             <IonLabel>
                 <h3>{player.name}</h3>
                 <p>{winRate}% WR · {played} matches</p>
             </IonLabel>
-            <IonButton fill="outline" size="small" className="tt-inline-btn">Open</IonButton>
-            <IonIcon icon={chevronForwardOutline} className="tt-item-arrow" />
+            <IonButton fill="outline" size="small">Open</IonButton>
+            <IonIcon icon={chevronForwardOutline} />
         </IonItem>
     );
 }
@@ -65,13 +65,13 @@ export function HomeView() {
     const showResultsSection = normalizedQuery.length === 0 || isSearchMode;
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-home">
-                <div className="tt-hero-row">
+        <div>
+            <header>
+                <div>
                     <div>
-                        <p className="tt-eyebrow">Welcome Back</p>
+                        <p>Welcome Back</p>
                         <h1>TT Hub</h1>
-                        <p className="tt-hero-sub">Find players, trends and league performance</p>
+                        <p>Find players, trends and league performance</p>
                     </div>
                     <LeagueFilterButton
                         count={selectedLeagueIds.length}
@@ -82,23 +82,23 @@ export function HomeView() {
                     value={query}
                     onIonInput={(e) => setQuery(e.detail.value ?? '')}
                     placeholder="Search players..."
-                    className="tt-search"
+                   
                     showClearButton="focus"
                 />
             </header>
 
-            <main className="tt-content">
-                <IonCard className="tt-card">
+            <main>
+                <IonCard>
                     <IonCardContent>
-                        <div className="tt-card-head">
+                        <div>
                             <h2><IonIcon icon={starOutline} /> Favourite Players</h2>
                             <IonText>{favouritePlayers.length} saved</IonText>
                         </div>
 
                         {favouritePlayers.length === 0 ? (
-                            <p className="tt-hint">Open a player profile and tap Favourite to pin quick links here.</p>
+                            <p>Open a player profile and tap Favourite to pin quick links here.</p>
                         ) : (
-                            <IonList lines="none" className="tt-list">
+                            <IonList lines="none">
                                 {favouritePlayers.map((player) => (
                                     <PlayerRow
                                         key={player.id}
@@ -112,9 +112,9 @@ export function HomeView() {
                 </IonCard>
 
                 {showResultsSection && (
-                    <IonCard className="tt-card">
+                    <IonCard>
                         <IonCardContent>
-                            <div className="tt-card-head">
+                            <div>
                                 <h2>
                                     <IonIcon icon={isSearchMode ? searchOutline : trendingUpOutline} />
                                     {isSearchMode ? 'Search Results' : 'Trending Players'}
@@ -125,17 +125,17 @@ export function HomeView() {
                             </div>
 
                             {normalizedQuery.length === 0 && (
-                                <p className="tt-subtext">Most played in the last 100 days</p>
+                                <p>Most played in the last 100 days</p>
                             )}
 
                             {leaguePreferencesLoading || isLoading ? (
-                                <div className="tt-center">
+                                <div>
                                     <IonSpinner name="crescent" />
                                 </div>
                             ) : !hasSelectedLeagues ? (
-                                <p className="tt-hint">Select at least one league to view trending players.</p>
+                                <p>Select at least one league to view trending players.</p>
                             ) : (
-                                <IonList lines="none" className="tt-list">
+                                <IonList lines="none">
                                     {(searchResults?.data ?? []).map((player) => (
                                         <PlayerRow
                                             key={player.id}
@@ -144,7 +144,7 @@ export function HomeView() {
                                         />
                                     ))}
                                     {(searchResults?.data?.length ?? 0) === 0 && (
-                                        <IonItem className="tt-list-item tt-empty-item">
+                                        <IonItem>
                                             <IonLabel>
                                                 {isSearchMode
                                                     ? `No players found matching "${normalizedQuery}"`

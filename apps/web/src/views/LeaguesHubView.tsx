@@ -72,11 +72,11 @@ export function LeaguesHubView() {
     }, [leagues, selectedLeague, selectedDivisionId]);
 
     return (
-        <div className="tt-route-scroll">
-            <header className="tt-hero tt-hero-leagues">
-                <div className="tt-hero-row">
+        <div>
+            <header>
+                <div>
                     <div>
-                        <p className="tt-eyebrow">League Hub</p>
+                        <p>League Hub</p>
                         <h1>League Central</h1>
                     </div>
                     <LeagueFilterButton
@@ -85,7 +85,7 @@ export function LeaguesHubView() {
                     />
                 </div>
 
-                <div className="tt-season-row">
+                <div>
                     <label htmlFor="season-select">Season</label>
                     <select
                         id="season-select"
@@ -100,12 +100,11 @@ export function LeaguesHubView() {
                     </select>
                 </div>
 
-                <div role="tablist" aria-label="League views" className="tt-tab-strip">
+                <div role="tablist" aria-label="League views">
                     <button
                         id="tables"
                         role="tab"
                         aria-selected={selectedTab === 'tables'}
-                        className={selectedTab === 'tables' ? 'tt-tab-btn active' : 'tt-tab-btn'}
                         onClick={() => setSelectedTab('tables')}
                     >
                         <IonIcon icon={listOutline} /> Tables
@@ -114,7 +113,6 @@ export function LeaguesHubView() {
                         id="leaders"
                         role="tab"
                         aria-selected={selectedTab === 'leaders'}
-                        className={selectedTab === 'leaders' ? 'tt-tab-btn active' : 'tt-tab-btn'}
                         onClick={() => setSelectedTab('leaders')}
                     >
                         <IonIcon icon={pulseOutline} /> Leaders
@@ -122,12 +120,12 @@ export function LeaguesHubView() {
                 </div>
             </header>
 
-            <main className="tt-content">
+            <main>
                 {isLoading ? (
-                    <div className="tt-state"><IonSpinner name="crescent" /></div>
+                    <div><IonSpinner name="crescent" /></div>
                 ) : leagues.length === 0 ? (
-                    <IonCard className="tt-card">
-                        <IonCardContent className="tt-card-center">
+                    <IonCard>
+                        <IonCardContent>
                             <IonIcon icon={trophyOutline} />
                             <h3>No leagues selected</h3>
                             <p>Select leagues to show them in League Central.</p>
@@ -140,16 +138,16 @@ export function LeaguesHubView() {
                     <>
                         {selectedTab === 'tables' && (
                             <>
-                                <IonCard className="tt-card">
+                                <IonCard>
                                     <IonCardContent>
-                                        <h3 className="tt-section-subtitle">League</h3>
-                                        <div className="tt-chip-row">
+                                        <h3>League</h3>
+                                        <div>
                                             {leagues.map((league) => (
                                                 <IonChip
                                                     key={league.id}
                                                     outline={selectedLeague?.id !== league.id}
                                                     color={selectedLeague?.id === league.id ? 'primary' : undefined}
-                                                    className="tt-chip"
+                                                   
                                                     onClick={() => {
                                                         setSelectedLeague(league);
                                                         setSelectedDivisionId(league.divisions[0]?.id ?? null);
@@ -160,17 +158,17 @@ export function LeaguesHubView() {
                                             ))}
                                         </div>
 
-                                        <h3 className="tt-section-subtitle">Division</h3>
+                                        <h3>Division</h3>
                                         {!selectedLeague || selectedLeague.divisions.length === 0 ? (
-                                            <p className="tt-hint">Pick a league first.</p>
+                                            <p>Pick a league first.</p>
                                         ) : (
-                                            <div className="tt-chip-row">
+                                            <div>
                                                 {selectedLeague.divisions.map((division) => (
                                                     <IonChip
                                                         key={division.id}
                                                         outline={selectedDivisionId !== division.id}
                                                         color={selectedDivisionId === division.id ? 'primary' : undefined}
-                                                        className="tt-chip"
+                                                       
                                                         onClick={() => setSelectedDivisionId(division.id)}
                                                     >
                                                         {division.name}
@@ -181,12 +179,12 @@ export function LeaguesHubView() {
                                     </IonCardContent>
                                 </IonCard>
 
-                                <IonCard className="tt-card">
+                                <IonCard>
                                     <IonCardContent>
                                         {selectedDivisionId ? (
                                             <LeagueTable competitionId={selectedDivisionId} />
                                         ) : (
-                                            <p className="tt-hint">No division selected</p>
+                                            <p>No division selected</p>
                                         )}
                                     </IonCardContent>
                                 </IonCard>
@@ -194,26 +192,23 @@ export function LeaguesHubView() {
                         )}
 
                         {selectedTab === 'leaders' && (
-                            <IonCard className="tt-card">
+                            <IonCard>
                                 <IonCardContent>
-                                    <div className="tt-mode-row">
+                                    <div>
                                         <button
                                             type="button"
-                                            className={leadersMode === 'win_pct' ? 'tt-native-btn' : 'tt-native-btn tt-native-btn-outline'}
                                             onClick={() => setLeadersMode('win_pct')}
                                         >
                                             Best Win %
                                         </button>
                                         <button
                                             type="button"
-                                            className={leadersMode === 'most_played' ? 'tt-native-btn' : 'tt-native-btn tt-native-btn-outline'}
                                             onClick={() => setLeadersMode('most_played')}
                                         >
                                             Most Played
                                         </button>
                                         <button
                                             type="button"
-                                            className={leadersMode === 'combined' ? 'tt-native-btn' : 'tt-native-btn tt-native-btn-outline'}
                                             onClick={() => setLeadersMode('combined')}
                                         >
                                             Combined
@@ -221,26 +216,26 @@ export function LeaguesHubView() {
                                     </div>
 
                                     {leadersLoading ? (
-                                        <div className="tt-state"><IonSpinner name="crescent" /></div>
+                                        <div><IonSpinner name="crescent" /></div>
                                     ) : !leadersData || leadersData.data.length === 0 ? (
-                                        <p className="tt-hint">No leaderboard data available for selected leagues.</p>
+                                        <p>No leaderboard data available for selected leagues.</p>
                                     ) : (
                                         <div>
-                                            <p className="tt-subtext">{leadersData.formula}</p>
-                                            <IonList lines="none" className="tt-list">
+                                            <p>{leadersData.formula}</p>
+                                            <IonList lines="none">
                                                 {leadersData.data.map((row) => (
                                                     <IonItem
                                                         key={row.player_id}
                                                         button
                                                         detail={false}
                                                         onClick={() => navigate(`/players/${row.player_id}`)}
-                                                        className="tt-list-item"
+                                                       
                                                     >
                                                         <IonLabel>
                                                             <h3>{row.rank}. {row.player_name}</h3>
                                                             <p>{row.wins}W-{row.losses}L · {row.played} played</p>
                                                         </IonLabel>
-                                                        <div className="tt-right-meta">
+                                                        <div>
                                                             <strong>{Math.round(row.win_rate)}% WR</strong>
                                                             {row.score !== null && <small>Score {row.score.toFixed(2)}</small>}
                                                         </div>
