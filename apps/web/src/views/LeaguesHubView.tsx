@@ -1,26 +1,55 @@
-import { Trophy, ChevronDown, Activity, FileText, SlidersHorizontal } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { LeagueTable } from './LeagueTable';
-import { LeagueWithDivisions, LeaderboardMode } from '../types';
+import { IonButton, IonCard, IonCardContent, IonChip, IonIcon, IonItem, IonLabel, IonList, IonSpinner } from '@ionic/react';
+import { pulseOutline, listOutline, trophyOutline } from 'ionicons/icons';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LeagueFilterButton } from '../components/LeagueFilterButton';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
-import { LeagueSelectionSheet } from '../components/LeagueSelectionSheet';
 import { useLeaders } from '../hooks/useLeaders';
+import { useLeagueSeasons } from '../hooks/useLeagueSeasons';
+import { useLeagues } from '../hooks/useLeagues';
+import type { LeaderboardMode, LeagueWithDivisions } from '../types';
+import { LeagueTable } from './LeagueTable';
 
 export function LeaguesHubView() {
-    const [selectedTab, setSelectedTab] = useState<'tables' | 'cups' | 'leaders'>('tables');
-    const {
-        selectedLeagues: leagues,
-        selectedLeagueIds,
-        isLoading,
-    } = useLeaguePreferences();
-    const [isLeagueSelectionOpen, setIsLeagueSelectionOpen] = useState(false);
+    const navigate = useNavigate();
+    const [selectedTab, setSelectedTab] = useState<'tables' | 'leaders'>('tables');
+
+    const { selectedLeagueIds, isLoading: preferencesLoading } = useLeaguePreferences();
+    const { data: seasonOptionsData, isLoading: seasonOptionsLoading } = useLeagueSeasons();
+    const seasonOptions = seasonOptionsData?.data ?? [];
+    const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+
+    const { data: leaguesData, isLoading: leaguesLoading } = useLeagues(selectedSeasonId ?? undefined);
+
+    useEffect(() => {
+        if (seasonOptions.length === 0) return;
+        if (selectedSeasonId && seasonOptions.some((season) => season.id === selectedSeasonId)) return;
+        const activeSeason = seasonOptions.find((season) => season.is_active);
+        setSelectedSeasonId(activeSeason?.id ?? seasonOptions[0]!.id);
+    }, [seasonOptions, selectedSeasonId]);
+
+    const allSeasonLeagues = leaguesData?.data ?? [];
+    const leagues = useMemo(
+        () => allSeasonLeagues.filter((league) => selectedLeagueIds.includes(league.id)),
+        [allSeasonLeagues, selectedLeagueIds],
+    );
+
+    const visibleLeagueIds = useMemo(() => leagues.map((league) => league.id), [leagues]);
+    const isLoading = preferencesLoading || seasonOptionsLoading || leaguesLoading;
 
     const [selectedLeague, setSelectedLeague] = useState<LeagueWithDivisions | null>(null);
     const [selectedDivisionId, setSelectedDivisionId] = useState<string | null>(null);
     const [leadersMode, setLeadersMode] = useState<LeaderboardMode>('combined');
-    const { data: leadersData, isLoading: leadersLoading } = useLeaders(leadersMode, selectedLeagueIds);
 
-    // Initialise selection
+    const leadersLimit = leadersMode === 'win_pct' ? 10 : 20;
+    const { data: leadersData, isLoading: leadersLoading } = useLeaders(
+        leadersMode,
+        visibleLeagueIds,
+        leadersLimit,
+        3,
+        selectedSeasonId ?? undefined,
+    );
+
     useEffect(() => {
         if (leagues.length === 0) {
             setSelectedLeague(null);
@@ -43,217 +72,184 @@ export function LeaguesHubView() {
     }, [leagues, selectedLeague, selectedDivisionId]);
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in zoom-in duration-300 pb-28 min-h-screen bg-slate-50">
-            {/* Search Header */}
-            <div className="rounded-b-[2rem] bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-800 px-6 pb-6 pt-16 shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+        <div>
+            <header>
+                <div>
+                    <div>
+                        <p>League Hub</p>
+                        <h1>League Central</h1>
+                    </div>
+                    <LeagueFilterButton
+                        count={selectedLeagueIds.length}
+                        onClick={() => navigate('/leagues/select', { state: { returnTo: '/leagues' } })}
+                    />
+                </div>
 
-                <h1 className="text-3xl font-extrabold text-white mb-6 relative z-10 flex items-center gap-3 drop-shadow-md">
-                    <Trophy className="text-amber-400 drop-shadow-sm" size={28} /> League Central
-                </h1>
+                <div>
+                    <label htmlFor="season-select">Season</label>
+                    <select
+                        id="season-select"
+                        value={selectedSeasonId ?? ''}
+                        onChange={(event) => setSelectedSeasonId(event.currentTarget.value)}
+                    >
+                        {seasonOptions.map((season) => (
+                            <option key={season.id} value={season.id}>
+                                {season.name}{season.is_active ? ' (Current)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                <button
-                    onClick={() => setIsLeagueSelectionOpen(true)}
-                    className="relative z-10 mb-4 inline-flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm ring-1 ring-white/20"
-                >
-                    <SlidersHorizontal size={14} />
-                    Edit leagues ({selectedLeagueIds.length})
-                </button>
-
-                {/* Segmented Control */}
-                <div className="relative z-10 flex h-12 w-full items-center justify-between rounded-2xl bg-black/20 p-1 backdrop-blur-md ring-1 ring-white/10">
+                <div role="tablist" aria-label="League views">
                     <button
+                        id="tables"
+                        role="tab"
+                        aria-selected={selectedTab === 'tables'}
                         onClick={() => setSelectedTab('tables')}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition-all duration-300 ${selectedTab === 'tables' ? 'bg-white text-emerald-700 shadow-md scale-[1.02]' : 'text-emerald-50 hover:text-white'
-                            }`}
                     >
-                        <FileText size={16} /> Tables
+                        <IonIcon icon={listOutline} /> Tables
                     </button>
                     <button
-                        onClick={() => setSelectedTab('cups')}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition-all duration-300 ${selectedTab === 'cups' ? 'bg-white text-emerald-700 shadow-md scale-[1.02]' : 'text-emerald-50 hover:text-white'
-                            }`}
-                    >
-                        <Trophy size={16} /> Cups
-                    </button>
-                    <button
+                        id="leaders"
+                        role="tab"
+                        aria-selected={selectedTab === 'leaders'}
                         onClick={() => setSelectedTab('leaders')}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition-all duration-300 ${selectedTab === 'leaders' ? 'bg-white text-emerald-700 shadow-md scale-[1.02]' : 'text-emerald-50 hover:text-white'
-                            }`}
                     >
-                        <Activity size={16} /> Leaders
+                        <IonIcon icon={pulseOutline} /> Leaders
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div className="px-5 flex flex-col gap-6">
+            <main>
                 {isLoading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
-                    </div>
+                    <div><IonSpinner name="crescent" /></div>
                 ) : leagues.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-                        <Trophy size={30} strokeWidth={1.5} className="text-slate-300" />
-                        <h3 className="text-base font-bold text-slate-700">No leagues selected</h3>
-                        <p className="text-sm text-slate-500 leading-relaxed">
-                            Select leagues to show them in League Central.
-                        </p>
-                        <button
-                            onClick={() => setIsLeagueSelectionOpen(true)}
-                            className="rounded-xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700"
-                        >
-                            Choose leagues
-                        </button>
-                    </div>
+                    <IonCard>
+                        <IonCardContent>
+                            <IonIcon icon={trophyOutline} />
+                            <h3>No leagues selected</h3>
+                            <p>Select leagues to show them in League Central.</p>
+                            <IonButton onClick={() => navigate('/leagues/select', { state: { returnTo: '/leagues' } })}>
+                                Choose leagues
+                            </IonButton>
+                        </IonCardContent>
+                    </IonCard>
                 ) : (
                     <>
-                        {/* Identical UI structure matching the mock */}
                         {selectedTab === 'tables' && (
                             <>
-                                {/* League & Division selector */}
-                                <section className="flex flex-col gap-3">
-                                    <div className="space-y-3">
+                                <IonCard>
+                                    <IonCardContent>
+                                        <h3>League</h3>
                                         <div>
-                                            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                                League
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    className="w-full appearance-none rounded-2xl bg-white px-4 py-4 pr-10 text-base font-bold text-slate-700 shadow-sm ring-1 ring-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                    value={selectedLeague?.id || ''}
-                                                    onChange={(e) => {
-                                                        const league = leagues.find(l => l.id === e.target.value);
-                                                        if (league) {
-                                                            setSelectedLeague(league);
-                                                            setSelectedDivisionId(league.divisions[0]?.id || null);
-                                                        }
+                                            {leagues.map((league) => (
+                                                <IonChip
+                                                    key={league.id}
+                                                    outline={selectedLeague?.id !== league.id}
+                                                    color={selectedLeague?.id === league.id ? 'primary' : undefined}
+                                                   
+                                                    onClick={() => {
+                                                        setSelectedLeague(league);
+                                                        setSelectedDivisionId(league.divisions[0]?.id ?? null);
                                                     }}
                                                 >
-                                                    {leagues.map(l => (
-                                                        <option key={l.id} value={l.id}>{l.name}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                            </div>
+                                                    {league.name}
+                                                </IonChip>
+                                            ))}
                                         </div>
 
-                                        <div>
-                                            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                                                Division
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    className="w-full appearance-none rounded-2xl bg-white px-4 py-4 pr-10 text-base font-bold text-slate-700 shadow-sm ring-1 ring-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                                                    value={selectedDivisionId || ''}
-                                                    onChange={(e) => setSelectedDivisionId(e.target.value)}
-                                                    disabled={!selectedLeague || selectedLeague.divisions.length === 0}
-                                                >
-                                                    {selectedLeague?.divisions.map(d => (
-                                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                        <h3>Division</h3>
+                                        {!selectedLeague || selectedLeague.divisions.length === 0 ? (
+                                            <p>Pick a league first.</p>
+                                        ) : (
+                                            <div>
+                                                {selectedLeague.divisions.map((division) => (
+                                                    <IonChip
+                                                        key={division.id}
+                                                        outline={selectedDivisionId !== division.id}
+                                                        color={selectedDivisionId === division.id ? 'primary' : undefined}
+                                                       
+                                                        onClick={() => setSelectedDivisionId(division.id)}
+                                                    >
+                                                        {division.name}
+                                                    </IonChip>
+                                                ))}
                                             </div>
-                                        </div>
-                                        <p className="text-xs font-medium text-slate-500">
-                                            Pick a league first, then choose its division.
-                                        </p>
-                                    </div>
-                                </section>
+                                        )}
+                                    </IonCardContent>
+                                </IonCard>
 
-                                {/* Division Standings Card */}
-                                <section className="bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden relative">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                                    {selectedDivisionId ? (
-                                        <LeagueTable competitionId={selectedDivisionId} />
-                                    ) : (
-                                        <div className="p-8 text-center text-slate-500">No division selected</div>
-                                    )}
-                                </section>
+                                <IonCard>
+                                    <IonCardContent>
+                                        {selectedDivisionId ? (
+                                            <LeagueTable competitionId={selectedDivisionId} />
+                                        ) : (
+                                            <p>No division selected</p>
+                                        )}
+                                    </IonCardContent>
+                                </IonCard>
                             </>
                         )}
 
-                        {selectedTab === 'cups' && (
-                            <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100">
-                                <Trophy size={32} />
-                                <span className="font-semibold text-sm">Cups coming soon</span>
-                            </div>
-                        )}
-
                         {selectedTab === 'leaders' && (
-                            <div className="rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-slate-100">
-                                <div className="mb-3 grid grid-cols-3 gap-2">
-                                    <button
-                                        onClick={() => setLeadersMode('win_pct')}
-                                        className={`rounded-xl px-2 py-2 text-xs font-semibold ${leadersMode === 'win_pct' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
-                                    >
-                                        Best Win %
-                                    </button>
-                                    <button
-                                        onClick={() => setLeadersMode('most_played')}
-                                        className={`rounded-xl px-2 py-2 text-xs font-semibold ${leadersMode === 'most_played' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
-                                    >
-                                        Most Played
-                                    </button>
-                                    <button
-                                        onClick={() => setLeadersMode('combined')}
-                                        className={`rounded-xl px-2 py-2 text-xs font-semibold ${leadersMode === 'combined' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
-                                    >
-                                        Combined
-                                    </button>
-                                </div>
+                            <IonCard>
+                                <IonCardContent>
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLeadersMode('win_pct')}
+                                        >
+                                            Best Win %
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLeadersMode('most_played')}
+                                        >
+                                            Most Played
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLeadersMode('combined')}
+                                        >
+                                            Combined
+                                        </button>
+                                    </div>
 
-                                {leadersLoading ? (
-                                    <div className="flex justify-center py-10">
-                                        <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500"></div>
-                                    </div>
-                                ) : !leadersData || leadersData.data.length === 0 ? (
-                                    <div className="p-8 text-center text-sm font-medium text-slate-500">
-                                        No leaderboard data available for selected leagues.
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className="mb-3 text-xs text-slate-500">{leadersData.formula}</p>
-                                        <div className="space-y-2">
-                                            {leadersData.data.map((row) => (
-                                                <div
-                                                    key={row.player_id}
-                                                    className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-black text-emerald-700 ring-1 ring-slate-200">
-                                                            {row.rank}
-                                                        </span>
+                                    {leadersLoading ? (
+                                        <div><IonSpinner name="crescent" /></div>
+                                    ) : !leadersData || leadersData.data.length === 0 ? (
+                                        <p>No leaderboard data available for selected leagues.</p>
+                                    ) : (
+                                        <div>
+                                            <p>{leadersData.formula}</p>
+                                            <IonList lines="none">
+                                                {leadersData.data.map((row) => (
+                                                    <IonItem
+                                                        key={row.player_id}
+                                                        button
+                                                        detail={false}
+                                                        onClick={() => navigate(`/players/${row.player_id}`)}
+                                                       
+                                                    >
+                                                        <IonLabel>
+                                                            <h3>{row.rank}. {row.player_name}</h3>
+                                                            <p>{row.wins}W-{row.losses}L · {row.played} played</p>
+                                                        </IonLabel>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-800">{row.player_name}</p>
-                                                            <p className="text-[11px] font-semibold text-slate-500">
-                                                                {row.wins}W-{row.losses}L · {row.played} played
-                                                            </p>
+                                                            <strong>{Math.round(row.win_rate)}% WR</strong>
+                                                            {row.score !== null && <small>Score {row.score.toFixed(2)}</small>}
                                                         </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-sm font-bold text-emerald-700">{Math.round(row.win_rate)}% WR</p>
-                                                        {row.score !== null && (
-                                                            <p className="text-[11px] font-semibold text-slate-500">
-                                                                Score {row.score.toFixed(2)}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                    </IonItem>
+                                                ))}
+                                            </IonList>
                                         </div>
-                                    </>
-                                )}
-                            </div>
+                                    )}
+                                </IonCardContent>
+                            </IonCard>
                         )}
                     </>
                 )}
-            </div>
-            <LeagueSelectionSheet
-                isOpen={isLeagueSelectionOpen}
-                onClose={() => setIsLeagueSelectionOpen(false)}
-                title="Choose Leagues for League Central"
-            />
+            </main>
         </div>
     );
 }

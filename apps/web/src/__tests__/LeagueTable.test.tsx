@@ -49,6 +49,10 @@ const MOCK_STANDINGS: StandingItem[] = [
 ];
 
 const COMPETITION_ID = 'comp-abc-123';
+const MOCK_STANDINGS_RESPONSE = {
+    source_url: null,
+    data: MOCK_STANDINGS,
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -60,7 +64,7 @@ function mockHook(overrides: Partial<ReturnType<typeof useStandingsModule.useSta
         isError: false,
         error: null,
         ...overrides,
-    } as ReturnType<typeof useStandingsModule.useStandings>);
+    } as unknown as ReturnType<typeof useStandingsModule.useStandings>);
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +78,7 @@ describe('LeagueTable', () => {
     // --- Success state --------------------------------------------------------
     describe('when data loads successfully', () => {
         it('renders a row for every team in the mock data', () => {
-            mockHook({ data: MOCK_STANDINGS, isLoading: false, isError: false });
+            mockHook({ data: MOCK_STANDINGS_RESPONSE, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             for (const standing of MOCK_STANDINGS) {
@@ -83,7 +87,7 @@ describe('LeagueTable', () => {
         });
 
         it('renders the correct points for each team', () => {
-            mockHook({ data: MOCK_STANDINGS, isLoading: false, isError: false });
+            mockHook({ data: MOCK_STANDINGS_RESPONSE, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             // Each team's points value should appear in the DOM.
@@ -94,7 +98,7 @@ describe('LeagueTable', () => {
         });
 
         it('renders the correct league position for each team', () => {
-            mockHook({ data: MOCK_STANDINGS, isLoading: false, isError: false });
+            mockHook({ data: MOCK_STANDINGS_RESPONSE, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             // Positions 1, 2, 3 must appear in the table.
@@ -106,7 +110,7 @@ describe('LeagueTable', () => {
         });
 
         it('renders won and lost counts for each team', () => {
-            mockHook({ data: MOCK_STANDINGS, isLoading: false, isError: false });
+            mockHook({ data: MOCK_STANDINGS_RESPONSE, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             // Brentwood A: 8 won, 2 lost
@@ -118,14 +122,14 @@ describe('LeagueTable', () => {
         });
 
         it('renders the table with correct accessible role', () => {
-            mockHook({ data: MOCK_STANDINGS, isLoading: false, isError: false });
+            mockHook({ data: MOCK_STANDINGS_RESPONSE, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             expect(screen.getByRole('table')).toBeInTheDocument();
         });
 
         it('renders an empty-state row when the standings list is empty', () => {
-            mockHook({ data: [], isLoading: false, isError: false });
+            mockHook({ data: { source_url: null, data: [] }, isLoading: false, isError: false });
             render(<LeagueTable competitionId={COMPETITION_ID} />);
 
             expect(screen.getByText(/no standings/i)).toBeInTheDocument();
@@ -192,11 +196,11 @@ describe('LeagueTable', () => {
     describe('hook wiring', () => {
         it('calls useStandings with the provided competitionId', () => {
             const spy = vi.spyOn(useStandingsModule, 'useStandings').mockReturnValue({
-                data: MOCK_STANDINGS,
+                data: MOCK_STANDINGS_RESPONSE,
                 isLoading: false,
                 isError: false,
                 error: null,
-            } as ReturnType<typeof useStandingsModule.useStandings>);
+            } as unknown as ReturnType<typeof useStandingsModule.useStandings>);
 
             render(<LeagueTable competitionId="specific-comp-id" />);
 

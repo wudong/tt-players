@@ -3,6 +3,17 @@ import { render, screen } from '@testing-library/react';
 import type { FixtureItem, FixturesResponse } from '../types';
 
 // ---------------------------------------------------------------------------
+// Mock router hooks used by fixture cards
+// ---------------------------------------------------------------------------
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => vi.fn(),
+    };
+});
+
+// ---------------------------------------------------------------------------
 // Mock the hook
 // ---------------------------------------------------------------------------
 vi.mock('../hooks/useFixtures');
@@ -20,6 +31,10 @@ const MOCK_FIXTURES: FixtureItem[] = [
         external_id: 'ext-001',
         home_team_id: 'team-home-1',
         away_team_id: 'team-away-1',
+        home_team_name: 'Home A',
+        away_team_name: 'Away B',
+        home_score: 6,
+        away_score: 4,
         date_played: '2025-11-15T19:00:00.000Z',
         status: 'completed',
         round_name: 'Week 5',
@@ -29,8 +44,12 @@ const MOCK_FIXTURES: FixtureItem[] = [
         id: 'fixture-2',
         competition_id: 'comp-1',
         external_id: 'ext-002',
-        home_team_id: 'team-home-2',
+        home_team_id: 'team-home-1',
         away_team_id: null,
+        home_team_name: 'Home C',
+        away_team_name: null,
+        home_score: null,
+        away_score: null,
         date_played: '2025-11-22T19:00:00.000Z',
         status: 'upcoming',
         round_name: 'Week 6',
@@ -38,7 +57,7 @@ const MOCK_FIXTURES: FixtureItem[] = [
     },
 ];
 
-const TEAM_ID = 'team-abc-123';
+const TEAM_ID = 'team-home-1';
 
 function makeFixturesResponse(data: FixtureItem[], availability: FixturesResponse['availability'] = 'available'): FixturesResponse {
     return {
@@ -98,11 +117,27 @@ describe('Dashboard', () => {
             expect(dateEls.length).toBe(MOCK_FIXTURES.length);
         });
 
-        it('renders "TBD" when away_team_id is null', () => {
+        it('renders "TBD" when away team name is null', () => {
             mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
             render(<Dashboard teamId={TEAM_ID} />);
 
             expect(screen.getByText(/tbd/i)).toBeInTheDocument();
+        });
+
+        it('shows opponent name and overall result for completed fixtures', () => {
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
+            render(<Dashboard teamId={TEAM_ID} />);
+
+            expect(screen.getByText('Away B')).toBeInTheDocument();
+            expect(screen.getByTestId('fixture-result')).toHaveTextContent('W 6-4');
+        });
+
+        it('shows only opponent labels and hides the current team name', () => {
+            mockHook({ data: makeFixturesResponse(MOCK_FIXTURES), isLoading: false, isError: false });
+            render(<Dashboard teamId={TEAM_ID} />);
+
+            expect(screen.queryByText('Home A')).not.toBeInTheDocument();
+            expect(screen.queryByText(/^vs$/i)).not.toBeInTheDocument();
         });
 
         it('shows an empty-state when fixtures list is empty', () => {
