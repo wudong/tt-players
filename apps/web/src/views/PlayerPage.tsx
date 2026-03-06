@@ -1,11 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { PlayerProfile } from './PlayerProfile';
 
+// Route wrapper: reads :playerId from the URL and passes it to the
+// PlayerProfile component (which is tested in isolation via props).
 export function PlayerPage() {
     const { playerId = '' } = useParams<{ playerId: string }>();
 
     return (
-        <div>
+        <div className="flex min-h-screen flex-col pb-28 bg-slate-50">
             <PlayerProfile playerId={playerId} />
         </div>
     );

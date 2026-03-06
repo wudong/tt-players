@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchLeagues } from '../lib/api';
 
-export function useLeagues(seasonId?: string) {
+export function useLeagues() {
     return useQuery({
-        queryKey: ['leagues', seasonId ?? 'active'],
-        queryFn: () => fetchLeagues(seasonId),
+        queryKey: ['leagues'],
+        queryFn: () => fetchLeagues(),
     });
 }

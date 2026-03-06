@@ -53,7 +53,6 @@ export function fetchLeaders(
     leagueIds: string[],
     limit = 20,
     minPlayed = 3,
-    seasonId?: string,
 ) {
     const params = new URLSearchParams({
         mode,
@@ -62,9 +61,6 @@ export function fetchLeaders(
     });
     if (leagueIds.length > 0) {
         params.set('league_ids', leagueIds.join(','));
-    }
-    if (seasonId) {
-        params.set('season_id', seasonId);
     }
     return apiFetch<import('../types').LeadersResponse>(`/players/leaders?${params.toString()}`);
 }
@@ -89,10 +85,6 @@ export function fetchPlayerCurrentSeasonAffiliations(playerId: string) {
     );
 }
 
-export function fetchPlayerInsights(playerId: string) {
-    return apiFetch<import('../types').PlayerInsights>(`/players/${playerId}/insights`);
-}
-
 export function fetchTeamRoster(teamId: string) {
     return apiFetch<import('../types').RosterResponse>(`/teams/${teamId}/roster`);
 }
@@ -101,22 +93,10 @@ export function fetchTeamForm(teamId: string) {
     return apiFetch<import('../types').TeamFormResponse>(`/teams/${teamId}/form`);
 }
 
-export function fetchTeamSummary(teamId: string) {
-    return apiFetch<import('../types').TeamSummaryResponse>(`/teams/${teamId}/summary`);
-}
-
 export function fetchFixtureRubbers(fixtureId: string) {
     return apiFetch<import('../types').FixtureRubbersResponse>(`/fixtures/${fixtureId}/rubbers`);
 }
 
-export function fetchLeagues(seasonId?: string) {
-    if (!seasonId) {
-        return apiFetch<import('../types').LeaguesResponse>('/leagues');
-    }
-    const params = new URLSearchParams({ season_id: seasonId });
-    return apiFetch<import('../types').LeaguesResponse>(`/leagues?${params.toString()}`);
-}
-
-export function fetchLeagueSeasons() {
-    return apiFetch<import('../types').LeagueSeasonsResponse>('/leagues/seasons');
+export function fetchLeagues() {
+    return apiFetch<import('../types').LeaguesResponse>('/leagues');
 }

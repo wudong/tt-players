@@ -17,7 +17,6 @@ interface LeaguePreferencesContextValue {
     selectedLeagueIds: string[];
     selectedLeagues: LeagueWithDivisions[];
     isLoading: boolean;
-    updateSelectedLeagueIds: (updater: (previous: string[]) => string[]) => void;
     toggleLeague: (leagueId: string) => void;
     selectAllLeagues: () => void;
     clearSelectedLeagues: () => void;
@@ -68,14 +67,6 @@ export function LeaguePreferencesProvider({ children }: { children: ReactNode })
         );
     }, []);
 
-    const updateSelectedLeagueIds = useCallback((updater: (previous: string[]) => string[]) => {
-        setSelectedLeagueIds((prev) => {
-            const validLeagueIds = new Set(allLeagues.map((league) => league.id));
-            const next = updater(prev);
-            return Array.from(new Set(next.filter((id) => validLeagueIds.has(id))));
-        });
-    }, [allLeagues]);
-
     const selectAllLeagues = useCallback(() => {
         setSelectedLeagueIds(allLeagues.map((league) => league.id));
     }, [allLeagues]);
@@ -94,7 +85,6 @@ export function LeaguePreferencesProvider({ children }: { children: ReactNode })
         selectedLeagueIds,
         selectedLeagues,
         isLoading: isLoading || !isInitialized,
-        updateSelectedLeagueIds,
         toggleLeague,
         selectAllLeagues,
         clearSelectedLeagues,
@@ -104,7 +94,6 @@ export function LeaguePreferencesProvider({ children }: { children: ReactNode })
         selectedLeagues,
         isLoading,
         isInitialized,
-        updateSelectedLeagueIds,
         toggleLeague,
         selectAllLeagues,
         clearSelectedLeagues,
