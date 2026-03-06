@@ -1,3 +1,4 @@
+import { IonContent, IonPage } from '@ionic/react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { HomeView } from './views/HomeView';
@@ -10,19 +11,23 @@ import { LeagueSelectionPage } from './views/LeagueSelectionPage';
 
 export default function App() {
     return (
-        <div className="tt-shell">
-            <Routes>
-                <Route path="/" element={<HomeView />} />
-                <Route path="/leagues" element={<LeaguesHubView />} />
-                <Route path="/leagues/select" element={<LeagueSelectionPage />} />
-                <Route path="/players/:playerId" element={<PlayerPage />} />
-                <Route path="/fixtures/:fixtureId" element={<FixtureDetailsView />} />
-                <Route path="/teams/:teamId" element={<TeamPage />} />
-                <Route path="/h2h" element={<H2HView />} />
-                <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+        <IonPage className="tt-app-page">
+            <IonContent fullscreen className="tt-app-content">
+                <div className="tt-shell">
+                    <Routes>
+                        <Route path="/" element={<HomeView />} />
+                        <Route path="/leagues" element={<LeaguesHubView />} />
+                        <Route path="/leagues/select" element={<LeagueSelectionPage />} />
+                        <Route path="/players/:playerId" element={<PlayerPage />} />
+                        <Route path="/fixtures/:fixtureId" element={<FixtureDetailsView />} />
+                        <Route path="/teams/:teamId" element={<TeamPage />} />
+                        <Route path="/h2h" element={<H2HView />} />
+                        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </div>
+            </IonContent>
             <BottomNav />
-        </div>
+        </IonPage>
     );
 }

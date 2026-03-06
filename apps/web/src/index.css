@@ -25,25 +25,39 @@
     @apply min-h-screen text-slate-900 antialiased;
     font-family: "Urbanist", "Inter", system-ui, sans-serif;
     background: radial-gradient(circle at top, #eef4ff 0%, #f8fbff 45%, #f5f7ff 100%);
+    margin: 0;
+    padding: 0;
   }
 
   #root {
     @apply flex min-h-screen justify-center;
   }
+
+  ion-app.tt-ion-app {
+    --ion-background-color: transparent;
+    --ion-font-family: "Urbanist", "Inter", system-ui, sans-serif;
+  }
 }
 
 @layer components {
+  .tt-app-page {
+    background: transparent;
+  }
+
+  .tt-app-content {
+    --background: transparent;
+  }
+
   .tt-shell {
-    @apply relative mx-auto min-h-screen w-full max-w-md overflow-hidden;
+    @apply relative min-h-screen w-full overflow-hidden;
     background: linear-gradient(180deg, #f7f9ff 0%, #f3f6ff 100%);
-    border-radius: 0 0 28px 28px;
-    box-shadow: 0 26px 54px rgba(18, 25, 39, 0.16);
   }
 
   .tt-hero {
-    @apply relative overflow-hidden rounded-b-[2rem] px-6 pb-7 pt-14 text-white;
+    @apply relative overflow-hidden rounded-b-[2rem] px-6 pb-7 text-white;
     background: linear-gradient(150deg, var(--tt-primary) 0%, var(--tt-violet) 88%);
     box-shadow: 0 10px 40px rgba(40, 105, 254, 0.28);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 3rem);
   }
 
   .tt-hero-home {
@@ -102,7 +116,7 @@
   }
 
   .tt-chip {
-    @apply inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold;
+    @apply inline-flex min-h-[44px] items-center rounded-xl px-3 py-1.5 text-xs font-bold;
     border: 1px solid #e2e8f0;
     color: #5b6680;
     background: #f8faff;
@@ -116,7 +130,7 @@
   }
 
   .tt-tab {
-    @apply flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-blue-100 transition;
+    @apply flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-blue-100 transition;
     line-height: 1;
     letter-spacing: 0.01em;
   }
@@ -143,7 +157,7 @@
   }
 
   .tt-soft-btn {
-    @apply inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition;
+    @apply inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition;
     border: 1px solid rgba(255, 255, 255, 0.35);
     background: rgba(255, 255, 255, 0.18);
     color: white;
@@ -200,6 +214,79 @@
     @apply font-black;
     letter-spacing: -0.015em;
     line-height: 1;
+  }
+
+  .tt-bottom-nav-shell {
+    --background: transparent;
+    --border-color: transparent;
+    box-shadow: none;
+  }
+
+  .tt-bottom-nav-toolbar {
+    --background: transparent;
+    --border-width: 0;
+    --min-height: 98px;
+    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+
+  .tt-bottom-nav-track {
+    @apply mx-auto flex h-[62px] w-full max-w-sm items-center justify-around rounded-[20px] bg-white/95 px-3 ring-1 ring-slate-200/80 backdrop-blur-md;
+    box-shadow: 0 8px 32px rgba(18, 25, 39, 0.12);
+  }
+
+  .tt-nav-btn {
+    --color: #64748b;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --background-hover: transparent;
+    --background-activated: transparent;
+    --ripple-color: rgba(40, 105, 254, 0.22);
+    text-transform: none;
+    letter-spacing: 0;
+    min-width: 82px;
+    min-height: 49px;
+    border-radius: 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .tt-nav-btn ion-icon {
+    font-size: 18px;
+  }
+
+  .tt-nav-btn-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .tt-nav-btn ion-label {
+    display: block;
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .tt-nav-btn-active {
+    --color: #2869fe;
+    background: #edf3ff;
+    box-shadow: inset 0 0 0 1px #bfd2ff;
+  }
+
+  @media (min-width: 768px) {
+    .tt-shell {
+      @apply mx-auto max-w-md;
+      border-radius: 0 0 28px 28px;
+      box-shadow: 0 26px 54px rgba(18, 25, 39, 0.16);
+    }
   }
 }
 
