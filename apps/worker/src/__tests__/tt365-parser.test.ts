@@ -146,6 +146,58 @@ describe('TT365 Cheerio Parser', () => {
         });
     });
 
+    describe('parseTT365PlayerStatsTargets()', () => {
+        const MATCH_CARD_URL =
+            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/458829';
+
+        it('extracts unique player statistics page targets from a match card', async () => {
+            const { parseTT365PlayerStatsTargets } = await import('../tt365-parser.js');
+
+            const targets = parseTT365PlayerStatsTargets(matchCardHtml, MATCH_CARD_URL);
+            const playerIds = targets.map((item) => item.playerExternalId).sort();
+
+            expect(targets.length).toBeGreaterThan(0);
+            expect(playerIds).toEqual(['395882', '395888', '395890', '400934', '401745']);
+            expect(targets[0]!.url.startsWith('https://www.tabletennis365.com/Brentwood/Results/Player/Statistics/')).toBe(true);
+        });
+    });
+
+    describe('parseTT365PlayerResultsForMatch()', () => {
+        it('parses score rows for a specific match id from a player page', async () => {
+            const { parseTT365PlayerResultsForMatch } = await import('../tt365-parser.js');
+            const html = `
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="/League/Results/Player/Statistics/S1/Opponent_A/2002">Opponent A</a></td>
+                      <td></td>
+                      <td>Team A</td>
+                      <td><time datetime="2025-09-08">08/09/2025</time></td>
+                      <td><span class="game">11-8</span><span class="game">8-11</span><span class="game">11-5</span><span class="game">11-9</span></td>
+                      <td class="right"><a href="/League/Results/S1/D1/MatchCard/9001">Win</a></td>
+                    </tr>
+                    <tr>
+                      <td><a href="/League/Results/Player/Statistics/S1/Opponent_B/3003">Opponent B</a></td>
+                      <td></td>
+                      <td>Team B</td>
+                      <td><time datetime="2025-09-15">15/09/2025</time></td>
+                      <td><span class="game">11-6</span><span class="game">11-4</span><span class="game">11-7</span></td>
+                      <td class="right"><a href="/League/Results/S1/D1/MatchCard/9002">Win</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const rows = parseTT365PlayerResultsForMatch(html, '9001');
+
+            expect(rows).toEqual([{
+                opponentExternalId: '2002',
+                playerGamesWon: 3,
+                opponentGamesWon: 1,
+            }]);
+        });
+    });
+
     // ── Match Card Parser ─────────────────────────────────────────────────────
 
     describe('parseTT365MatchCard()', () => {

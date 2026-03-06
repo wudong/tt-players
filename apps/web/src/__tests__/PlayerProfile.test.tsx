@@ -6,10 +6,12 @@ import { winPercentage } from '../types';
 vi.mock('../hooks/usePlayerExtendedStats');
 vi.mock('../hooks/usePlayerRubbers');
 vi.mock('../hooks/usePlayerCurrentSeasonAffiliations');
+vi.mock('../hooks/usePlayerInsights');
 
 import * as usePlayerExtendedStatsModule from '../hooks/usePlayerExtendedStats';
 import * as usePlayerRubbersModule from '../hooks/usePlayerRubbers';
 import * as usePlayerCurrentSeasonAffiliationsModule from '../hooks/usePlayerCurrentSeasonAffiliations';
+import * as usePlayerInsightsModule from '../hooks/usePlayerInsights';
 import { PlayerProfile } from '../views/PlayerProfile';
 
 const MOCK_STATS: ExtendedPlayerStats = {
@@ -62,10 +64,85 @@ const MOCK_AFFILIATIONS: PlayerCurrentSeasonAffiliationsResponse = {
 
 const PLAYER_ID = 'player-uuid-1';
 
+const MOCK_INSIGHTS: import('../types').PlayerInsights = {
+    player_id: 'player-uuid-1',
+    player_name: 'Alice Smith',
+    years_played: 3,
+    first_match_date: '2023-01-01',
+    latest_match_date: '2025-01-12',
+    career_by_year: [{
+        year: 2025,
+        played: 24,
+        wins: 18,
+        losses: 6,
+        win_rate: 75,
+    }],
+    peaks: {
+        best_season: { year: 2025, played: 24, win_rate: 75 },
+        most_active_season: { year: 2025, played: 24 },
+        best_month: { month: '2025-01', played: 8, win_rate: 88 },
+        worst_month: { month: '2024-12', played: 8, win_rate: 38 },
+    },
+    rivals: {
+        toughest: {
+            opponent_id: 'opp-2',
+            opponent_name: 'Tough Opp',
+            played: 6,
+            wins: 2,
+            losses: 4,
+            win_rate: 33,
+        },
+        easiest: {
+            opponent_id: 'opp-3',
+            opponent_name: 'Easy Opp',
+            played: 6,
+            wins: 5,
+            losses: 1,
+            win_rate: 83,
+        },
+        improving_vs: {
+            opponent_id: 'opp-1',
+            opponent_name: 'Bob Jones',
+            first_half_win_rate: 20,
+            second_half_win_rate: 60,
+            delta_points: 40,
+        },
+    },
+    style: {
+        singles: { played: 24, wins: 18, losses: 6, win_rate: 75 },
+        doubles: { played: 6, wins: 4, losses: 2, win_rate: 67 },
+        score_patterns: [{ score: '3-1', count: 8 }],
+    },
+    form: {
+        rolling_10_win_rate: 70,
+        rolling_20_win_rate: 65,
+        momentum: 'hot',
+        recent_results: ['W', 'W', 'L', 'W'],
+    },
+    context: {
+        home: { played: 12, wins: 10, win_rate: 83 },
+        away: { played: 12, wins: 8, win_rate: 67 },
+        by_league: [{ league: 'Chelmsford League', played: 16, win_rate: 75 }],
+        by_division: [{ division: 'Division 1', played: 12, win_rate: 67 }],
+    },
+    milestones: {
+        total_matches: 24,
+        longest_win_streak: 5,
+        milestone_hits: [],
+    },
+    projection: {
+        current_season_matches: 12,
+        current_season_win_rate: 75,
+        projected_matches: 44,
+        on_track_for_70_win_rate: true,
+    },
+};
+
 function mockHooks(options?: {
     stats?: Partial<ReturnType<typeof usePlayerExtendedStatsModule.usePlayerExtendedStats>>;
     rubbers?: Partial<ReturnType<typeof usePlayerRubbersModule.usePlayerRubbers>>;
     affiliations?: Partial<ReturnType<typeof usePlayerCurrentSeasonAffiliationsModule.usePlayerCurrentSeasonAffiliations>>;
+    insights?: Partial<ReturnType<typeof usePlayerInsightsModule.usePlayerInsights>>;
 }) {
     vi.spyOn(usePlayerExtendedStatsModule, 'usePlayerExtendedStats').mockReturnValue({
         data: MOCK_STATS,
@@ -91,6 +168,14 @@ function mockHooks(options?: {
         error: null,
         ...options?.affiliations,
     } as ReturnType<typeof usePlayerCurrentSeasonAffiliationsModule.usePlayerCurrentSeasonAffiliations>);
+
+    vi.spyOn(usePlayerInsightsModule, 'usePlayerInsights').mockReturnValue({
+        data: MOCK_INSIGHTS,
+        isLoading: false,
+        isError: false,
+        error: null,
+        ...options?.insights,
+    } as ReturnType<typeof usePlayerInsightsModule.usePlayerInsights>);
 }
 
 describe('PlayerProfile', () => {
@@ -112,7 +197,7 @@ describe('PlayerProfile', () => {
 
             const expectedPct = winPercentage(MOCK_STATS);
             expect(expectedPct).toBe(75);
-            expect(screen.getByText(/75%/)).toBeInTheDocument();
+            expect(screen.getByTestId('stat-win-rate')).toHaveTextContent('75%');
         });
 
         it('renders the wins count', () => {
@@ -134,6 +219,15 @@ describe('PlayerProfile', () => {
             render(<PlayerProfile playerId={PLAYER_ID} />);
 
             expect(screen.getByTestId('stat-total')).toHaveTextContent('24');
+        });
+
+        it('renders career insights sections', () => {
+            mockHooks();
+            render(<PlayerProfile playerId={PLAYER_ID} />);
+
+            expect(screen.getByText('Career Timeline')).toBeInTheDocument();
+            expect(screen.getByText('Rival Intelligence')).toBeInTheDocument();
+            expect(screen.getByText('Form & Momentum')).toBeInTheDocument();
         });
 
         it('handles a player with zero rubbers gracefully (no division by zero)', () => {

@@ -128,6 +128,18 @@ export interface TT365MatchCardTarget {
     url: string;
 }
 
+export interface TT365PlayerStatsTarget {
+    playerExternalId: string;
+    seasonToken: string;
+    url: string;
+}
+
+export interface TT365PlayerMatchResult {
+    opponentExternalId: string;
+    playerGamesWon: number;
+    opponentGamesWon: number;
+}
+
 export function parseTT365FixtureMatchCards(
     html: string,
     fixturesPageUrl: string,
@@ -151,6 +163,100 @@ export function parseTT365FixtureMatchCards(
     });
 
     return targets;
+}
+
+function extractSeasonTokenFromPlayerStatsHref(href: string): string | null {
+    const match = href.match(/\/results\/player\/statistics\/([^/]+)\//i);
+    return match?.[1] ?? null;
+}
+
+export function parseTT365PlayerStatsTargets(
+    html: string,
+    matchCardUrl: string,
+): TT365PlayerStatsTarget[] {
+    const $ = cheerio.load(html);
+
+    const targets: TT365PlayerStatsTarget[] = [];
+    const seenPlayerIds = new Set<string>();
+
+    $('a[href*="/Results/Player/Statistics/"], a[href*="/results/player/statistics/"]').each(
+        (_i, a) => {
+            const href = $(a).attr('href');
+            if (!href) return;
+
+            const playerExternalId = extractPlayerIdFromHref(href);
+            const seasonToken = extractSeasonTokenFromPlayerStatsHref(href);
+            if (!playerExternalId || !seasonToken || seenPlayerIds.has(playerExternalId)) {
+                return;
+            }
+
+            seenPlayerIds.add(playerExternalId);
+            targets.push({
+                playerExternalId,
+                seasonToken,
+                url: new URL(href, matchCardUrl).toString(),
+            });
+        },
+    );
+
+    return targets;
+}
+
+export function parseTT365PlayerResultsForMatch(
+    html: string,
+    matchExternalId: string,
+): TT365PlayerMatchResult[] {
+    const $ = cheerio.load(html);
+
+    const results: TT365PlayerMatchResult[] = [];
+
+    $('table tbody tr').each((_i, row) => {
+        const cells = $(row).find('td');
+        if (cells.length < 6) return;
+
+        const resultLink = $(cells[cells.length - 1]).find(
+            'a[href*="/MatchCard/"], a[href*="/matchcard/"]',
+        ).first();
+        const resultHref = resultLink.attr('href') ?? '';
+        const rowMatchExternalId = extractMatchIdFromHref(resultHref);
+        if (rowMatchExternalId !== matchExternalId) return;
+
+        const opponentLink = $(cells[0]).find(
+            'a[href*="/Results/Player/Statistics/"], a[href*="/results/player/statistics/"]',
+        ).first();
+        const opponentHref = opponentLink.attr('href') ?? '';
+        const opponentExternalId = extractPlayerIdFromHref(opponentHref);
+        if (!opponentExternalId) return;
+
+        const gamesCell = $(cells[cells.length - 2]);
+        const gameSpans = gamesCell.find('.game').toArray();
+        const gamesCellText = gameSpans.length > 0
+            ? gameSpans.map((el) => normalizeText($(el).text())).join(' ')
+            : normalizeText(gamesCell.text());
+        const parsedGames = parseGameCountsFromCellText(gamesCellText);
+        let playerGamesWon = parsedGames?.homeGamesWon ?? 0;
+        let opponentGamesWon = parsedGames?.awayGamesWon ?? 0;
+
+        // Rare fallback: some rows can have no per-game spans but still indicate win/loss.
+        if (!parsedGames) {
+            const resultText = normalizeText(resultLink.text()).toLowerCase();
+            if (resultText === 'win') {
+                playerGamesWon = 1;
+                opponentGamesWon = 0;
+            } else if (resultText === 'loss') {
+                playerGamesWon = 0;
+                opponentGamesWon = 1;
+            }
+        }
+
+        results.push({
+            opponentExternalId,
+            playerGamesWon,
+            opponentGamesWon,
+        });
+    });
+
+    return results;
 }
 
 // ─── Match Card Parser ────────────────────────────────────────────────────────

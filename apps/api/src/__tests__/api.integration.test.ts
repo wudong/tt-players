@@ -36,7 +36,7 @@ afterAll(async () => {
 describe('GET /competitions/:id/standings', () => {
     it('returns 200 with sorted standings array', async () => {
         const res = await request
-            .get(`/competitions/${ids.competitionId}/standings`)
+            .get(`/api/competitions/${ids.competitionId}/standings`)
             .expect(200);
 
         expect(res.body).toHaveProperty('data');
@@ -60,7 +60,7 @@ describe('GET /competitions/:id/standings', () => {
 
     it('returns standings ordered by position ascending', async () => {
         const res = await request
-            .get(`/competitions/${ids.competitionId}/standings`)
+            .get(`/api/competitions/${ids.competitionId}/standings`)
             .expect(200);
 
         const positions: number[] = res.body.data.map((d: { position: number }) => d.position);
@@ -70,7 +70,7 @@ describe('GET /competitions/:id/standings', () => {
 
     it('returns correct data for the seeded standing', async () => {
         const res = await request
-            .get(`/competitions/${ids.competitionId}/standings`)
+            .get(`/api/competitions/${ids.competitionId}/standings`)
             .expect(200);
 
         const item = res.body.data[0];
@@ -85,7 +85,7 @@ describe('GET /competitions/:id/standings', () => {
     it('returns 404 with error shape for unknown competition', async () => {
         const fakeId = '00000000-0000-0000-0000-000000000001';
         const res = await request
-            .get(`/competitions/${fakeId}/standings`)
+            .get(`/api/competitions/${fakeId}/standings`)
             .expect(404);
 
         expect(res.body).toMatchObject({
@@ -96,7 +96,7 @@ describe('GET /competitions/:id/standings', () => {
 
     it('includes CORS header for the configured origin', async () => {
         const res = await request
-            .get(`/competitions/${ids.competitionId}/standings`)
+            .get(`/api/competitions/${ids.competitionId}/standings`)
             .set('Origin', 'http://localhost:7373')
             .expect(200);
 
@@ -109,7 +109,7 @@ describe('GET /competitions/:id/standings', () => {
 describe('GET /teams/:id/fixtures', () => {
     it('returns 200 with pagination shape for home team', async () => {
         const res = await request
-            .get(`/teams/${ids.homeTeamId}/fixtures`)
+            .get(`/api/teams/${ids.homeTeamId}/fixtures`)
             .expect(200);
 
         expect(res.body).toMatchObject({
@@ -124,7 +124,7 @@ describe('GET /teams/:id/fixtures', () => {
 
     it('fixture item has correct schema', async () => {
         const res = await request
-            .get(`/teams/${ids.homeTeamId}/fixtures`)
+            .get(`/api/teams/${ids.homeTeamId}/fixtures`)
             .expect(200);
 
         const item = res.body.data[0];
@@ -142,7 +142,7 @@ describe('GET /teams/:id/fixtures', () => {
 
     it('returns fixtures for away team as well', async () => {
         const res = await request
-            .get(`/teams/${ids.awayTeamId}/fixtures`)
+            .get(`/api/teams/${ids.awayTeamId}/fixtures`)
             .expect(200);
 
         expect(res.body.total).toBeGreaterThanOrEqual(1);
@@ -150,7 +150,7 @@ describe('GET /teams/:id/fixtures', () => {
 
     it('respects limit=1 pagination', async () => {
         const res = await request
-            .get(`/teams/${ids.homeTeamId}/fixtures?limit=1&offset=0`)
+            .get(`/api/teams/${ids.homeTeamId}/fixtures?limit=1&offset=0`)
             .expect(200);
 
         expect(res.body.limit).toBe(1);
@@ -160,7 +160,7 @@ describe('GET /teams/:id/fixtures', () => {
 
     it('returns empty data array when offset exceeds total', async () => {
         const res = await request
-            .get(`/teams/${ids.homeTeamId}/fixtures?limit=20&offset=999`)
+            .get(`/api/teams/${ids.homeTeamId}/fixtures?limit=20&offset=999`)
             .expect(200);
 
         expect(res.body.data).toHaveLength(0);
@@ -171,7 +171,7 @@ describe('GET /teams/:id/fixtures', () => {
     it('returns 404 with error shape for unknown team', async () => {
         const fakeId = '00000000-0000-0000-0000-000000000002';
         const res = await request
-            .get(`/teams/${fakeId}/fixtures`)
+            .get(`/api/teams/${fakeId}/fixtures`)
             .expect(404);
 
         expect(res.body).toMatchObject({
@@ -182,7 +182,7 @@ describe('GET /teams/:id/fixtures', () => {
 
     it('includes CORS header', async () => {
         const res = await request
-            .get(`/teams/${ids.homeTeamId}/fixtures`)
+            .get(`/api/teams/${ids.homeTeamId}/fixtures`)
             .set('Origin', 'http://localhost:7373')
             .expect(200);
 
@@ -195,7 +195,7 @@ describe('GET /teams/:id/fixtures', () => {
 describe('GET /players/:id/stats', () => {
     it('returns 200 with correct stats shape for home player', async () => {
         const res = await request
-            .get(`/players/${ids.homePlayerId}/stats`)
+            .get(`/api/players/${ids.homePlayerId}/stats`)
             .expect(200);
 
         expect(res.body).toMatchObject({
@@ -209,7 +209,7 @@ describe('GET /players/:id/stats', () => {
 
     it('wins + losses === total', async () => {
         const res = await request
-            .get(`/players/${ids.homePlayerId}/stats`)
+            .get(`/api/players/${ids.homePlayerId}/stats`)
             .expect(200);
 
         expect(res.body.wins + res.body.losses).toBe(res.body.total);
@@ -218,7 +218,7 @@ describe('GET /players/:id/stats', () => {
     it('excludes walkover rubbers from total count', async () => {
         // Seeded: 1 normal rubber + 1 walkover rubber. Total should be 1 (only normal counted).
         const res = await request
-            .get(`/players/${ids.homePlayerId}/stats`)
+            .get(`/api/players/${ids.homePlayerId}/stats`)
             .expect(200);
 
         expect(res.body.total).toBe(1);
@@ -226,7 +226,7 @@ describe('GET /players/:id/stats', () => {
 
     it('correctly counts wins for home player (home_games_won=3 > away_games_won=1)', async () => {
         const res = await request
-            .get(`/players/${ids.homePlayerId}/stats`)
+            .get(`/api/players/${ids.homePlayerId}/stats`)
             .expect(200);
 
         expect(res.body.wins).toBe(1);
@@ -235,7 +235,7 @@ describe('GET /players/:id/stats', () => {
 
     it('correctly counts losses for away player (away_games_won=1 < home_games_won=3)', async () => {
         const res = await request
-            .get(`/players/${ids.awayPlayerId}/stats`)
+            .get(`/api/players/${ids.awayPlayerId}/stats`)
             .expect(200);
 
         expect(res.body.wins).toBe(0);
@@ -246,7 +246,7 @@ describe('GET /players/:id/stats', () => {
     it('returns 404 with error shape for unknown player', async () => {
         const fakeId = '00000000-0000-0000-0000-000000000003';
         const res = await request
-            .get(`/players/${fakeId}/stats`)
+            .get(`/api/players/${fakeId}/stats`)
             .expect(404);
 
         expect(res.body).toMatchObject({
@@ -257,10 +257,61 @@ describe('GET /players/:id/stats', () => {
 
     it('includes CORS header', async () => {
         const res = await request
-            .get(`/players/${ids.homePlayerId}/stats`)
+            .get(`/api/players/${ids.homePlayerId}/stats`)
             .set('Origin', 'http://localhost:7373')
             .expect(200);
 
         expect(res.headers['access-control-allow-origin']).toBe('http://localhost:7373');
+    });
+});
+
+// ─── /players/:id/insights ───────────────────────────────────────────────────
+
+describe('GET /players/:id/insights', () => {
+    it('returns 200 with the expected insights shape', async () => {
+        const res = await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        expect(res.body).toMatchObject({
+            player_id: ids.homePlayerId,
+            player_name: 'Alice Smith',
+            years_played: expect.any(Number),
+            first_match_date: expect.any(String),
+            latest_match_date: expect.any(String),
+            career_by_year: expect.any(Array),
+            peaks: expect.any(Object),
+            rivals: expect.any(Object),
+            style: expect.any(Object),
+            form: expect.any(Object),
+            context: expect.any(Object),
+            milestones: expect.any(Object),
+            projection: expect.any(Object),
+        });
+    });
+
+    it('computes seeded totals and season projection fields correctly', async () => {
+        const res = await request
+            .get(`/api/players/${ids.homePlayerId}/insights`)
+            .expect(200);
+
+        expect(res.body.style.singles.played).toBe(1);
+        expect(res.body.style.singles.wins).toBe(1);
+        expect(res.body.style.singles.losses).toBe(0);
+        expect(res.body.milestones.total_matches).toBe(1);
+        expect(res.body.projection.current_season_matches).toBe(1);
+        expect(res.body.projection.current_season_win_rate).toBe(100);
+    });
+
+    it('returns 404 with error shape for unknown player', async () => {
+        const fakeId = '00000000-0000-0000-0000-000000000009';
+        const res = await request
+            .get(`/api/players/${fakeId}/insights`)
+            .expect(404);
+
+        expect(res.body).toMatchObject({
+            error: expect.any(String),
+            statusCode: 404,
+        });
     });
 });

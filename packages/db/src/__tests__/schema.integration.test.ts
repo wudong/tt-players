@@ -10,6 +10,7 @@ import * as m003 from '../migrations/003_create_match_tables.js';
 import * as m004 from '../migrations/004_create_raw_scrape_logs.js';
 import * as m005 from '../migrations/005_make_rubber_players_nullable.js';
 import * as m006 from '../migrations/006_add_canonical_player_id_to_external_players.js';
+import * as m007 from '../migrations/007_add_performance_indexes.js';
 
 const { Pool } = pg;
 
@@ -33,6 +34,7 @@ class StaticMigrationProvider implements MigrationProvider {
             '004_create_raw_scrape_logs': m004,
             '005_make_rubber_players_nullable': m005,
             '006_add_canonical_player_id_to_external_players': m006,
+            '007_add_performance_indexes': m007,
         };
     }
 }
@@ -694,6 +696,26 @@ describe('Database Schema Integration Tests', () => {
                     idx.indexdef.toLowerCase().includes('is not null')
             );
             expect(partialIndex).toBeTruthy();
+        });
+
+        it('should have performance indexes for fixture and rubber lookups', () => {
+            const expected = [
+                'idx_external_players_name_trgm_active',
+                'idx_fixtures_home_team_date_active',
+                'idx_fixtures_away_team_date_active',
+                'idx_rubbers_home_p1_fixture_singles_active',
+                'idx_rubbers_away_p1_fixture_singles_active',
+                'idx_rubbers_h2h_p1_pair_fixture_active',
+                'idx_rubbers_home_p2_fixture_doubles_active',
+                'idx_rubbers_away_p2_fixture_doubles_active',
+                'idx_rubbers_fixture_created_active',
+                'idx_league_standings_team_updated_active',
+                'idx_league_standings_team_created_active',
+            ];
+
+            for (const indexName of expected) {
+                expect(indexes.some((idx) => idx.indexname === indexName)).toBe(true);
+            }
         });
     });
 

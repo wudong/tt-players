@@ -62,6 +62,121 @@ const ExtendedResponseSchema = ResponseSchema.extend({
     ),
 });
 
+const CareerByYearItemSchema = z.object({
+    year: z.number().int(),
+    played: z.number().int(),
+    wins: z.number().int(),
+    losses: z.number().int(),
+    win_rate: z.number().int(),
+});
+
+const RivalItemSchema = z.object({
+    opponent_id: z.string().uuid(),
+    opponent_name: z.string(),
+    played: z.number().int(),
+    wins: z.number().int(),
+    losses: z.number().int(),
+    win_rate: z.number().int(),
+});
+
+const PlayerInsightsResponseSchema = z.object({
+    player_id: z.string().uuid(),
+    player_name: z.string(),
+    years_played: z.number().int(),
+    first_match_date: z.string().nullable(),
+    latest_match_date: z.string().nullable(),
+    career_by_year: z.array(CareerByYearItemSchema),
+    peaks: z.object({
+        best_season: z.object({
+            year: z.number().int(),
+            played: z.number().int(),
+            win_rate: z.number().int(),
+        }).nullable(),
+        most_active_season: z.object({
+            year: z.number().int(),
+            played: z.number().int(),
+        }).nullable(),
+        best_month: z.object({
+            month: z.string(),
+            played: z.number().int(),
+            win_rate: z.number().int(),
+        }).nullable(),
+        worst_month: z.object({
+            month: z.string(),
+            played: z.number().int(),
+            win_rate: z.number().int(),
+        }).nullable(),
+    }),
+    rivals: z.object({
+        toughest: RivalItemSchema.nullable(),
+        easiest: RivalItemSchema.nullable(),
+        improving_vs: z.object({
+            opponent_id: z.string().uuid(),
+            opponent_name: z.string(),
+            first_half_win_rate: z.number().int(),
+            second_half_win_rate: z.number().int(),
+            delta_points: z.number().int(),
+        }).nullable(),
+    }),
+    style: z.object({
+        singles: z.object({
+            played: z.number().int(),
+            wins: z.number().int(),
+            losses: z.number().int(),
+            win_rate: z.number().int(),
+        }),
+        doubles: z.object({
+            played: z.number().int(),
+            wins: z.number().int(),
+            losses: z.number().int(),
+            win_rate: z.number().int(),
+        }),
+        score_patterns: z.array(z.object({
+            score: z.string(),
+            count: z.number().int(),
+        })),
+    }),
+    form: z.object({
+        rolling_10_win_rate: z.number().int(),
+        rolling_20_win_rate: z.number().int(),
+        momentum: z.enum(['hot', 'steady', 'cold', 'new']),
+        recent_results: z.array(z.enum(['W', 'L'])),
+    }),
+    context: z.object({
+        home: z.object({
+            played: z.number().int(),
+            wins: z.number().int(),
+            win_rate: z.number().int(),
+        }),
+        away: z.object({
+            played: z.number().int(),
+            wins: z.number().int(),
+            win_rate: z.number().int(),
+        }),
+        by_league: z.array(z.object({
+            league: z.string(),
+            played: z.number().int(),
+            win_rate: z.number().int(),
+        })),
+        by_division: z.array(z.object({
+            division: z.string(),
+            played: z.number().int(),
+            win_rate: z.number().int(),
+        })),
+    }),
+    milestones: z.object({
+        total_matches: z.number().int(),
+        longest_win_streak: z.number().int(),
+        milestone_hits: z.array(z.number().int()),
+    }),
+    projection: z.object({
+        current_season_matches: z.number().int(),
+        current_season_win_rate: z.number().int(),
+        projected_matches: z.number().int(),
+        on_track_for_70_win_rate: z.boolean(),
+    }),
+});
+
 const CurrentSeasonAffiliationSchema = z.object({
     team_id: z.string().uuid(),
     team_name: z.string(),
@@ -148,6 +263,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                           AND r.deleted_at IS NULL
                           AND r.outcome_type != 'walkover'
                           AND r.home_player_1_id IS NOT NULL
+                          AND s.is_active = true
                           AND (${leagueCsv} = '' OR s.league_id::text = ANY(string_to_array(${leagueCsv}, ',')))
 
                         UNION ALL
@@ -163,6 +279,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                           AND r.deleted_at IS NULL
                           AND r.outcome_type != 'walkover'
                           AND r.away_player_1_id IS NOT NULL
+                          AND s.is_active = true
                           AND (${leagueCsv} = '' OR s.league_id::text = ANY(string_to_array(${leagueCsv}, ',')))
                     ),
                     aggregated AS (
@@ -585,6 +702,448 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     most_played_opponents: mostPlayedOpponents,
                 });
             }
+        );
+
+        app.get(
+            '/:id/insights',
+            {
+                schema: {
+                    params: ParamsSchema,
+                    response: {
+                        200: PlayerInsightsResponseSchema,
+                        404: ErrorSchema,
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (request, reply) => {
+                const { id } = request.params;
+
+                const player = await db
+                    .selectFrom('external_players')
+                    .select(['id', 'name'])
+                    .where('id', '=', id)
+                    .where('deleted_at', 'is', null)
+                    .executeTakeFirst();
+
+                if (!player) {
+                    return reply.status(404).send({
+                        error: `Player ${id} not found`,
+                        statusCode: 404,
+                    });
+                }
+
+                const singlesRes = await sql<{
+                    date_played: Date | null;
+                    league_name: string;
+                    division_name: string;
+                    opponent_id: string | null;
+                    opponent_name: string | null;
+                    player_games: number;
+                    opponent_games: number;
+                    is_win: number;
+                    is_home: number;
+                    season_is_active: boolean;
+                }>`
+                    SELECT
+                        f.date_played,
+                        l.name AS league_name,
+                        c.name AS division_name,
+                        CASE WHEN r.home_player_1_id = ${id} THEN r.away_player_1_id ELSE r.home_player_1_id END AS opponent_id,
+                        CASE WHEN r.home_player_1_id = ${id} THEN ep_away.name ELSE ep_home.name END AS opponent_name,
+                        CASE WHEN r.home_player_1_id = ${id} THEN r.home_games_won ELSE r.away_games_won END AS player_games,
+                        CASE WHEN r.home_player_1_id = ${id} THEN r.away_games_won ELSE r.home_games_won END AS opponent_games,
+                        CASE
+                            WHEN (r.home_player_1_id = ${id} AND r.home_games_won > r.away_games_won)
+                              OR (r.away_player_1_id = ${id} AND r.away_games_won > r.home_games_won)
+                            THEN 1 ELSE 0
+                        END AS is_win,
+                        CASE WHEN r.home_player_1_id = ${id} THEN 1 ELSE 0 END AS is_home,
+                        s.is_active AS season_is_active
+                    FROM rubbers r
+                    JOIN fixtures f ON f.id = r.fixture_id
+                    JOIN competitions c ON c.id = f.competition_id
+                    JOIN seasons s ON s.id = c.season_id
+                    JOIN leagues l ON l.id = s.league_id
+                    LEFT JOIN external_players ep_home ON ep_home.id = r.home_player_1_id
+                    LEFT JOIN external_players ep_away ON ep_away.id = r.away_player_1_id
+                    WHERE (r.home_player_1_id = ${id} OR r.away_player_1_id = ${id})
+                      AND r.is_doubles = false
+                      AND r.deleted_at IS NULL
+                      AND r.outcome_type != 'walkover'
+                      AND f.deleted_at IS NULL
+                      AND c.deleted_at IS NULL
+                      AND s.deleted_at IS NULL
+                      AND l.deleted_at IS NULL
+                      AND f.date_played IS NOT NULL
+                    ORDER BY f.date_played ASC, r.id ASC
+                `.execute(db);
+
+                const doublesRes = await sql<{
+                    is_win: number;
+                }>`
+                    SELECT
+                        CASE
+                            WHEN (
+                                (r.home_player_1_id = ${id} OR r.home_player_2_id = ${id})
+                                AND r.home_games_won > r.away_games_won
+                            ) OR (
+                                (r.away_player_1_id = ${id} OR r.away_player_2_id = ${id})
+                                AND r.away_games_won > r.home_games_won
+                            )
+                            THEN 1 ELSE 0
+                        END AS is_win
+                    FROM rubbers r
+                    JOIN fixtures f ON f.id = r.fixture_id
+                    WHERE (
+                        r.home_player_1_id = ${id}
+                        OR r.home_player_2_id = ${id}
+                        OR r.away_player_1_id = ${id}
+                        OR r.away_player_2_id = ${id}
+                    )
+                      AND r.is_doubles = true
+                      AND r.deleted_at IS NULL
+                      AND r.outcome_type != 'walkover'
+                      AND f.deleted_at IS NULL
+                      AND f.date_played IS NOT NULL
+                `.execute(db);
+
+                const singles = singlesRes.rows
+                    .filter((row) => row.date_played !== null)
+                    .map((row) => {
+                        const date = row.date_played instanceof Date
+                            ? row.date_played
+                            : new Date(String(row.date_played));
+                        if (Number.isNaN(date.getTime())) return null;
+                        const year = date.getUTCFullYear();
+                        const month = date.toISOString().slice(0, 7);
+                        return {
+                            date,
+                            year,
+                            month,
+                            league: row.league_name,
+                            division: row.division_name,
+                            opponentId: row.opponent_id,
+                            opponentName: row.opponent_name ?? 'Unknown',
+                            playerGames: Number(row.player_games),
+                            opponentGames: Number(row.opponent_games),
+                            isWin: Number(row.is_win) === 1,
+                            isHome: Number(row.is_home) === 1,
+                            seasonIsActive: row.season_is_active,
+                        };
+                    })
+                    .filter((row): row is NonNullable<typeof row> => row !== null);
+
+                const totalMatches = singles.length;
+                const firstMatchDate = totalMatches > 0 ? singles[0]!.date.toISOString().slice(0, 10) : null;
+                const latestMatchDate = totalMatches > 0 ? singles[totalMatches - 1]!.date.toISOString().slice(0, 10) : null;
+
+                const yearsSet = new Set<number>();
+                const byYearMap = new Map<number, { played: number; wins: number }>();
+                const byMonthMap = new Map<string, { played: number; wins: number }>();
+                const byLeagueMap = new Map<string, { played: number; wins: number }>();
+                const byDivisionMap = new Map<string, { played: number; wins: number }>();
+                const scorePatternMap = new Map<string, number>();
+                const rivalMap = new Map<string, {
+                    opponent_id: string;
+                    opponent_name: string;
+                    played: number;
+                    wins: number;
+                    losses: number;
+                    results: boolean[];
+                }>();
+
+                let homePlayed = 0;
+                let homeWins = 0;
+                let awayPlayed = 0;
+                let awayWins = 0;
+                let longestWinStreak = 0;
+                let currentWinStreak = 0;
+
+                for (const row of singles) {
+                    yearsSet.add(row.year);
+
+                    const yearAgg = byYearMap.get(row.year) ?? { played: 0, wins: 0 };
+                    yearAgg.played += 1;
+                    if (row.isWin) yearAgg.wins += 1;
+                    byYearMap.set(row.year, yearAgg);
+
+                    const monthAgg = byMonthMap.get(row.month) ?? { played: 0, wins: 0 };
+                    monthAgg.played += 1;
+                    if (row.isWin) monthAgg.wins += 1;
+                    byMonthMap.set(row.month, monthAgg);
+
+                    const leagueAgg = byLeagueMap.get(row.league) ?? { played: 0, wins: 0 };
+                    leagueAgg.played += 1;
+                    if (row.isWin) leagueAgg.wins += 1;
+                    byLeagueMap.set(row.league, leagueAgg);
+
+                    const divisionAgg = byDivisionMap.get(row.division) ?? { played: 0, wins: 0 };
+                    divisionAgg.played += 1;
+                    if (row.isWin) divisionAgg.wins += 1;
+                    byDivisionMap.set(row.division, divisionAgg);
+
+                    const score = `${row.playerGames}-${row.opponentGames}`;
+                    scorePatternMap.set(score, (scorePatternMap.get(score) ?? 0) + 1);
+
+                    if (row.isHome) {
+                        homePlayed += 1;
+                        if (row.isWin) homeWins += 1;
+                    } else {
+                        awayPlayed += 1;
+                        if (row.isWin) awayWins += 1;
+                    }
+
+                    if (row.isWin) {
+                        currentWinStreak += 1;
+                        if (currentWinStreak > longestWinStreak) {
+                            longestWinStreak = currentWinStreak;
+                        }
+                    } else {
+                        currentWinStreak = 0;
+                    }
+
+                    if (!row.opponentId) continue;
+                    const rival = rivalMap.get(row.opponentId) ?? {
+                        opponent_id: row.opponentId,
+                        opponent_name: row.opponentName,
+                        played: 0,
+                        wins: 0,
+                        losses: 0,
+                        results: [],
+                    };
+                    rival.played += 1;
+                    if (row.isWin) rival.wins += 1;
+                    else rival.losses += 1;
+                    rival.results.push(row.isWin);
+                    rivalMap.set(row.opponentId, rival);
+                }
+
+                const careerByYear = Array.from(byYearMap.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([year, agg]) => ({
+                        year,
+                        played: agg.played,
+                        wins: agg.wins,
+                        losses: agg.played - agg.wins,
+                        win_rate: agg.played > 0 ? Math.round((agg.wins / agg.played) * 100) : 0,
+                    }));
+
+                const seasonsForPeak = careerByYear.filter((item) => item.played >= 5);
+                const bestSeasonSource = (seasonsForPeak.length > 0 ? seasonsForPeak : careerByYear)
+                    .slice()
+                    .sort((a, b) => b.win_rate - a.win_rate || b.played - a.played)[0] ?? null;
+
+                const mostActiveSeason = careerByYear
+                    .slice()
+                    .sort((a, b) => b.played - a.played || b.win_rate - a.win_rate)[0] ?? null;
+
+                const monthRows = Array.from(byMonthMap.entries()).map(([month, agg]) => ({
+                    month,
+                    played: agg.played,
+                    win_rate: agg.played > 0 ? Math.round((agg.wins / agg.played) * 100) : 0,
+                }));
+                const monthsForPeak = monthRows.filter((item) => item.played >= 3);
+                const bestMonth = monthsForPeak
+                    .slice()
+                    .sort((a, b) => b.win_rate - a.win_rate || b.played - a.played)[0] ?? null;
+                const worstMonth = monthsForPeak
+                    .slice()
+                    .sort((a, b) => a.win_rate - b.win_rate || b.played - a.played)[0] ?? null;
+
+                const rivals = Array.from(rivalMap.values()).map((item) => ({
+                    ...item,
+                    win_rate: item.played > 0 ? Math.round((item.wins / item.played) * 100) : 0,
+                }));
+
+                const toughest = rivals
+                    .filter((item) => item.played >= 3)
+                    .slice()
+                    .sort((a, b) => a.win_rate - b.win_rate || b.played - a.played)[0] ?? null;
+                const easiest = rivals
+                    .filter((item) => item.played >= 3)
+                    .slice()
+                    .sort((a, b) => b.win_rate - a.win_rate || b.played - a.played)[0] ?? null;
+
+                const improvingCandidates = Array.from(rivalMap.values())
+                    .filter((item) => item.results.length >= 4)
+                    .map((item) => {
+                        const half = Math.floor(item.results.length / 2);
+                        const firstHalf = item.results.slice(0, half);
+                        const secondHalf = item.results.slice(half);
+                        const firstWinRate = firstHalf.length > 0
+                            ? Math.round((firstHalf.filter(Boolean).length / firstHalf.length) * 100)
+                            : 0;
+                        const secondWinRate = secondHalf.length > 0
+                            ? Math.round((secondHalf.filter(Boolean).length / secondHalf.length) * 100)
+                            : 0;
+                        return {
+                            opponent_id: item.opponent_id,
+                            opponent_name: item.opponent_name,
+                            first_half_win_rate: firstWinRate,
+                            second_half_win_rate: secondWinRate,
+                            delta_points: secondWinRate - firstWinRate,
+                        };
+                    })
+                    .filter((item) => item.delta_points > 0)
+                    .sort((a, b) => b.delta_points - a.delta_points);
+                const improvingVs = improvingCandidates[0] ?? null;
+
+                const singlesWins = singles.filter((row) => row.isWin).length;
+                const doublesPlayed = doublesRes.rows.length;
+                const doublesWins = doublesRes.rows.filter((row) => Number(row.is_win) === 1).length;
+
+                const recentResults = singles
+                    .slice(-20)
+                    .reverse()
+                    .map((row) => (row.isWin ? 'W' : 'L') as 'W' | 'L');
+                const recent10 = recentResults.slice(0, 10);
+                const recent20 = recentResults.slice(0, 20);
+                const rolling10 = recent10.length > 0
+                    ? Math.round((recent10.filter((r) => r === 'W').length / recent10.length) * 100)
+                    : 0;
+                const rolling20 = recent20.length > 0
+                    ? Math.round((recent20.filter((r) => r === 'W').length / recent20.length) * 100)
+                    : 0;
+                const momentum: 'hot' | 'steady' | 'cold' | 'new' = recent10.length < 5
+                    ? 'new'
+                    : rolling10 >= 70
+                        ? 'hot'
+                        : rolling10 >= 45
+                            ? 'steady'
+                            : 'cold';
+
+                const byLeague = Array.from(byLeagueMap.entries())
+                    .map(([league, agg]) => ({
+                        league,
+                        played: agg.played,
+                        win_rate: agg.played > 0 ? Math.round((agg.wins / agg.played) * 100) : 0,
+                    }))
+                    .sort((a, b) => b.played - a.played || b.win_rate - a.win_rate)
+                    .slice(0, 6);
+
+                const byDivision = Array.from(byDivisionMap.entries())
+                    .map(([division, agg]) => ({
+                        division,
+                        played: agg.played,
+                        win_rate: agg.played > 0 ? Math.round((agg.wins / agg.played) * 100) : 0,
+                    }))
+                    .sort((a, b) => b.played - a.played || b.win_rate - a.win_rate)
+                    .slice(0, 6);
+
+                const scorePatterns = Array.from(scorePatternMap.entries())
+                    .map(([score, count]) => ({ score, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 6);
+
+                const activeSeasonRows = singles.filter((row) => row.seasonIsActive);
+                const activeWins = activeSeasonRows.filter((row) => row.isWin).length;
+                const currentSeasonMatches = activeSeasonRows.length;
+                const currentSeasonWinRate = currentSeasonMatches > 0
+                    ? Math.round((activeWins / currentSeasonMatches) * 100)
+                    : 0;
+                const projectedMatches = (() => {
+                    if (currentSeasonMatches === 0) return 0;
+                    const start = activeSeasonRows[0]!.date.getTime();
+                    const daysElapsed = Math.max(1, Math.floor((Date.now() - start) / (24 * 60 * 60 * 1000)));
+                    return Math.max(currentSeasonMatches, Math.round((currentSeasonMatches / daysElapsed) * 365));
+                })();
+
+                return reply.send({
+                    player_id: player.id,
+                    player_name: player.name,
+                    years_played: yearsSet.size,
+                    first_match_date: firstMatchDate,
+                    latest_match_date: latestMatchDate,
+                    career_by_year: careerByYear,
+                    peaks: {
+                        best_season: bestSeasonSource
+                            ? {
+                                year: bestSeasonSource.year,
+                                played: bestSeasonSource.played,
+                                win_rate: bestSeasonSource.win_rate,
+                            }
+                            : null,
+                        most_active_season: mostActiveSeason
+                            ? {
+                                year: mostActiveSeason.year,
+                                played: mostActiveSeason.played,
+                            }
+                            : null,
+                        best_month: bestMonth,
+                        worst_month: worstMonth,
+                    },
+                    rivals: {
+                        toughest: toughest
+                            ? {
+                                opponent_id: toughest.opponent_id,
+                                opponent_name: toughest.opponent_name,
+                                played: toughest.played,
+                                wins: toughest.wins,
+                                losses: toughest.losses,
+                                win_rate: toughest.win_rate,
+                            }
+                            : null,
+                        easiest: easiest
+                            ? {
+                                opponent_id: easiest.opponent_id,
+                                opponent_name: easiest.opponent_name,
+                                played: easiest.played,
+                                wins: easiest.wins,
+                                losses: easiest.losses,
+                                win_rate: easiest.win_rate,
+                            }
+                            : null,
+                        improving_vs: improvingVs,
+                    },
+                    style: {
+                        singles: {
+                            played: totalMatches,
+                            wins: singlesWins,
+                            losses: totalMatches - singlesWins,
+                            win_rate: totalMatches > 0 ? Math.round((singlesWins / totalMatches) * 100) : 0,
+                        },
+                        doubles: {
+                            played: doublesPlayed,
+                            wins: doublesWins,
+                            losses: doublesPlayed - doublesWins,
+                            win_rate: doublesPlayed > 0 ? Math.round((doublesWins / doublesPlayed) * 100) : 0,
+                        },
+                        score_patterns: scorePatterns,
+                    },
+                    form: {
+                        rolling_10_win_rate: rolling10,
+                        rolling_20_win_rate: rolling20,
+                        momentum,
+                        recent_results: recentResults,
+                    },
+                    context: {
+                        home: {
+                            played: homePlayed,
+                            wins: homeWins,
+                            win_rate: homePlayed > 0 ? Math.round((homeWins / homePlayed) * 100) : 0,
+                        },
+                        away: {
+                            played: awayPlayed,
+                            wins: awayWins,
+                            win_rate: awayPlayed > 0 ? Math.round((awayWins / awayPlayed) * 100) : 0,
+                        },
+                        by_league: byLeague,
+                        by_division: byDivision,
+                    },
+                    milestones: {
+                        total_matches: totalMatches,
+                        longest_win_streak: longestWinStreak,
+                        milestone_hits: [50, 100, 250, 500, 1000].filter((n) => totalMatches >= n),
+                    },
+                    projection: {
+                        current_season_matches: currentSeasonMatches,
+                        current_season_win_rate: currentSeasonWinRate,
+                        projected_matches: projectedMatches,
+                        on_track_for_70_win_rate: currentSeasonWinRate >= 70,
+                    },
+                });
+            },
         );
 
         app.get(

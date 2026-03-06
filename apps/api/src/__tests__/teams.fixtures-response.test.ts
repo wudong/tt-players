@@ -45,4 +45,44 @@ describe('GET /api/teams/:id/fixtures - enriched team labels and score', () => {
         expect(fixture.home_score).toBe(1);
         expect(fixture.away_score).toBe(0);
     });
+
+    it('returns correct score for paginated fixtures when team has multiple matches', async () => {
+        const [fixtureTwo] = await db
+            .insertInto('fixtures')
+            .values({
+                competition_id: ids.competitionId,
+                external_id: 'ext-fixture-2',
+                home_team_id: ids.homeTeamId,
+                away_team_id: ids.awayTeamId,
+                date_played: '2025-01-16',
+                status: 'completed',
+            })
+            .returning('id')
+            .execute();
+
+        await db
+            .insertInto('rubbers')
+            .values({
+                fixture_id: fixtureTwo!.id,
+                external_id: 'ext-rubber-2',
+                home_player_1_id: ids.homePlayerId,
+                away_player_1_id: ids.awayPlayerId,
+                home_games_won: 1,
+                away_games_won: 3,
+                outcome_type: 'normal',
+            })
+            .execute();
+
+        const res = await request
+            .get(`/api/teams/${ids.homeTeamId}/fixtures?limit=1&offset=1`)
+            .expect(200);
+
+        expect(res.body.total).toBe(2);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            id: fixtureTwo!.id,
+            home_score: 0,
+            away_score: 1,
+        });
+    });
 });

@@ -55,6 +55,7 @@ export function leaguesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     ])
                     .where('c.deleted_at', 'is', null)
                     .where('l.deleted_at', 'is', null)
+                    .where('s.is_active', '=', true)
                     .orderBy('l.name', 'asc')
                     .orderBy('c.name', 'asc')
                     .execute();

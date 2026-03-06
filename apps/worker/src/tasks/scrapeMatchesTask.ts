@@ -14,9 +14,33 @@ export interface ScrapeMatchesPayload {
 
 const TTL_API_BASE = 'https://ttleagues-api.azurewebsites.net/api';
 const TTL_RECHECK_COMPLETED_MS = 7 * 24 * 60 * 60 * 1000; // 7d
+const SCRAPE_RETRY_DELAY_MS = Number(
+    process.env['SCRAPE_RETRY_DELAY_MS'] ?? '10000',
+);
 
 function hash(body: string): string {
     return createHash('sha256').update(body).digest('hex');
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithOneRetry(
+    url: string,
+    helpers: { logger: { info: (msg: string) => void } },
+): Promise<Response> {
+    const first = await fetch(url);
+    if (first.ok) return first;
+
+    helpers.logger.info(
+        `scrapeMatchesTask: first attempt failed for ${url} (HTTP ${first.status}), retrying in ${SCRAPE_RETRY_DELAY_MS}ms`,
+    );
+    await sleep(SCRAPE_RETRY_DELAY_MS);
+
+    const second = await fetch(url);
+    if (second.ok) return second;
+    throw new Error(`HTTP ${second.status} fetching ${url}`);
 }
 
 /**
@@ -32,10 +56,7 @@ export const scrapeMatchesTask: Task = async (payload, helpers) => {
     helpers.logger.info(`scrapeMatchesTask: fetching ${matchesUrl}`);
 
     // 1. Fetch the matches list
-    const matchesRes = await fetch(matchesUrl);
-    if (!matchesRes.ok) {
-        throw new Error(`HTTP ${matchesRes.status} fetching ${matchesUrl}`);
-    }
+    const matchesRes = await fetchWithOneRetry(matchesUrl, helpers);
     const matchesJson = await matchesRes.json();
 
     // Parse to find completed matches

@@ -7,8 +7,17 @@ export interface ScrapeUrlPayload {
     platformId: string;
     platformType: 'tt365' | 'ttleagues';
     competitionId: string;
-    tt365DataType?: 'standings' | 'fixtures' | 'matchcard';
+    tt365DataType?: 'standings' | 'fixtures' | 'matchcard' | 'playerstats';
     matchExternalId?: string;
+    playerExternalId?: string;
+}
+
+const SCRAPE_RETRY_DELAY_MS = Number(
+    process.env['SCRAPE_RETRY_DELAY_MS'] ?? '10000',
+);
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function extractAntiForgeryToken(html: string): string | null {
@@ -89,6 +98,7 @@ export const scrapeUrlTask: Task = async (payload, helpers) => {
         competitionId,
         tt365DataType,
         matchExternalId,
+        playerExternalId,
     } = payload as ScrapeUrlPayload;
 
     helpers.logger.info(`scrapeUrlTask: fetching ${url}`);
@@ -96,12 +106,35 @@ export const scrapeUrlTask: Task = async (payload, helpers) => {
     const isTT365MatchCard =
         platformType === 'tt365' && tt365DataType === 'matchcard';
 
-    // Run the extractor (returns the upserted log ID)
-    const logId = isTT365MatchCard
-        ? await extractAndStoreTT365MatchCard(url, platformId)
-        : await extractAndStore(url, platformId, db);
+    const extractOnce = async (): Promise<string> => (
+        isTT365MatchCard
+            ? extractAndStoreTT365MatchCard(url, platformId)
+            : extractAndStore(url, platformId, db)
+    );
+
+    // One local retry after a short delay to absorb transient upstream failures.
+    let logId: string;
+    try {
+        logId = await extractOnce();
+    } catch {
+        helpers.logger.info(
+            `scrapeUrlTask: first attempt failed for ${url}; retrying in ${SCRAPE_RETRY_DELAY_MS}ms`,
+        );
+        await sleep(SCRAPE_RETRY_DELAY_MS);
+        logId = await extractOnce();
+    }
 
     helpers.logger.info(`scrapeUrlTask: stored log ${logId}, queuing processLogTask`);
+
+    // Player-stat pages are used to override TT365 singles scores.
+    // Ensure the transform step re-runs even when payload hash is unchanged.
+    if (platformType === 'tt365' && tt365DataType === 'playerstats') {
+        await db
+            .updateTable('raw_scrape_logs')
+            .set({ status: 'pending' })
+            .where('id', '=', logId)
+            .execute();
+    }
 
     // Chain: immediately queue a Phase 2 (transform + load) task
     await helpers.addJob('processLogTask', {
@@ -111,5 +144,6 @@ export const scrapeUrlTask: Task = async (payload, helpers) => {
         platformType,
         tt365DataType,
         matchExternalId,
+        playerExternalId,
     });
 };

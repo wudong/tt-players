@@ -185,65 +185,84 @@ export function teamsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .where('deleted_at', 'is', null)
                     .executeTakeFirstOrThrow();
 
-                const scoreByFixture = db
-                    .selectFrom('rubbers')
-                    .select([
-                        'fixture_id',
-                        sql<number>`
-                            (
-                                SUM(
-                                    CASE
-                                        WHEN home_games_won > away_games_won THEN 1
-                                        ELSE 0
-                                    END
-                                )
-                            )::int
-                        `.as('home_score'),
-                        sql<number>`
-                            (
-                                SUM(
-                                    CASE
-                                        WHEN away_games_won > home_games_won THEN 1
-                                        ELSE 0
-                                    END
-                                )
-                            )::int
-                        `.as('away_score'),
-                    ])
-                    .where('deleted_at', 'is', null)
-                    .groupBy('fixture_id')
-                    .as('score_by_fixture');
-
                 const rows = await db
-                    .selectFrom('fixtures as f')
-                    .leftJoin('teams as home', 'home.id', 'f.home_team_id')
-                    .leftJoin('teams as away', 'away.id', 'f.away_team_id')
-                    .leftJoin(scoreByFixture, 'score_by_fixture.fixture_id', 'f.id')
+                    .with('paged_fixtures', (qb) =>
+                        qb
+                            .selectFrom('fixtures as f')
+                            .select([
+                                'f.id',
+                                'f.competition_id',
+                                'f.external_id',
+                                'f.home_team_id',
+                                'f.away_team_id',
+                                'f.date_played',
+                                'f.status',
+                                'f.round_name',
+                                'f.round_order',
+                            ])
+                            .where((eb) =>
+                                eb.or([
+                                    eb('f.home_team_id', '=', id),
+                                    eb('f.away_team_id', '=', id),
+                                ])
+                            )
+                            .where('f.deleted_at', 'is', null)
+                            .orderBy('f.date_played', 'asc')
+                            .orderBy('f.id', 'asc')
+                            .limit(limit)
+                            .offset(offset)
+                    )
+                    .with('score_by_fixture', (qb) =>
+                        qb
+                            .selectFrom('rubbers as r')
+                            .innerJoin('paged_fixtures as pf', 'pf.id', 'r.fixture_id')
+                            .select([
+                                'r.fixture_id',
+                                sql<number>`
+                                    (
+                                        SUM(
+                                            CASE
+                                                WHEN r.home_games_won > r.away_games_won THEN 1
+                                                ELSE 0
+                                            END
+                                        )
+                                    )::int
+                                `.as('home_score'),
+                                sql<number>`
+                                    (
+                                        SUM(
+                                            CASE
+                                                WHEN r.away_games_won > r.home_games_won THEN 1
+                                                ELSE 0
+                                            END
+                                        )
+                                    )::int
+                                `.as('away_score'),
+                            ])
+                            .where('r.deleted_at', 'is', null)
+                            .groupBy('r.fixture_id')
+                    )
+                    .selectFrom('paged_fixtures as pf')
+                    .leftJoin('teams as home', 'home.id', 'pf.home_team_id')
+                    .leftJoin('teams as away', 'away.id', 'pf.away_team_id')
+                    .leftJoin('score_by_fixture as sbf', 'sbf.fixture_id', 'pf.id')
                     .select([
-                        'f.id',
-                        'f.competition_id',
-                        'f.external_id',
-                        'f.home_team_id',
-                        'f.away_team_id',
-                        'f.date_played',
-                        'f.status',
-                        'f.round_name',
-                        'f.round_order',
+                        'pf.id',
+                        'pf.competition_id',
+                        'pf.external_id',
+                        'pf.home_team_id',
+                        'pf.away_team_id',
+                        'pf.date_played',
+                        'pf.status',
+                        'pf.round_name',
+                        'pf.round_order',
                         sql<string | null>`home.name`.as('home_team_name'),
                         sql<string | null>`away.name`.as('away_team_name'),
-                        sql<number | null>`score_by_fixture.home_score`.as('home_score'),
-                        sql<number | null>`score_by_fixture.away_score`.as('away_score'),
+                        sql<number | null>`sbf.home_score`.as('home_score'),
+                        sql<number | null>`sbf.away_score`.as('away_score'),
                     ])
-                    .where((eb) =>
-                        eb.or([
-                            eb('f.home_team_id', '=', id),
-                            eb('f.away_team_id', '=', id),
-                        ])
-                    )
-                    .where('f.deleted_at', 'is', null)
-                    .orderBy('f.date_played', 'asc')
-                    .limit(limit)
-                    .offset(offset)
+                    .orderBy('pf.date_played', 'asc')
+                    .orderBy('pf.id', 'asc')
                     .execute();
 
                 // Serialise dates to ISO strings

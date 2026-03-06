@@ -85,6 +85,10 @@ export function fetchPlayerCurrentSeasonAffiliations(playerId: string) {
     );
 }
 
+export function fetchPlayerInsights(playerId: string) {
+    return apiFetch<import('../types').PlayerInsights>(`/players/${playerId}/insights`);
+}
+
 export function fetchTeamRoster(teamId: string) {
     return apiFetch<import('../types').RosterResponse>(`/teams/${teamId}/roster`);
 }

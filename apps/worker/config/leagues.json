@@ -5,6 +5,10 @@
         "externalId": "brentwood-tt365",
         "seasonName": "Winter 2025",
         "seasonExtId": "winter-2025",
+        "history": {
+            "enabled": true,
+            "maxSeasons": 6
+        },
         "divisions": [
             {
                 "name": "Premier Division",
@@ -25,6 +29,10 @@
         "externalId": "basildon-tt365",
         "seasonName": "Winter 2025-26",
         "seasonExtId": "winter-2025-26",
+        "history": {
+            "enabled": true,
+            "maxSeasons": 6
+        },
         "divisions": [
             {
                 "name": "Division 1",
@@ -45,6 +53,10 @@
         "externalId": "southend-tt365",
         "seasonName": "Winter League 25-26",
         "seasonExtId": "winter-league-25-26",
+        "history": {
+            "enabled": true,
+            "maxSeasons": 6
+        },
         "divisions": [
             {
                 "name": "Premier",
@@ -75,6 +87,11 @@
         "externalId": "chelmsford-ttl",
         "seasonName": "2025-26",
         "seasonExtId": "2025-26",
+        "history": {
+            "enabled": true,
+            "maxSeasons": 6,
+            "includeCups": false
+        },
         "divisions": [
             {
                 "name": "Division 1",
@@ -105,6 +122,11 @@
         "externalId": "colchester-ttl",
         "seasonName": "CDTTL 2025-2026",
         "seasonExtId": "cdttl-2025-2026",
+        "history": {
+            "enabled": true,
+            "maxSeasons": 6,
+            "includeCups": false
+        },
         "divisions": [
             {
                 "name": "Premier",

@@ -113,6 +113,80 @@ export interface ExtendedPlayerStats extends PlayerStats {
     }>;
 }
 
+export interface PlayerInsights {
+    player_id: string;
+    player_name: string;
+    years_played: number;
+    first_match_date: string | null;
+    latest_match_date: string | null;
+    career_by_year: Array<{
+        year: number;
+        played: number;
+        wins: number;
+        losses: number;
+        win_rate: number;
+    }>;
+    peaks: {
+        best_season: { year: number; played: number; win_rate: number } | null;
+        most_active_season: { year: number; played: number } | null;
+        best_month: { month: string; played: number; win_rate: number } | null;
+        worst_month: { month: string; played: number; win_rate: number } | null;
+    };
+    rivals: {
+        toughest: {
+            opponent_id: string;
+            opponent_name: string;
+            played: number;
+            wins: number;
+            losses: number;
+            win_rate: number;
+        } | null;
+        easiest: {
+            opponent_id: string;
+            opponent_name: string;
+            played: number;
+            wins: number;
+            losses: number;
+            win_rate: number;
+        } | null;
+        improving_vs: {
+            opponent_id: string;
+            opponent_name: string;
+            first_half_win_rate: number;
+            second_half_win_rate: number;
+            delta_points: number;
+        } | null;
+    };
+    style: {
+        singles: { played: number; wins: number; losses: number; win_rate: number };
+        doubles: { played: number; wins: number; losses: number; win_rate: number };
+        score_patterns: Array<{ score: string; count: number }>;
+    };
+    form: {
+        rolling_10_win_rate: number;
+        rolling_20_win_rate: number;
+        momentum: 'hot' | 'steady' | 'cold' | 'new';
+        recent_results: Array<'W' | 'L'>;
+    };
+    context: {
+        home: { played: number; wins: number; win_rate: number };
+        away: { played: number; wins: number; win_rate: number };
+        by_league: Array<{ league: string; played: number; win_rate: number }>;
+        by_division: Array<{ division: string; played: number; win_rate: number }>;
+    };
+    milestones: {
+        total_matches: number;
+        longest_win_streak: number;
+        milestone_hits: number[];
+    };
+    projection: {
+        current_season_matches: number;
+        current_season_win_rate: number;
+        projected_matches: number;
+        on_track_for_70_win_rate: boolean;
+    };
+}
+
 export interface RubberItem {
     id: string;
     fixture_id: string;
