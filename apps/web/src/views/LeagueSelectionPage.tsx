@@ -1,9 +1,8 @@
-import { Search } from 'lucide-react';
+import { IonBadge, IonButton, IonCard, IonCardContent, IonChip, IonIcon, IonItem, IonLabel, IonList, IonSearchbar, IonSpinner } from '@ionic/react';
+import { checkmarkCircle, ellipseOutline } from 'ionicons/icons';
 import { useMemo, useState } from 'react';
-import { Input, SearchField as AriaSearchField } from 'react-aria-components';
 import { buildRegionBuckets, leagueRegionLabels } from '../config/leagueRegions';
 import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
-import { PressButton } from '../ui/PressButton';
 
 export function LeagueSelectionPage() {
     const [query, setQuery] = useState('');
@@ -34,112 +33,90 @@ export function LeagueSelectionPage() {
     const toggleRegion = (leagueIds: string[]) => {
         const allSelected = leagueIds.every((id) => selectedLeagueIds.includes(id));
         updateSelectedLeagueIds((previous) => {
-            if (allSelected) {
-                return previous.filter((id) => !leagueIds.includes(id));
-            }
+            if (allSelected) return previous.filter((id) => !leagueIds.includes(id));
             return [...previous, ...leagueIds];
         });
     };
 
     return (
-        <div className="flex min-h-screen flex-col bg-transparent pb-28">
+        <div className="tt-route-scroll">
             <header className="tt-hero tt-hero-league-pick">
-                <div className="relative z-10">
-                    <h1 className="tt-hero-title">Choose Leagues</h1>
-                    <p className="tt-hero-subtitle mt-2">
-                        Search leagues or use regions to apply quick multi-select.
-                    </p>
-                    <AriaSearchField
-                        aria-label="Search leagues or regions"
-                        value={query}
-                        onChange={setQuery}
-                        className="tt-search-shell mt-4"
-                    >
-                        <Search size={18} className="text-slate-400" />
-                        <Input
-                            placeholder="Search leagues or regions..."
-                            className="tt-input"
-                        />
-                    </AriaSearchField>
-                </div>
+                <p className="tt-eyebrow">Preferences</p>
+                <h1>Choose Leagues</h1>
+                <p className="tt-hero-sub">Search leagues or use regions to apply quick multi-select.</p>
+                <IonSearchbar
+                    value={query}
+                    onIonInput={(e) => setQuery(e.detail.value ?? '')}
+                    placeholder="Search leagues or regions..."
+                    className="tt-search"
+                    showClearButton="focus"
+                />
             </header>
 
-            <main className="flex-1 px-5 pt-6">
-                <div className="tt-card mb-4 flex flex-wrap items-center gap-2 p-3">
-                    <PressButton onClick={selectAllLeagues} className="tt-chip-active">Select all</PressButton>
-                    <PressButton onClick={clearSelectedLeagues} className="tt-chip">Clear all</PressButton>
-                    <span className="ml-auto tt-meta font-extrabold tracking-wide">
-                        {selectedLeagueIds.length} selected
-                    </span>
-                </div>
+            <main className="tt-content">
+                <IonCard className="tt-card">
+                    <IonCardContent>
+                        <div className="tt-action-row">
+                            <IonButton size="small" onClick={selectAllLeagues}>Select all</IonButton>
+                            <IonButton size="small" fill="outline" onClick={clearSelectedLeagues}>Clear all</IonButton>
+                            <IonBadge>{selectedLeagueIds.length} selected</IonBadge>
+                        </div>
+                    </IonCardContent>
+                </IonCard>
 
-                <section className="tt-card mb-4 p-4">
-                    <h2 className="tt-section-title mb-2">Regions</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {regionBuckets.map((bucket) => {
-                            const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
-                            return (
-                                <PressButton
-                                    key={bucket.id}
-                                    onClick={() => toggleRegion(bucket.leagueIds)}
-                                    className={allSelected ? 'tt-chip-active' : 'tt-chip'}
-                                >
-                                    {bucket.label} ({bucket.leagueIds.length})
-                                </PressButton>
-                            );
-                        })}
-                    </div>
-                </section>
+                <IonCard className="tt-card">
+                    <IonCardContent>
+                        <h2 className="tt-section-subtitle">Regions</h2>
+                        <div className="tt-chip-row">
+                            {regionBuckets.map((bucket) => {
+                                const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
+                                return (
+                                    <IonChip
+                                        key={bucket.id}
+                                        color={allSelected ? 'primary' : undefined}
+                                        outline={!allSelected}
+                                        className="tt-chip"
+                                        onClick={() => toggleRegion(bucket.leagueIds)}
+                                    >
+                                        {bucket.label} ({bucket.leagueIds.length})
+                                    </IonChip>
+                                );
+                            })}
+                        </div>
+                    </IonCardContent>
+                </IonCard>
 
                 {isLoading ? (
-                    <div className="flex justify-center py-10">
-                        <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
-                    </div>
+                    <div className="tt-state"><IonSpinner name="crescent" /></div>
                 ) : filteredLeagues.length === 0 ? (
-                    <div className="tt-card p-6 tt-body-sm text-slate-500">
-                        No leagues matched your search.
-                    </div>
+                    <IonCard className="tt-card"><IonCardContent><p className="tt-hint">No leagues matched your search.</p></IonCardContent></IonCard>
                 ) : (
-                    <div className="space-y-2.5">
+                    <IonList lines="none" className="tt-list">
                         {filteredLeagues.map((league) => {
                             const isSelected = selectedLeagueIds.includes(league.id);
                             const regionLabels = leagueRegionLabels(league.name);
                             return (
-                                <PressButton
+                                <IonItem
                                     key={league.id}
+                                    button
+                                    detail={false}
+                                    className={isSelected ? 'tt-list-item tt-selected-item' : 'tt-list-item'}
                                     onClick={() => toggleLeague(league.id)}
-                                    className={`tt-card w-full px-4 py-3 text-left ${
-                                        isSelected ? 'border-[#b9cdff] bg-[#edf3ff]' : ''
-                                    }`}
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p className="tt-title-md !text-sm">{league.name}</p>
-                                            <p className="tt-meta mt-1">
-                                                {league.divisions.length} division{league.divisions.length === 1 ? '' : 's'}
-                                            </p>
-                                            <div className="mt-2 flex flex-wrap gap-1.5">
-                                                {regionLabels.map((label) => (
-                                                    <span key={`${league.id}-${label}`} className="tt-chip !px-2 !py-0.5 !text-[10px]">
-                                                        {label}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                    <IonLabel>
+                                        <h3>{league.name}</h3>
+                                        <p>{league.divisions.length} division{league.divisions.length === 1 ? '' : 's'}</p>
+                                        <div className="tt-region-badges">
+                                            {regionLabels.map((label) => (
+                                                <IonChip key={`${league.id}-${label}`} outline className="tt-mini-chip">{label}</IonChip>
+                                            ))}
                                         </div>
-                                        <span
-                                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-black ${
-                                                isSelected
-                                                    ? 'border-[#2869fe] bg-[#2869fe] text-white'
-                                                    : 'border-slate-300 text-slate-300'
-                                            }`}
-                                        >
-                                            ✓
-                                        </span>
-                                    </div>
-                                </PressButton>
+                                    </IonLabel>
+                                    <IonIcon icon={isSelected ? checkmarkCircle : ellipseOutline} className={isSelected ? 'tt-check-on' : 'tt-check-off'} />
+                                </IonItem>
                             );
                         })}
-                    </div>
+                    </IonList>
                 )}
             </main>
         </div>

@@ -1,6 +1,6 @@
-import { useNavigate, useLocation } from 'react-router-dom';
 import { IonButton, IonFooter, IonIcon, IonLabel, IonToolbar } from '@ionic/react';
-import { homeOutline, trophyOutline, gitCompareOutline } from 'ionicons/icons';
+import { gitCompareOutline, homeOutline, trophyOutline } from 'ionicons/icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const NAV_ITEMS = [
     { label: 'Home', icon: homeOutline, path: '/' },
@@ -29,13 +29,11 @@ export function BottomNav() {
                                 key={path}
                                 fill="clear"
                                 onClick={() => navigate(path)}
-                                className={`tt-nav-btn ${active ? 'tt-nav-btn-active' : ''}`}
+                                className={active ? 'tt-nav-btn tt-nav-btn-active' : 'tt-nav-btn'}
                                 aria-current={active ? 'page' : undefined}
                             >
-                                <span className="tt-nav-btn-inner">
-                                    <IonIcon icon={icon} />
-                                    <IonLabel>{label}</IonLabel>
-                                </span>
+                                <IonIcon icon={icon} />
+                                <IonLabel>{label}</IonLabel>
                             </IonButton>
                         );
                     })}

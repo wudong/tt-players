@@ -1,18 +1,18 @@
 import { IonContent, IonPage } from '@ionic/react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
+import { FixtureDetailsView } from './views/FixtureDetailsView';
+import { H2HView } from './views/H2HView';
 import { HomeView } from './views/HomeView';
+import { LeagueSelectionPage } from './views/LeagueSelectionPage';
 import { LeaguesHubView } from './views/LeaguesHubView';
 import { PlayerPage } from './views/PlayerPage';
-import { FixtureDetailsView } from './views/FixtureDetailsView';
 import { TeamPage } from './views/TeamPage';
-import { H2HView } from './views/H2HView';
-import { LeagueSelectionPage } from './views/LeagueSelectionPage';
 
 export default function App() {
     return (
         <IonPage className="tt-app-page">
-            <IonContent fullscreen className="tt-app-content">
+            <IonContent fullscreen className="tt-app-content" scrollY={false}>
                 <div className="tt-shell">
                     <Routes>
                         <Route path="/" element={<HomeView />} />

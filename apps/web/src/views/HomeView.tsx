@@ -1,13 +1,23 @@
-import { Search, TrendingUp, ChevronRight, Star } from 'lucide-react';
+import {
+    IonButton,
+    IonCard,
+    IonCardContent,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonSearchbar,
+    IonSpinner,
+    IonText,
+} from '@ionic/react';
+import { chevronForwardOutline, searchOutline, starOutline, trendingUpOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Input, SearchField as AriaSearchField } from 'react-aria-components';
-import { usePlayerSearch } from '../hooks/usePlayerSearch';
-import { PlayerSearchItem } from '../types';
-import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
 import { LeagueFilterButton } from '../components/LeagueFilterButton';
+import { useLeaguePreferences } from '../context/LeaguePreferencesContext';
 import { useFavouritePlayers } from '../hooks/useFavouritePlayers';
-import { PressButton } from '../ui/PressButton';
+import { usePlayerSearch } from '../hooks/usePlayerSearch';
+import type { PlayerSearchItem } from '../types';
 
 function getInitials(name: string) {
     const parts = name.split(' ');
@@ -15,7 +25,7 @@ function getInitials(name: string) {
     return name.slice(0, 2).toUpperCase();
 }
 
-function PlayerCard({
+function PlayerRow({
     player,
     onClick,
 }: {
@@ -27,26 +37,15 @@ function PlayerCard({
     const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
     return (
-        <PressButton
-            onClick={onClick}
-            className="tt-card flex w-full items-center justify-between p-4 text-left transition hover:-translate-y-0.5"
-        >
-            <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#2869fe] to-[#7c66ff] text-sm font-extrabold tracking-wide text-white">
-                    {getInitials(player.name)}
-                </div>
-                <div>
-                    <h3 className="tt-title-md">{player.name}</h3>
-                    <p className="tt-meta mt-0.5">
-                        {winRate}% WR • {played} matches
-                    </p>
-                </div>
-            </div>
-            <div className="flex items-center gap-2">
-                <span className="tt-chip-active">Open</span>
-                <ChevronRight size={16} className="text-slate-400" />
-            </div>
-        </PressButton>
+        <IonItem button detail={false} onClick={onClick} className="tt-list-item">
+            <div className="tt-avatar">{getInitials(player.name)}</div>
+            <IonLabel>
+                <h3>{player.name}</h3>
+                <p>{winRate}% WR · {played} matches</p>
+            </IonLabel>
+            <IonButton fill="outline" size="small" className="tt-inline-btn">Open</IonButton>
+            <IonIcon icon={chevronForwardOutline} className="tt-item-arrow" />
+        </IonItem>
     );
 }
 
@@ -54,122 +53,109 @@ export function HomeView() {
     const [query, setQuery] = useState('');
     const navigate = useNavigate();
     const { favouritePlayers } = useFavouritePlayers();
-    const {
-        selectedLeagueIds,
-        isLoading: leaguePreferencesLoading,
-    } = useLeaguePreferences();
+    const { selectedLeagueIds, isLoading: leaguePreferencesLoading } = useLeaguePreferences();
+
     const hasSelectedLeagues = selectedLeagueIds.length > 0;
     const { data: searchResults, isLoading } = usePlayerSearch(query, selectedLeagueIds, {
         enabled: hasSelectedLeagues,
     });
+
     const normalizedQuery = query.trim();
     const isSearchMode = normalizedQuery.length > 2;
     const showResultsSection = normalizedQuery.length === 0 || isSearchMode;
 
     return (
-        <div className="flex min-h-screen flex-col bg-transparent pb-28">
+        <div className="tt-route-scroll">
             <header className="tt-hero tt-hero-home">
-                <div className="relative z-10">
-                    <div className="mb-5 flex items-start justify-between gap-3">
-                        <div>
-                            <p className="tt-kicker text-blue-100">Welcome Back</p>
-                            <h1 className="tt-hero-title mt-1">TT Hub</h1>
-                            <p className="tt-hero-subtitle mt-2">Find players, trends and league performance</p>
-                        </div>
-                        <LeagueFilterButton
-                            count={selectedLeagueIds.length}
-                            onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
-                        />
+                <div className="tt-hero-row">
+                    <div>
+                        <p className="tt-eyebrow">Welcome Back</p>
+                        <h1>TT Hub</h1>
+                        <p className="tt-hero-sub">Find players, trends and league performance</p>
                     </div>
-                    <AriaSearchField
-                        aria-label="Search players"
-                        value={query}
-                        onChange={setQuery}
-                        className="tt-search-shell"
-                    >
-                        <Search size={18} className="text-slate-400" />
-                        <Input
-                            placeholder="Search players..."
-                            className="tt-input"
-                        />
-                    </AriaSearchField>
+                    <LeagueFilterButton
+                        count={selectedLeagueIds.length}
+                        onClick={() => navigate('/leagues/select', { state: { returnTo: '/' } })}
+                    />
                 </div>
+                <IonSearchbar
+                    value={query}
+                    onIonInput={(e) => setQuery(e.detail.value ?? '')}
+                    placeholder="Search players..."
+                    className="tt-search"
+                    showClearButton="focus"
+                />
             </header>
 
-            <main className="flex-1 px-5 pt-6">
-                <div className="tt-card mb-4 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                        <h2 className="tt-title-lg flex items-center gap-2">
-                            <Star size={18} className="text-[#2869fe]" />
-                            Favourite Players
-                        </h2>
-                        <p className="tt-meta font-bold">
-                            {favouritePlayers.length} saved
-                        </p>
-                    </div>
-                    {favouritePlayers.length === 0 ? (
-                        <div className="rounded-xl bg-[#f5f8ff] p-4 tt-body-sm">
-                            Open a player profile and tap Favourite to pin quick links here.
+            <main className="tt-content">
+                <IonCard className="tt-card">
+                    <IonCardContent>
+                        <div className="tt-card-head">
+                            <h2><IonIcon icon={starOutline} /> Favourite Players</h2>
+                            <IonText>{favouritePlayers.length} saved</IonText>
                         </div>
-                    ) : (
-                        <div className="flex flex-col gap-2.5">
-                            {favouritePlayers.map((player) => (
-                                <PlayerCard
-                                    key={player.id}
-                                    player={player}
-                                    onClick={() => navigate(`/players/${player.id}`)}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
 
-                {showResultsSection && (
-                    <div className="tt-card p-4">
-                        <div className="mb-3 flex items-center justify-between">
-                            <h2 className="tt-title-lg flex items-center gap-2">
-                                {isSearchMode ? <Search size={18} className="text-[#2869fe]" /> : <TrendingUp size={18} className="text-[#2869fe]" />}
-                                {isSearchMode ? 'Search Results' : 'Trending Players'}
-                            </h2>
-                            <p className="tt-meta font-bold">
-                                {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
-                            </p>
-                        </div>
-                        {normalizedQuery.length === 0 && (
-                            <p className="tt-meta mb-3">Most played in the last 100 days</p>
-                        )}
-
-                        {leaguePreferencesLoading ? (
-                            <div className="flex justify-center p-8">
-                                <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
-                            </div>
-                        ) : !hasSelectedLeagues ? (
-                            <div className="rounded-xl bg-[#f5f8ff] p-4 tt-body-sm">
-                                Select at least one league to view trending players.
-                            </div>
-                        ) : isLoading ? (
-                            <div className="flex justify-center p-8">
-                                <div className="h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-[#2869fe]"></div>
-                            </div>
+                        {favouritePlayers.length === 0 ? (
+                            <p className="tt-hint">Open a player profile and tap Favourite to pin quick links here.</p>
                         ) : (
-                            <div className="flex flex-col gap-2.5">
-                                {searchResults?.data?.map((player) => (
-                                    <PlayerCard
+                            <IonList lines="none" className="tt-list">
+                                {favouritePlayers.map((player) => (
+                                    <PlayerRow
                                         key={player.id}
                                         player={player}
                                         onClick={() => navigate(`/players/${player.id}`)}
                                     />
                                 ))}
-                                {searchResults?.data?.length === 0 && (
-                                    <div className="rounded-xl bg-[#f5f8ff] p-5 text-center tt-body-sm text-slate-500">
-                                        {isSearchMode
-                                            ? `No players found matching "${normalizedQuery}"`
-                                            : 'No trending players available yet.'}
-                                    </div>
-                                )}
-                            </div>
+                            </IonList>
                         )}
-                    </div>
+                    </IonCardContent>
+                </IonCard>
+
+                {showResultsSection && (
+                    <IonCard className="tt-card">
+                        <IonCardContent>
+                            <div className="tt-card-head">
+                                <h2>
+                                    <IonIcon icon={isSearchMode ? searchOutline : trendingUpOutline} />
+                                    {isSearchMode ? 'Search Results' : 'Trending Players'}
+                                </h2>
+                                <IonText>
+                                    {selectedLeagueIds.length} league{selectedLeagueIds.length === 1 ? '' : 's'} selected
+                                </IonText>
+                            </div>
+
+                            {normalizedQuery.length === 0 && (
+                                <p className="tt-subtext">Most played in the last 100 days</p>
+                            )}
+
+                            {leaguePreferencesLoading || isLoading ? (
+                                <div className="tt-center">
+                                    <IonSpinner name="crescent" />
+                                </div>
+                            ) : !hasSelectedLeagues ? (
+                                <p className="tt-hint">Select at least one league to view trending players.</p>
+                            ) : (
+                                <IonList lines="none" className="tt-list">
+                                    {(searchResults?.data ?? []).map((player) => (
+                                        <PlayerRow
+                                            key={player.id}
+                                            player={player}
+                                            onClick={() => navigate(`/players/${player.id}`)}
+                                        />
+                                    ))}
+                                    {(searchResults?.data?.length ?? 0) === 0 && (
+                                        <IonItem className="tt-list-item tt-empty-item">
+                                            <IonLabel>
+                                                {isSearchMode
+                                                    ? `No players found matching "${normalizedQuery}"`
+                                                    : 'No trending players available yet.'}
+                                            </IonLabel>
+                                        </IonItem>
+                                    )}
+                                </IonList>
+                            )}
+                        </IonCardContent>
+                    </IonCard>
                 )}
             </main>
         </div>

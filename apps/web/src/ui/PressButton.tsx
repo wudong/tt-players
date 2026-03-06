@@ -1,18 +1,26 @@
-import { Button, type ButtonProps } from 'react-aria-components';
+import type { ButtonHTMLAttributes } from 'react';
 
-interface PressButtonProps extends Omit<ButtonProps, 'onPress'> {
+interface PressButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
     className?: string;
     onClick?: () => void;
-    onPress?: ButtonProps['onPress'];
-    disabled?: boolean;
+    onPress?: () => void;
 }
 
-export function PressButton({ className, onClick, onPress, disabled, isDisabled, ...props }: PressButtonProps) {
+export function PressButton({
+    className,
+    onClick,
+    onPress,
+    type = 'button',
+    ...props
+}: PressButtonProps) {
     return (
-        <Button
+        <button
             {...props}
-            isDisabled={isDisabled ?? disabled}
-            onPress={onPress ?? onClick}
+            type={type}
+            onClick={() => {
+                onClick?.();
+                onPress?.();
+            }}
             className={className}
         />
     );

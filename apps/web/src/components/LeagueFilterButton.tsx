@@ -1,5 +1,5 @@
-import { SlidersHorizontal } from 'lucide-react';
-import { PressButton } from '../ui/PressButton';
+import { IonButton, IonIcon } from '@ionic/react';
+import { optionsOutline } from 'ionicons/icons';
 
 interface Props {
     count: number;
@@ -9,13 +9,15 @@ interface Props {
 
 export function LeagueFilterButton({ count, onClick, className = '' }: Props) {
     return (
-        <PressButton
+        <IonButton
+            fill="outline"
+            size="small"
             onClick={onClick}
-            className={`tt-soft-btn !rounded-full ${className}`}
+            className={`tt-filter-btn ${className}`}
             aria-label="Choose leagues"
         >
-            <SlidersHorizontal size={14} />
+            <IonIcon icon={optionsOutline} slot="start" />
             Filters ({count})
-        </PressButton>
+        </IonButton>
     );
 }
