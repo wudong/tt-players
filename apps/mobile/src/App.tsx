@@ -9,7 +9,7 @@ type FooterTab = {
   circle?: boolean;
 };
 
-type MenuId = 'menu-main' | 'menu-share' | 'menu-colors';
+type MenuId = 'menu-main' | 'menu-share' | 'menu-colors' | 'menu-leagues';
 type MenuPlacement = 'left' | 'right' | 'top' | 'bottom';
 type MenuEffect = 'none' | 'menu-push' | 'menu-parallax';
 type HighlightName =
@@ -44,6 +44,21 @@ type PlayerSearchResponse = {
   data: PlayerSearchItem[];
 };
 
+type DivisionItem = {
+  id: string;
+  name: string;
+};
+
+type LeagueWithDivisions = {
+  id: string;
+  name: string;
+  divisions: DivisionItem[];
+};
+
+type LeaguesResponse = {
+  data: LeagueWithDivisions[];
+};
+
 const footerTabs: FooterTab[] = [
   { id: 'dashboard', label: 'Dashboard', iconClassName: 'fa fa-chart-line', active: true },
   { id: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
@@ -53,6 +68,7 @@ const footerTabs: FooterTab[] = [
 
 const menuConfigs: Record<MenuId, MenuConfig> = {
   'menu-colors': { id: 'menu-colors', placement: 'bottom', height: 520, effect: 'none' },
+  'menu-leagues': { id: 'menu-leagues', placement: 'bottom', width: 350, height: 520, effect: 'none' },
   'menu-main': { id: 'menu-main', placement: 'left', width: 280, effect: 'none' },
   'menu-share': { id: 'menu-share', placement: 'bottom', height: 370, effect: 'none' },
 };
@@ -87,6 +103,7 @@ const HIGHLIGHT_STORAGE_KEY = 'TTPlayers-Highlight';
 const GRADIENT_STORAGE_KEY = 'TTPlayers-Gradient';
 const FAVOURITES_STORAGE_KEY = 'tt_players_favourite_players';
 const FAVOURITES_UPDATED_EVENT = 'tt_players_favourite_players_updated';
+const LEAGUES_STORAGE_KEY = 'tt_players_selected_league_ids';
 
 function getInitials(name: string): string {
   const parts = name.trim().split(' ').filter(Boolean);
@@ -122,6 +139,18 @@ function parseStoredFavouritePlayers(): PlayerSearchItem[] {
   }
 }
 
+function parseStoredLeagueIds(): string[] {
+  try {
+    const raw = localStorage.getItem(LEAGUES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string');
+  } catch {
+    return [];
+  }
+}
+
 function persistFavouritePlayers(players: PlayerSearchItem[]) {
   localStorage.setItem(FAVOURITES_STORAGE_KEY, JSON.stringify(players));
   window.dispatchEvent(new Event(FAVOURITES_UPDATED_EVENT));
@@ -130,12 +159,18 @@ function persistFavouritePlayers(players: PlayerSearchItem[]) {
 function App() {
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
+  const [allLeagues, setAllLeagues] = useState<LeagueWithDivisions[]>([]);
   const [activeMenuId, setActiveMenuId] = useState<MenuId | null>(null);
   const [favouritePlayers, setFavouritePlayers] = useState<PlayerSearchItem[]>(() => parseStoredFavouritePlayers());
   const [isBooting, setIsBooting] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLeagueSelectionReady, setIsLeagueSelectionReady] = useState(false);
+  const [isLeaguesLoading, setIsLeaguesLoading] = useState(false);
+  const [leagueQuery, setLeagueQuery] = useState('');
+  const [leaguesError, setLeaguesError] = useState<string | null>(null);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [query, setQuery] = useState('');
+  const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<PlayerSearchItem[]>([]);
 
@@ -143,10 +178,20 @@ function App() {
   const pageTitleRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedQuery = query.trim();
+  const normalizedLeagueQuery = leagueQuery.trim().toLowerCase();
+  const hasSelectedLeagues = selectedLeagueIds.length > 0;
+  const sortedSelectedLeagueIds = useMemo(() => [...selectedLeagueIds].sort(), [selectedLeagueIds]);
+  const selectedLeagueIdsKey = sortedSelectedLeagueIds.join(',');
+  const filteredLeagues = useMemo(() => {
+    if (normalizedLeagueQuery.length === 0) return allLeagues;
+    return allLeagues.filter((league) => league.name.toLowerCase().includes(normalizedLeagueQuery));
+  }, [allLeagues, normalizedLeagueQuery]);
   const isSearchMode = normalizedQuery.length > 2;
-  const shouldFetchPlayers = normalizedQuery.length === 0 || normalizedQuery.length > 2;
+  const shouldFetchPlayers = isLeagueSelectionReady
+    && hasSelectedLeagues
+    && (normalizedQuery.length === 0 || normalizedQuery.length > 2);
   const activeMenuConfig = activeMenuId ? menuConfigs[activeMenuId] : null;
-  const trendingPlayer = normalizedQuery.length === 0 ? (searchResults[0] ?? null) : null;
+  const trendingPlayer = normalizedQuery.length === 0 && hasSelectedLeagues ? (searchResults[0] ?? null) : null;
 
   const wrapperTransform = useMemo(() => {
     if (!activeMenuConfig || activeMenuConfig.effect === 'none') {
@@ -264,6 +309,24 @@ function App() {
     });
   };
 
+  const toggleLeagueSelection = (leagueId: string) => {
+    setSelectedLeagueIds((previous) => (
+      previous.includes(leagueId)
+        ? previous.filter((id) => id !== leagueId)
+        : [...previous, leagueId]
+    ));
+  };
+
+  const onSelectAllLeagues = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setSelectedLeagueIds(allLeagues.map((league) => league.id));
+  };
+
+  const onClearLeagueSelection = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setSelectedLeagueIds([]);
+  };
+
   useEffect(() => {
     const timerId = window.setTimeout(() => setIsBooting(false), 350);
     return () => window.clearTimeout(timerId);
@@ -306,6 +369,52 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
+    const loadLeagues = async () => {
+      try {
+        setIsLeaguesLoading(true);
+        setLeaguesError(null);
+
+        const response = await fetch(`${API_BASE_URL}/leagues`, { signal: abortController.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json() as LeaguesResponse;
+        const leagues = Array.isArray(payload.data) ? payload.data : [];
+        const validLeagueIds = new Set(leagues.map((league) => league.id));
+        const storedSelection = parseStoredLeagueIds().filter((id) => validLeagueIds.has(id));
+        const initialSelection = storedSelection.length > 0
+          ? storedSelection
+          : leagues.map((league) => league.id);
+
+        setAllLeagues(leagues);
+        setSelectedLeagueIds(initialSelection);
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+        setAllLeagues([]);
+        setSelectedLeagueIds([]);
+        setLeaguesError((error as Error).message || 'Failed to load leagues');
+      } finally {
+        setIsLeaguesLoading(false);
+        setIsLeagueSelectionReady(true);
+      }
+    };
+
+    loadLeagues();
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLeagueSelectionReady) return;
+    localStorage.setItem(LEAGUES_STORAGE_KEY, JSON.stringify(selectedLeagueIds));
+  }, [isLeagueSelectionReady, selectedLeagueIds]);
+
+  useEffect(() => {
     if (!shouldFetchPlayers) {
       setSearchResults([]);
       setSearchError(null);
@@ -322,6 +431,9 @@ function App() {
         const params = new URLSearchParams();
         if (normalizedQuery.length > 0) {
           params.set('q', normalizedQuery);
+        }
+        if (sortedSelectedLeagueIds.length > 0 && sortedSelectedLeagueIds.length < allLeagues.length) {
+          params.set('league_ids', sortedSelectedLeagueIds.join(','));
         }
 
         const path = params.size > 0
@@ -349,7 +461,7 @@ function App() {
       abortController.abort();
       window.clearTimeout(timerId);
     };
-  }, [normalizedQuery, shouldFetchPlayers]);
+  }, [allLeagues.length, normalizedQuery, selectedLeagueIdsKey, shouldFetchPlayers, sortedSelectedLeagueIds]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -470,15 +582,26 @@ function App() {
 
         <main className="page-content mt-n1 app-shell-content" style={wrapperStyle}>
           <div className="content mt-n4 mb-3">
-            <div className="search-box search-dark shadow-sm border-0 mt-4 bg-theme rounded-sm bottom-0">
-              <i className="fa fa-search ms-1" />
-              <input
-                type="text"
-                className="border-0"
-                placeholder="Search players..."
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
+            <div className="tt-search-toolbar mt-4">
+              <div className="search-box search-dark shadow-sm border-0 bg-theme rounded-sm bottom-0 mb-0">
+                <i className="fa fa-search ms-1" />
+                <input
+                  type="text"
+                  className="border-0"
+                  placeholder="Search players..."
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </div>
+              <a
+                href="#"
+                data-menu="menu-leagues"
+                onClick={onMenuTrigger('menu-leagues')}
+                className="tt-league-trigger btn btn-s shadow-s rounded-s font-600 bg-highlight color-white text-uppercase"
+              >
+                <i className="fa fa-filter me-1" />
+                {isLeaguesLoading && !isLeagueSelectionReady ? 'Loading' : `Leagues (${selectedLeagueIds.length})`}
+              </a>
             </div>
           </div>
 
@@ -553,10 +676,16 @@ function App() {
                   <span className="font-11 opacity-60">{listItems.length} players</span>
                 </div>
               </div>
-              {normalizedQuery.length === 0 ? (
+              {normalizedQuery.length === 0 && hasSelectedLeagues ? (
                 <p className="mt-n1 mb-2 font-11 opacity-60">Most played in the last 100 days</p>
               ) : null}
-              {normalizedQuery.length > 0 && normalizedQuery.length <= 2 ? (
+              {!isLeagueSelectionReady || isLeaguesLoading ? (
+                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+              ) : leaguesError ? (
+                <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
+              ) : !hasSelectedLeagues ? (
+                <p className="mb-0">Select at least one league to view players.</p>
+              ) : normalizedQuery.length > 0 && normalizedQuery.length <= 2 ? (
                 <p className="mb-0">Type at least 3 characters to search players.</p>
               ) : isSearchLoading ? (
                 <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading players...</p>
@@ -695,6 +824,76 @@ function App() {
               </a>
             </div>
           </div>
+        </div>
+
+        <div
+          id="menu-leagues"
+          className={`menu menu-box-modal rounded-m ${activeMenuId === 'menu-leagues' ? 'menu-active' : ''}`}
+          data-menu-height={menuConfigs['menu-leagues'].height}
+          data-menu-width={menuConfigs['menu-leagues'].width}
+          style={{ height: menuConfigs['menu-leagues'].height, width: menuConfigs['menu-leagues'].width }}
+        >
+          <div className="menu-title">
+            <p className="color-highlight">Filter player stats by</p>
+            <h1 className="font-24">Select Leagues</h1>
+            <a href="#" className="close-menu" onClick={onCloseMenuClick}><i className="fa fa-times-circle" /></a>
+          </div>
+          <div className="divider divider-margins mt-2 mb-0" />
+
+          <div className="content mt-2 mb-0">
+            <div className="search-box search-dark shadow-xs border-0 bg-theme rounded-sm mb-2">
+              <i className="fa fa-search ms-1" />
+              <input
+                type="text"
+                className="border-0"
+                placeholder="Search leagues..."
+                value={leagueQuery}
+                onChange={(event) => setLeagueQuery(event.target.value)}
+              />
+            </div>
+
+            <div className="d-flex mb-2">
+              <p className="font-11 opacity-60 mb-0 align-self-center">
+                {selectedLeagueIds.length} of {allLeagues.length} selected
+              </p>
+              <a href="#" className="ms-auto font-11 color-highlight text-uppercase me-2" onClick={onSelectAllLeagues}>All</a>
+              <a href="#" className="font-11 color-red-dark text-uppercase" onClick={onClearLeagueSelection}>Clear</a>
+            </div>
+
+            <div className="tt-league-modal-list">
+              {!isLeagueSelectionReady || isLeaguesLoading ? (
+                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+              ) : leaguesError ? (
+                <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
+              ) : filteredLeagues.length === 0 ? (
+                <p className="mb-0">No leagues matched your search.</p>
+              ) : (
+                <div className="list-group list-custom-small tt-league-selector-list">
+                  {filteredLeagues.map((league) => {
+                    const isSelected = selectedLeagueIds.includes(league.id);
+                    return (
+                      <a
+                        key={league.id}
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          toggleLeagueSelection(league.id);
+                        }}
+                      >
+                        <i className={`fa ${isSelected ? 'fa-check-circle color-green-dark' : 'fa-circle color-gray-dark'}`} />
+                        <span>{league.name}</span>
+                        <span className={`badge ${isSelected ? 'bg-green-dark' : 'bg-gray-dark'} color-white font-10`}>
+                          {league.divisions.length} Div
+                        </span>
+                        <i className="fa fa-angle-right" />
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
 
         <div

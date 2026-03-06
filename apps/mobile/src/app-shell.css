@@ -31,6 +31,31 @@ body[data-gradient='body-midnight'] #page {
   padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
+.tt-search-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.tt-search-toolbar .search-box {
+  flex: 1;
+}
+
+.tt-league-trigger {
+  align-items: center;
+  display: inline-flex;
+  height: 46px;
+  justify-content: center;
+  min-width: 122px;
+  white-space: nowrap;
+}
+
+.tt-league-modal-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+
 .app-skeleton-row {
   height: 12px;
   border-radius: 8px;
