@@ -5,6 +5,7 @@ import { scrapeUrlTask } from './tasks/scrapeUrlTask.js';
 import { processLogTask } from './tasks/processLogTask.js';
 import { scrapeMatchesTask } from './tasks/scrapeMatchesTask.js';
 import { bootstrap, type ScrapeTarget } from './bootstrap.js';
+import { runStartupRecovery } from './startup-recovery.js';
 
 dotenv.config();
 
@@ -15,15 +16,20 @@ if (!DATABASE_URL) {
 
 // Holds the scrape targets resolved at startup
 let scrapeTargets: ScrapeTarget[] = [];
+const SCRAPE_JOB_SPEC = { maxAttempts: 1 };
 
 /**
  * Graphile Worker task: reads the bootstrapped targets and queues
  * a scrapeUrlTask for each one. This is the task triggered by cron.
  */
 const scheduleScrapeTasks = async (_payload: unknown, helpers: { addJob: Function; logger: { info: (msg: string) => void } }) => {
-    helpers.logger.info(`scheduleScrapeTasks: queuing ${scrapeTargets.length} scrape jobs`);
+    const activeTargets = scrapeTargets.filter((t) => !t.isHistorical);
+    const historicalCount = scrapeTargets.length - activeTargets.length;
+    helpers.logger.info(
+        `scheduleScrapeTasks: queuing ${activeTargets.length} active targets (skipping ${historicalCount} historical targets)`,
+    );
 
-    for (const target of scrapeTargets) {
+    for (const target of activeTargets) {
         // 1. Queue standings scrape
         await helpers.addJob('scrapeUrlTask', {
             url: target.url,
@@ -31,7 +37,7 @@ const scheduleScrapeTasks = async (_payload: unknown, helpers: { addJob: Functio
             platformType: target.platformType,
             competitionId: target.competitionId,
             tt365DataType: target.platformType === 'tt365' ? 'standings' : undefined,
-        });
+        }, SCRAPE_JOB_SPEC);
         helpers.logger.info(`  → Queued standings: ${target.leagueName} - ${target.divisionName}`);
 
         // 2. Queue fixtures scrape for TT365 divisions
@@ -42,7 +48,7 @@ const scheduleScrapeTasks = async (_payload: unknown, helpers: { addJob: Functio
                 platformType: target.platformType,
                 competitionId: target.competitionId,
                 tt365DataType: 'fixtures',
-            });
+            }, SCRAPE_JOB_SPEC);
             helpers.logger.info(`  → Queued fixtures:  ${target.leagueName} - ${target.divisionName}`);
         }
 
@@ -53,7 +59,7 @@ const scheduleScrapeTasks = async (_payload: unknown, helpers: { addJob: Functio
                 platformId: target.platformId,
                 platformType: target.platformType,
                 competitionId: target.competitionId,
-            });
+            }, SCRAPE_JOB_SPEC);
             helpers.logger.info(`  → Queued matches:   ${target.leagueName} - ${target.divisionName}`);
         }
     }
@@ -98,6 +104,7 @@ export async function startWorker(): Promise<void> {
     await runMigrations({
         connectionString: DATABASE_URL,
     });
+    await runStartupRecovery(db, (message) => console.log(message));
 
     const runner = await run({
         connectionString: DATABASE_URL,
