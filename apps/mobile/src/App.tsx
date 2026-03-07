@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import './app-shell.css';
+import { useTabNavigation, type AppTabId } from './navigation/tab-navigation';
 
 type FooterTab = {
   id: string;
   label: string;
   iconClassName: string;
-  active?: boolean;
+  tabId?: AppTabId;
   circle?: boolean;
 };
 
@@ -61,11 +61,17 @@ type LeaguesResponse = {
 };
 
 const footerTabs: FooterTab[] = [
-  { id: 'dashboard', label: 'Dashboard', iconClassName: 'fa fa-chart-line', active: true },
-  { id: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
-  { id: 'players', label: 'Players', iconClassName: 'fa fa-user-friends' },
+  { id: 'dashboard', tabId: 'dashboard', label: 'Dashboard', iconClassName: 'fa fa-chart-line' },
+  { id: 'leagues', tabId: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
+  { id: 'players', tabId: 'players', label: 'Players', iconClassName: 'fa fa-user-friends' },
   { id: 'menu', label: 'Menu', iconClassName: 'fa fa-bars' },
 ];
+
+const tabTitles: Record<AppTabId, string> = {
+  dashboard: 'Dashboard',
+  leagues: 'Leagues',
+  players: 'Players',
+};
 
 const menuConfigs: Record<MenuId, MenuConfig> = {
   'menu-colors': { id: 'menu-colors', placement: 'bottom', height: 520, effect: 'none' },
@@ -158,7 +164,7 @@ function persistFavouritePlayers(players: PlayerSearchItem[]) {
 }
 
 function App() {
-  const navigate = useNavigate();
+  const { activeTab, handleSystemBack, navigateInActiveTab, switchTab } = useTabNavigation();
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
   const [allLeagues, setAllLeagues] = useState<LeagueWithDivisions[]>([]);
@@ -233,9 +239,30 @@ function App() {
     closeActiveMenu();
   };
 
-  const onDummyLinkClick = (event: MouseEvent<HTMLAnchorElement>): void => {
-    event.preventDefault();
-  };
+  const onFooterTabClick =
+    (tabId: AppTabId) =>
+    (event: MouseEvent<HTMLAnchorElement>): void => {
+      event.preventDefault();
+      closeActiveMenu();
+      switchTab(tabId, 'root');
+    };
+
+  const onMenuTabClick =
+    (tabId: AppTabId) =>
+    (event: MouseEvent<HTMLAnchorElement>): void => {
+      event.preventDefault();
+      closeActiveMenu();
+      switchTab(tabId, 'root');
+    };
+
+  const onSystemBackPressed = useCallback((): boolean => {
+    if (activeMenuId) {
+      closeActiveMenu();
+      return true;
+    }
+
+    return handleSystemBack();
+  }, [activeMenuId, handleSystemBack]);
 
   const activateDarkMode = () => {
     document.body.classList.add('theme-dark');
@@ -503,6 +530,61 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  useEffect(() => {
+    const onBackButton = (event: Event) => {
+      event.preventDefault();
+      onSystemBackPressed();
+    };
+
+    document.addEventListener('backbutton', onBackButton, false);
+    return () => document.removeEventListener('backbutton', onBackButton, false);
+  }, [onSystemBackPressed]);
+
+  useEffect(() => {
+    type CapacitorListenerHandle = { remove: () => void };
+    type CapacitorAppPlugin = {
+      addListener?: (eventName: string, listenerFunc: () => void) => CapacitorListenerHandle | Promise<CapacitorListenerHandle>;
+      exitApp?: () => void;
+    };
+    type CapacitorGlobal = {
+      Capacitor?: {
+        App?: CapacitorAppPlugin;
+        Plugins?: { App?: CapacitorAppPlugin };
+      };
+    };
+
+    const capacitorGlobal = window as Window & CapacitorGlobal;
+    const appPlugin = capacitorGlobal.Capacitor?.Plugins?.App ?? capacitorGlobal.Capacitor?.App;
+    if (!appPlugin?.addListener) return;
+
+    let isActive = true;
+    let listenerHandle: CapacitorListenerHandle | null = null;
+
+    const handleBack = () => {
+      const handled = onSystemBackPressed();
+      if (!handled) {
+        appPlugin.exitApp?.();
+      }
+    };
+
+    Promise.resolve(appPlugin.addListener('backButton', handleBack))
+      .then((handle) => {
+        if (!isActive) {
+          handle.remove();
+          return;
+        }
+        listenerHandle = handle;
+      })
+      .catch(() => {
+        // Ignore plugin binding issues when not running in a Capacitor container.
+      });
+
+    return () => {
+      isActive = false;
+      listenerHandle?.remove();
+    };
+  }, [onSystemBackPressed]);
+
   const pageHref = encodeURIComponent(window.location.href);
   const pageTitle = encodeURIComponent(document.title || 'TT Players');
 
@@ -528,7 +610,7 @@ function App() {
 
       <div id="page" className="app-shell-page">
         <header ref={headerRef} style={wrapperStyle} className="header header-auto-show header-fixed header-logo-center">
-          <a href="#" className="header-title" onClick={onDummyLinkClick}>TT Players</a>
+          <a href="#" className="header-title" onClick={onFooterTabClick(activeTab)}>TT Players</a>
           <a href="#" className="header-icon header-icon-1" data-menu="menu-main" onClick={onMenuTrigger('menu-main')}>
             <i className="fas fa-bars" />
           </a>
@@ -545,7 +627,7 @@ function App() {
 
         <nav id="footer-bar" style={wrapperStyle} className="footer-bar-6">
           {footerTabs.map((tab) => {
-            const classNames = [tab.active ? 'active-nav' : '', tab.circle ? 'circle-nav' : '']
+            const classNames = [tab.tabId === activeTab ? 'active-nav' : '', tab.circle ? 'circle-nav' : '']
               .filter(Boolean)
               .join(' ');
             const isMenuTab = tab.id === 'menu';
@@ -556,7 +638,7 @@ function App() {
                 href="#"
                 className={classNames}
                 data-menu={isMenuTab ? 'menu-main' : undefined}
-                onClick={isMenuTab ? onMenuTrigger('menu-main') : onDummyLinkClick}
+                onClick={isMenuTab ? onMenuTrigger('menu-main') : onFooterTabClick(tab.tabId ?? 'dashboard')}
               >
                 <i className={tab.iconClassName} />
                 <span>{tab.label}</span>
@@ -566,7 +648,7 @@ function App() {
         </nav>
 
         <div ref={pageTitleRef} className="page-title page-title-fixed">
-          <h1>Home</h1>
+          <h1>{tabTitles[activeTab]}</h1>
           <a href="#" className="page-title-icon shadow-xl bg-theme color-theme" data-menu="menu-share" onClick={onMenuTrigger('menu-share')}>
             <i className="fa fa-share-alt" />
           </a>
@@ -626,7 +708,7 @@ function App() {
                         href="#"
                         onClick={(event) => {
                           event.preventDefault();
-                          navigate(`/players/${player.id}`);
+                          navigateInActiveTab(`player/${player.id}`);
                         }}
                       >
                         <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
@@ -655,7 +737,7 @@ function App() {
             <div
               className="card card-style tt-trending-card"
               data-card-height="210"
-              onClick={() => navigate(`/players/${trendingPlayer.id}`)}
+              onClick={() => navigateInActiveTab(`player/${trendingPlayer.id}`)}
             >
               <div className="card-top px-3 py-3">
                 <span className="bg-white color-black rounded-sm btn btn-xs float-start font-700 font-12">Trending</span>
@@ -720,7 +802,7 @@ function App() {
                         data-filter-item
                         onClick={(event) => {
                           event.preventDefault();
-                          navigate(`/players/${player.id}`);
+                          navigateInActiveTab(`player/${player.id}`);
                         }}
                       >
                         <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
@@ -767,17 +849,17 @@ function App() {
           <div className="mt-4" />
           <h6 className="menu-divider">Library</h6>
           <div className="list-group list-custom-small list-menu">
-            <a href="#" onClick={onCloseMenuClick}>
+            <a href="#" onClick={onMenuTabClick('dashboard')}>
               <i className="fa fa-chart-line gradient-red color-white" />
               <span>Home</span>
               <i className="fa fa-angle-right" />
             </a>
-            <a href="#" onClick={onCloseMenuClick}>
+            <a href="#" onClick={onMenuTabClick('leagues')}>
               <i className="fa fa-table-tennis gradient-green color-white" />
               <span>Leagues</span>
               <i className="fa fa-angle-right" />
             </a>
-            <a href="#" onClick={onCloseMenuClick}>
+            <a href="#" onClick={onMenuTabClick('players')}>
               <i className="fa fa-user-friends gradient-magenta color-white" />
               <span>Players</span>
               <i className="fa fa-angle-right" />

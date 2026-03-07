@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import './app-shell.css';
+import { useTabNavigation } from './navigation/tab-navigation';
 import {
   FAVOURITES_UPDATED_EVENT,
   apiFetch,
@@ -16,9 +17,22 @@ import {
   type RubbersResponse,
   type RubberItem,
 } from './player-shared';
+import {
+  AppButtonLink,
+  AppCard,
+  AppCardContent,
+  AppHeader,
+  AppHeaderSpacer,
+  AppListGroup,
+  AppListItem,
+  AppLoadingCard,
+  AppMessageCard,
+  AppPageContent,
+  AppShellPage,
+} from './ui/appkit';
 
 export function PlayerPage() {
-  const navigate = useNavigate();
+  const { goBackInActiveTab, navigateInActiveTab, switchTab } = useTabNavigation();
   const { playerId = '' } = useParams<{ playerId: string }>();
 
   const [stats, setStats] = useState<ExtendedPlayerStats | null>(null);
@@ -48,16 +62,12 @@ export function PlayerPage() {
 
   const goBack = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate('/');
+    goBackInActiveTab();
   };
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate('/');
+    switchTab('dashboard', 'root');
   };
 
   const onToggleFavourite = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -81,11 +91,15 @@ export function PlayerPage() {
   };
 
   const openSection =
-    (path: string) =>
+    (relativePath: string) =>
     (event: MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
-      navigate(path);
+      navigateInActiveTab(relativePath);
     };
+
+  const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+  };
 
   useEffect(() => {
     const syncFromStorage = () => {
@@ -204,34 +218,28 @@ export function PlayerPage() {
   }, [playerId]);
 
   return (
-    <div id="page" className="app-shell-page">
-      <header className="header header-fixed header-logo-center">
-        <a href="#" className="header-title" onClick={goHome}>{stats?.player_name ?? 'Player'}</a>
-        <a href="#" className="header-icon header-icon-1" onClick={goBack}><i className="fas fa-chevron-left" /></a>
-        <a href="#" className="header-icon header-icon-4" onClick={goHome}><i className="fas fa-home" /></a>
-      </header>
+    <AppShellPage>
+      <AppHeader
+        title={stats?.player_name ?? 'Player'}
+        onTitleClick={goHome}
+        leftAction={{ iconClassName: 'fas fa-chevron-left', onClick: goBack, position: 1, ariaLabel: 'Back' }}
+        rightAction={{ iconClassName: 'fas fa-home', onClick: goHome, position: 4, ariaLabel: 'Home' }}
+      />
+      <AppHeaderSpacer />
 
-      <div className="header-clear-medium" />
-
-      <main className="page-content app-shell-content">
+      <AppPageContent>
         {statsLoading ? (
-          <div className="card card-style">
-            <div className="content">
-              <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading player profile...</p>
-            </div>
-          </div>
+          <AppLoadingCard message="Loading player profile..." />
         ) : !stats ? (
-          <div className="card card-style">
-            <div className="content">
-              <h4 className="mb-2">Player not available</h4>
-              <p className="mb-3">{statsError || 'Failed to load this player profile.'}</p>
-              <a href="#" className="btn btn-s rounded-s bg-highlight color-white font-600" onClick={goHome}>Back Home</a>
-            </div>
-          </div>
+          <AppMessageCard
+            title="Player not available"
+            message={statsError || 'Failed to load this player profile.'}
+            action={{ label: 'Back Home', onClick: goHome }}
+          />
         ) : (
           <>
-            <div className="card card-style">
-              <div className="d-flex content mb-1">
+            <AppCard>
+              <AppCardContent className="d-flex mb-1">
                 <div className="flex-grow-1">
                   <h2>{stats.player_name}<i className="fa fa-check-circle color-blue-dark font-16 ms-2" /></h2>
                   <p className="mb-2 mt-3 me-3">
@@ -245,28 +253,34 @@ export function PlayerPage() {
                 <div className="tt-player-summary-avatar align-self-center">
                   <span className="tt-player-summary-initials">{getInitials(stats.player_name)}</span>
                 </div>
-              </div>
-              <div className="content mb-0">
+              </AppCardContent>
+              <AppCardContent className="mb-0">
                 <div className="row mb-0">
                   <div className="col-4">
-                    <a href="#" className="btn btn-full btn-sm rounded-s font-600 font-13 bg-highlight" onClick={onToggleFavourite}>
+                    <AppButtonLink full size="sm" className="font-13" onClick={onToggleFavourite}>
                       {isFavourite ? 'Saved Favourite' : 'Save Favourite'}
-                    </a>
+                    </AppButtonLink>
                   </div>
                   <div className="col-4">
-                    <a href="#" className="btn btn-full btn-sm rounded-s font-600 font-13 color-highlight border-highlight" onClick={openSection(`/players/${playerId}/insights`)}>
+                    <AppButtonLink
+                      full
+                      size="sm"
+                      className="font-13"
+                      tone="outline-highlight"
+                      onClick={openSection(`player/${playerId}/insights`)}
+                    >
                       Insights
-                    </a>
+                    </AppButtonLink>
                   </div>
                   <div className="col-4">
-                    <a href="#" className="btn btn-full btn-sm rounded-s font-600 font-13 color-highlight border-highlight" onClick={goHome}>
+                    <AppButtonLink full size="sm" className="font-13" tone="outline-highlight" onClick={goHome}>
                       Back Home
-                    </a>
+                    </AppButtonLink>
                   </div>
                 </div>
-              </div>
+              </AppCardContent>
               <div className="tt-player-summary-divider" />
-              <div className="content mb-2">
+              <AppCardContent className="mb-2">
                 <div className="row text-center row-cols-3 mb-n1">
                   <div className="col mb-3">
                     <div className="tt-player-chip">
@@ -306,11 +320,11 @@ export function PlayerPage() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </AppCardContent>
+            </AppCard>
 
-            <div className="card card-style">
-              <div className="content mb-2">
+            <AppCard>
+              <AppCardContent className="mb-2">
                 <div className="d-flex mb-2">
                   <div className="align-self-center">
                     <h1 className="mb-0 font-16">Current Season</h1>
@@ -326,27 +340,24 @@ export function PlayerPage() {
                 ) : affiliations.length === 0 ? (
                   <p className="mb-0">No active-season clubs found.</p>
                 ) : (
-                  <div className="list-group list-custom-large tt-season-list">
+                  <AppListGroup size="large" className="tt-season-list">
                     {affiliations.map((affiliation, index) => (
-                      <a
-                        href="#"
+                      <AppListItem
                         key={`${affiliation.team_id}-${affiliation.competition_name}-${affiliation.season_id}`}
-                        onClick={(event) => event.preventDefault()}
-                        className={index === affiliations.length - 1 ? 'border-0' : undefined}
-                      >
-                        <i className="fa fa-table-tennis rounded-xl shadow-xl bg-blue-dark color-white" />
-                        <span>{affiliation.team_name}</span>
-                        <strong>{affiliation.league_name} · {affiliation.competition_name} · {affiliation.season_name}</strong>
-                        <i className="fa fa-angle-right" />
-                      </a>
+                        iconClassName="fa fa-table-tennis rounded-xl shadow-xl bg-blue-dark color-white"
+                        title={affiliation.team_name}
+                        subtitle={`${affiliation.league_name} · ${affiliation.competition_name} · ${affiliation.season_name}`}
+                        onClick={preventDefaultLink}
+                        borderless={index === affiliations.length - 1}
+                      />
                     ))}
-                  </div>
+                  </AppListGroup>
                 )}
-              </div>
-            </div>
+              </AppCardContent>
+            </AppCard>
 
-            <div className="card card-style">
-              <div className="content mb-2">
+            <AppCard>
+              <AppCardContent className="mb-2">
                 <div className="d-flex mb-2">
                   <div className="align-self-center">
                     <h1 className="mb-0 font-16">Form</h1>
@@ -360,34 +371,32 @@ export function PlayerPage() {
                 ) : insightsError || !insights ? (
                   <p className="mb-0 color-red-dark">Unable to load form insights.</p>
                 ) : (
-                  <>
-                    <div className="row text-center row-cols-3 mb-0">
-                      <div className="col mb-3">
-                        <div className="tt-player-chip">
-                          <h5 className="mb-0">{insights.form.rolling_10_win_rate}%</h5>
-                          <p className="font-10 mb-0">Rolling 10</p>
-                        </div>
-                      </div>
-                      <div className="col mb-3">
-                        <div className="tt-player-chip">
-                          <h5 className="mb-0">{insights.form.rolling_20_win_rate}%</h5>
-                          <p className="font-10 mb-0">Rolling 20</p>
-                        </div>
-                      </div>
-                      <div className="col mb-3">
-                        <div className="tt-player-chip">
-                          <h5 className="mb-0 text-capitalize">{insights.form.momentum}</h5>
-                          <p className="font-10 mb-0">Momentum</p>
-                        </div>
+                  <div className="row text-center row-cols-3 mb-0">
+                    <div className="col mb-3">
+                      <div className="tt-player-chip">
+                        <h5 className="mb-0">{insights.form.rolling_10_win_rate}%</h5>
+                        <p className="font-10 mb-0">Rolling 10</p>
                       </div>
                     </div>
-                  </>
+                    <div className="col mb-3">
+                      <div className="tt-player-chip">
+                        <h5 className="mb-0">{insights.form.rolling_20_win_rate}%</h5>
+                        <p className="font-10 mb-0">Rolling 20</p>
+                      </div>
+                    </div>
+                    <div className="col mb-3">
+                      <div className="tt-player-chip">
+                        <h5 className="mb-0 text-capitalize">{insights.form.momentum}</h5>
+                        <p className="font-10 mb-0">Momentum</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
+              </AppCardContent>
+            </AppCard>
 
-            <div className="card card-style">
-              <div className="content mb-2">
+            <AppCard>
+              <AppCardContent className="mb-2">
                 <div className="d-flex mb-2">
                   <div className="align-self-center">
                     <h1 className="mb-0 font-16">Last 10 Matches</h1>
@@ -404,35 +413,33 @@ export function PlayerPage() {
                   <p className="mb-3">No recent matches found.</p>
                 ) : (
                   <>
-                    <div className="list-group list-custom-large">
+                    <AppListGroup size="large">
                       {recentMatches.map((match, index) => (
-                        <a
-                          href="#"
+                        <AppListItem
                           key={match.id}
-                          onClick={(event) => event.preventDefault()}
-                          className={index === recentMatches.length - 1 ? 'border-0' : undefined}
-                        >
-                          <i className={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`} />
-                          <span>{match.opponent} · {match.result}</span>
-                          <strong>{formatMatchDate(match.date)} · {match.league}</strong>
-                          <i className="fa fa-angle-right" />
-                        </a>
+                          iconClassName={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`}
+                          title={`${match.opponent} · ${match.result}`}
+                          subtitle={`${formatMatchDate(match.date)} · ${match.league}`}
+                          onClick={preventDefaultLink}
+                          borderless={index === recentMatches.length - 1}
+                        />
                       ))}
-                    </div>
-                    <a
-                      href="#"
-                      className="btn btn-full btn-sm rounded-s font-600 font-13 bg-highlight mt-3"
-                      onClick={openSection(`/players/${playerId}/matches`)}
+                    </AppListGroup>
+                    <AppButtonLink
+                      full
+                      size="sm"
+                      className="font-13 mt-3"
+                      onClick={openSection(`player/${playerId}/matches`)}
                     >
                       View Full Match List
-                    </a>
+                    </AppButtonLink>
                   </>
                 )}
-              </div>
-            </div>
+              </AppCardContent>
+            </AppCard>
           </>
         )}
-      </main>
-    </div>
+      </AppPageContent>
+    </AppShellPage>
   );
 }

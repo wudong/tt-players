@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import './app-shell.css';
+import { useTabNavigation } from './navigation/tab-navigation';
 import { apiFetch, formatMatchDate, type ExtendedPlayerStats, type RubberItem, type RubbersResponse } from './player-shared';
+import {
+  AppButtonLink,
+  AppCard,
+  AppCardContent,
+  AppHeader,
+  AppHeaderSpacer,
+  AppListGroup,
+  AppListItem,
+  AppPageContent,
+  AppShellPage,
+} from './ui/appkit';
 
 const PAGE_SIZE = 20;
 
 export function PlayerMatchesPage() {
-  const navigate = useNavigate();
+  const { goBackInActiveTab, switchTab } = useTabNavigation();
   const { playerId = '' } = useParams<{ playerId: string }>();
 
   const [stats, setStats] = useState<ExtendedPlayerStats | null>(null);
@@ -22,18 +34,22 @@ export function PlayerMatchesPage() {
 
   const goBack = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate(`/players/${playerId}`);
+    goBackInActiveTab(playerId ? `player/${playerId}` : '');
   };
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate('/');
+    switchTab('dashboard', 'root');
   };
 
   const onLoadMore = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (matchesLoadingMore || !hasMore) return;
     setOffset((previous) => previous + PAGE_SIZE);
+  };
+
+  const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
   };
 
   useEffect(() => {
@@ -124,20 +140,18 @@ export function PlayerMatchesPage() {
   }, [playerId]);
 
   return (
-    <div id="page" className="app-shell-page">
-      <header className="header header-fixed header-logo-center">
-        <a href="#" className="header-title" onClick={goHome}>
-          {statsLoading ? 'Match History' : stats?.player_name ?? 'Match History'}
-        </a>
-        <a href="#" className="header-icon header-icon-1" onClick={goBack}><i className="fas fa-chevron-left" /></a>
-        <a href="#" className="header-icon header-icon-4" onClick={goHome}><i className="fas fa-home" /></a>
-      </header>
+    <AppShellPage>
+      <AppHeader
+        title={statsLoading ? 'Match History' : stats?.player_name ?? 'Match History'}
+        onTitleClick={goHome}
+        leftAction={{ iconClassName: 'fas fa-chevron-left', onClick: goBack, position: 1, ariaLabel: 'Back' }}
+        rightAction={{ iconClassName: 'fas fa-home', onClick: goHome, position: 4, ariaLabel: 'Home' }}
+      />
+      <AppHeaderSpacer />
 
-      <div className="header-clear-medium" />
-
-      <main className="page-content app-shell-content">
-        <div className="card card-style">
-          <div className="content mb-2">
+      <AppPageContent>
+        <AppCard>
+          <AppCardContent className="mb-2">
             <p className="mb-n1 color-highlight font-600">Player Matches</p>
             <h4>Full Match List</h4>
             {matchesLoading && matches.length === 0 ? (
@@ -145,27 +159,24 @@ export function PlayerMatchesPage() {
             ) : matchesError && matches.length === 0 ? (
               <div>
                 <p className="mb-3 color-red-dark">Failed to load match history.</p>
-                <a href="#" className="btn btn-s rounded-s bg-highlight color-white font-600" onClick={goBack}>Back to Player</a>
+                <AppButtonLink onClick={goBack}>Back to Player</AppButtonLink>
               </div>
             ) : matches.length === 0 ? (
               <p className="mb-0">No matches available for this player.</p>
             ) : (
               <>
-                <div className="list-group list-custom-large">
+                <AppListGroup size="large">
                   {matches.map((match, index) => (
-                    <a
-                      href="#"
+                    <AppListItem
                       key={match.id}
-                      onClick={(event) => event.preventDefault()}
-                      className={index === matches.length - 1 ? 'border-0' : undefined}
-                    >
-                      <i className={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`} />
-                      <span>{match.opponent} · {match.result}</span>
-                      <strong>{formatMatchDate(match.date)} · {match.league}</strong>
-                      <i className="fa fa-angle-right" />
-                    </a>
+                      iconClassName={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`}
+                      title={`${match.opponent} · ${match.result}`}
+                      subtitle={`${formatMatchDate(match.date)} · ${match.league}`}
+                      onClick={preventDefaultLink}
+                      borderless={index === matches.length - 1}
+                    />
                   ))}
-                </div>
+                </AppListGroup>
                 <p className="font-11 opacity-70 mt-3 mb-0">Showing {matches.length} of {total} matches</p>
               </>
             )}
@@ -175,17 +186,19 @@ export function PlayerMatchesPage() {
             ) : null}
 
             {hasMore && matches.length > 0 ? (
-              <a
-                href="#"
-                className={`btn btn-full btn-sm rounded-s font-600 font-13 mt-3 ${matchesLoadingMore ? 'bg-gray-dark' : 'bg-highlight'}`}
+              <AppButtonLink
+                full
+                size="sm"
+                className="font-13 mt-3"
+                tone={matchesLoadingMore ? 'gray' : 'highlight'}
                 onClick={onLoadMore}
               >
                 {matchesLoadingMore ? 'Loading...' : 'Load More Matches'}
-              </a>
+              </AppButtonLink>
             ) : null}
-          </div>
-        </div>
-      </main>
-    </div>
+          </AppCardContent>
+        </AppCard>
+      </AppPageContent>
+    </AppShellPage>
   );
 }

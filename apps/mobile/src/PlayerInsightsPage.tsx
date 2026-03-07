@@ -1,10 +1,23 @@
 import { useEffect, useState, type MouseEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import './app-shell.css';
+import { useTabNavigation } from './navigation/tab-navigation';
 import { apiFetch, type ExtendedPlayerStats, type PlayerInsights } from './player-shared';
+import {
+  AppCard,
+  AppCardContent,
+  AppHeader,
+  AppHeaderSpacer,
+  AppListGroup,
+  AppListItem,
+  AppLoadingCard,
+  AppMessageCard,
+  AppPageContent,
+  AppShellPage,
+} from './ui/appkit';
 
 export function PlayerInsightsPage() {
-  const navigate = useNavigate();
+  const { goBackInActiveTab, switchTab } = useTabNavigation();
   const { playerId = '' } = useParams<{ playerId: string }>();
 
   const [stats, setStats] = useState<ExtendedPlayerStats | null>(null);
@@ -16,12 +29,16 @@ export function PlayerInsightsPage() {
 
   const goBack = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate(`/players/${playerId}`);
+    goBackInActiveTab(playerId ? `player/${playerId}` : '');
   };
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    navigate('/');
+    switchTab('dashboard', 'root');
+  };
+
+  const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
   };
 
   useEffect(() => {
@@ -63,77 +80,84 @@ export function PlayerInsightsPage() {
   }, [playerId]);
 
   return (
-    <div id="page" className="app-shell-page">
-      <header className="header header-fixed header-logo-center">
-        <a href="#" className="header-title" onClick={goHome}>{stats?.player_name ?? 'Insights'}</a>
-        <a href="#" className="header-icon header-icon-1" onClick={goBack}><i className="fas fa-chevron-left" /></a>
-        <a href="#" className="header-icon header-icon-4" onClick={goHome}><i className="fas fa-home" /></a>
-      </header>
+    <AppShellPage>
+      <AppHeader
+        title={stats?.player_name ?? 'Insights'}
+        onTitleClick={goHome}
+        leftAction={{ iconClassName: 'fas fa-chevron-left', onClick: goBack, position: 1, ariaLabel: 'Back' }}
+        rightAction={{ iconClassName: 'fas fa-home', onClick: goHome, position: 4, ariaLabel: 'Home' }}
+      />
+      <AppHeaderSpacer />
 
-      <div className="header-clear-medium" />
-
-      <main className="page-content app-shell-content">
+      <AppPageContent>
         {isLoading ? (
-          <div className="card card-style"><div className="content"><p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading insights...</p></div></div>
+          <AppLoadingCard message="Loading insights..." />
         ) : error || !stats || !insights ? (
-          <div className="card card-style"><div className="content"><p className="mb-2 color-red-dark">Failed to load insights.</p><a href="#" className="btn btn-s rounded-s bg-highlight color-white" onClick={goBack}>Back</a></div></div>
+          <AppMessageCard
+            message="Failed to load insights."
+            tone="danger"
+            action={{ label: 'Back', onClick: goBack }}
+          />
         ) : (
           <>
-            <div className="card card-style bg-6" data-card-height="230">
+            <AppCard className="bg-6" cardHeight={230}>
               <div className="card-bottom ms-3 me-3 mb-3">
                 <p className="color-white opacity-60 mb-1">Insights Overview</p>
                 <h1 className="font-28 line-height-l color-white mb-1">{stats.player_name}</h1>
                 <p className="color-white opacity-80 mb-0 text-capitalize">Momentum: {momentum}</p>
               </div>
               <div className="card-overlay bg-gradient" />
-            </div>
+            </AppCard>
 
-            <div className="card card-style">
-              <div className="content mb-2">
+            <AppCard>
+              <AppCardContent className="mb-2">
                 <p className="mb-n1 color-highlight font-600">Rival Intelligence</p>
                 <h4>Trends</h4>
-                <div className="list-group list-custom-small">
-                  <a href="#" onClick={(event) => event.preventDefault()}>
-                    <i className="fa fa-bolt rounded-xl shadow-xl bg-red-dark color-white" />
-                    <span>Toughest: {insights.rivals.toughest ? `${insights.rivals.toughest.opponent_name} (${insights.rivals.toughest.win_rate}% WR)` : 'N/A'}</span>
-                    <i className="fa fa-angle-right" />
-                  </a>
-                  <a href="#" onClick={(event) => event.preventDefault()}>
-                    <i className="fa fa-smile rounded-xl shadow-xl bg-green-dark color-white" />
-                    <span>Easiest: {insights.rivals.easiest ? `${insights.rivals.easiest.opponent_name} (${insights.rivals.easiest.win_rate}% WR)` : 'N/A'}</span>
-                    <i className="fa fa-angle-right" />
-                  </a>
-                  <a href="#" onClick={(event) => event.preventDefault()} className="border-0">
-                    <i className="fa fa-arrow-up rounded-xl shadow-xl bg-blue-dark color-white" />
-                    <span>Improving vs: {insights.rivals.improving_vs ? `${insights.rivals.improving_vs.opponent_name} (+${insights.rivals.improving_vs.delta_points})` : 'N/A'}</span>
-                    <i className="fa fa-angle-right" />
-                  </a>
-                </div>
-              </div>
-            </div>
+                <AppListGroup size="small">
+                  <AppListItem
+                    iconClassName="fa fa-bolt rounded-xl shadow-xl bg-red-dark color-white"
+                    title={`Toughest: ${insights.rivals.toughest ? `${insights.rivals.toughest.opponent_name} (${insights.rivals.toughest.win_rate}% WR)` : 'N/A'}`}
+                    onClick={preventDefaultLink}
+                  />
+                  <AppListItem
+                    iconClassName="fa fa-smile rounded-xl shadow-xl bg-green-dark color-white"
+                    title={`Easiest: ${insights.rivals.easiest ? `${insights.rivals.easiest.opponent_name} (${insights.rivals.easiest.win_rate}% WR)` : 'N/A'}`}
+                    onClick={preventDefaultLink}
+                  />
+                  <AppListItem
+                    iconClassName="fa fa-arrow-up rounded-xl shadow-xl bg-blue-dark color-white"
+                    title={`Improving vs: ${insights.rivals.improving_vs ? `${insights.rivals.improving_vs.opponent_name} (+${insights.rivals.improving_vs.delta_points})` : 'N/A'}`}
+                    onClick={preventDefaultLink}
+                    borderless
+                  />
+                </AppListGroup>
+              </AppCardContent>
+            </AppCard>
 
-            <div className="card card-style">
-              <div className="content mb-2">
+            <AppCard>
+              <AppCardContent className="mb-2">
                 <p className="mb-n1 color-highlight font-600">Career</p>
                 <h4>Timeline</h4>
                 {insights.career_by_year.length === 0 ? (
                   <p className="mb-0">Not enough history yet.</p>
                 ) : (
-                  <div className="list-group list-custom-small">
+                  <AppListGroup size="small">
                     {insights.career_by_year.map((year, index) => (
-                      <a key={year.year} href="#" onClick={(event) => event.preventDefault()} className={index === insights.career_by_year.length - 1 ? 'border-0' : undefined}>
-                        <i className="fa fa-calendar-alt rounded-xl shadow-xl bg-green-dark color-white" />
-                        <span>{year.year} · {year.played} played · {year.win_rate}% WR</span>
-                        <i className="fa fa-angle-right" />
-                      </a>
+                      <AppListItem
+                        key={year.year}
+                        iconClassName="fa fa-calendar-alt rounded-xl shadow-xl bg-green-dark color-white"
+                        title={`${year.year} · ${year.played} played · ${year.win_rate}% WR`}
+                        onClick={preventDefaultLink}
+                        borderless={index === insights.career_by_year.length - 1}
+                      />
                     ))}
-                  </div>
+                  </AppListGroup>
                 )}
-              </div>
-            </div>
+              </AppCardContent>
+            </AppCard>
           </>
         )}
-      </main>
-    </div>
+      </AppPageContent>
+    </AppShellPage>
   );
 }
