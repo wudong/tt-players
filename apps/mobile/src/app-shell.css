@@ -31,6 +31,16 @@ body[data-gradient='body-midnight'] #page {
   padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
+.list-custom-small a,
+.list-custom-large a {
+  border-bottom-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+body.theme-dark .list-custom-small a,
+body.theme-dark .list-custom-large a {
+  border-bottom-color: rgba(255, 255, 255, 0.18) !important;
+}
+
 .tt-search-toolbar {
   align-items: center;
   display: flex;
@@ -84,10 +94,127 @@ body[data-gradient='body-midnight'] #page {
   right: 28px;
 }
 
+.tt-player-remove-badge {
+  cursor: pointer;
+}
+
 .tt-player-search-list .tt-player-favourite-icon {
   position: absolute;
   right: 44px;
   margin-top: 31px;
   font-size: 16px;
   line-height: 1 !important;
+}
+
+.tt-trending-card {
+  cursor: pointer;
+}
+
+.tt-player-summary-avatar {
+  align-items: center;
+  background: linear-gradient(135deg, #2f75dd, #1f5ab8);
+  border-radius: 999px;
+  display: flex;
+  box-shadow: 0 8px 24px rgba(31, 90, 184, 0.28);
+  height: 92px;
+  justify-content: center;
+  min-width: 92px;
+}
+
+.tt-player-summary-initials {
+  color: #fff;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.tt-player-chip {
+  background: rgba(31, 31, 31, 0.03);
+  border-radius: 8px;
+  padding: 10px 6px;
+}
+
+.tt-form-recent {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.tt-form-recent-label {
+  color: #7b889f;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tt-form-recent-empty {
+  color: #95a1b6;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tt-form-recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tt-form-result-pill {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 24px;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.tt-form-result-win {
+  background: rgba(52, 168, 83, 0.18);
+  color: #2f8d4d;
+}
+
+.tt-form-result-loss {
+  background: rgba(234, 67, 53, 0.18);
+  color: #c44339;
+}
+
+.tt-season-list a strong {
+  max-width: calc(100% - 92px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-player-summary-divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 18px 0 0;
+}
+
+body.theme-dark .tt-player-chip {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.theme-dark .tt-form-recent-label {
+  color: #a9b5c9;
+}
+
+body.theme-dark .tt-form-recent-empty {
+  color: #93a3be;
+}
+
+body.theme-dark .tt-form-result-win {
+  background: rgba(62, 195, 104, 0.22);
+  color: #89de9f;
+}
+
+body.theme-dark .tt-form-result-loss {
+  background: rgba(233, 93, 81, 0.24);
+  color: #ffb1a7;
+}
+
+body.theme-dark .tt-player-summary-divider {
+  border-top-color: rgba(255, 255, 255, 0.12);
 }

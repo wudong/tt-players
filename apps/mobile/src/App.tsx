@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './app-shell.css';
 
 type FooterTab = {
@@ -157,6 +158,7 @@ function persistFavouritePlayers(players: PlayerSearchItem[]) {
 }
 
 function App() {
+  const navigate = useNavigate();
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
   const [allLeagues, setAllLeagues] = useState<LeagueWithDivisions[]>([]);
@@ -624,13 +626,22 @@ function App() {
                         href="#"
                         onClick={(event) => {
                           event.preventDefault();
-                          toggleFavouritePlayer(player);
+                          navigate(`/players/${player.id}`);
                         }}
                       >
                         <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
                         <span>{player.name}</span>
                         <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
-                        <span className="badge bg-red-dark color-white">REMOVE</span>
+                        <span
+                          className="badge bg-red-dark color-white tt-player-remove-badge"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleFavouritePlayer(player);
+                          }}
+                        >
+                          REMOVE
+                        </span>
                         <i className="fa fa-angle-right" />
                       </a>
                     ))}
@@ -641,13 +652,18 @@ function App() {
           ) : null}
 
           {trendingPlayer ? (
-            <div className="card card-style tt-trending-card" data-card-height="210">
+            <div
+              className="card card-style tt-trending-card"
+              data-card-height="210"
+              onClick={() => navigate(`/players/${trendingPlayer.id}`)}
+            >
               <div className="card-top px-3 py-3">
                 <span className="bg-white color-black rounded-sm btn btn-xs float-start font-700 font-12">Trending</span>
                 <a
                   href="#"
                   onClick={(event) => {
                     event.preventDefault();
+                    event.stopPropagation();
                     toggleFavouritePlayer(trendingPlayer);
                   }}
                   className="bg-white rounded-sm icon icon-xs float-end"
@@ -702,7 +718,10 @@ function App() {
                         key={player.id}
                         href="#"
                         data-filter-item
-                        onClick={onDummyLinkClick}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          navigate(`/players/${player.id}`);
+                        }}
                       >
                         <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
                         <span>{player.name}</span>

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import App from './App';
+import { AppRouter } from './AppRouter';
 
 const rememberedTheme = window.localStorage.getItem('TTPlayers-Theme');
 if (rememberedTheme === 'dark-mode') {
@@ -35,6 +35,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <AppRouter />
   </StrictMode>,
 );
