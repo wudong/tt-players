@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import './app-shell.css';
 import { useTabNavigation } from './navigation/tab-navigation';
 import { apiFetch, formatMatchDate, type ExtendedPlayerStats, type RubberItem, type RubbersResponse } from './player-shared';
+import { TabShellPage } from './TabShellPage';
 import {
   AppButtonLink,
   AppCard,
@@ -12,13 +13,12 @@ import {
   AppListGroup,
   AppListItem,
   AppPageContent,
-  AppShellPage,
 } from './ui/appkit';
 
 const PAGE_SIZE = 20;
 
 export function PlayerMatchesPage() {
-  const { goBackInActiveTab, switchTab } = useTabNavigation();
+  const { goBackInActiveTab, navigateInTab, switchTab } = useTabNavigation();
   const { playerId = '' } = useParams<{ playerId: string }>();
 
   const [stats, setStats] = useState<ExtendedPlayerStats | null>(null);
@@ -48,8 +48,9 @@ export function PlayerMatchesPage() {
     setOffset((previous) => previous + PAGE_SIZE);
   };
 
-  const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
+  const openFixtureInLeaguesTab = (fixtureId: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    navigateInTab('leagues', `fixture/${fixtureId}`);
   };
 
   useEffect(() => {
@@ -140,7 +141,7 @@ export function PlayerMatchesPage() {
   }, [playerId]);
 
   return (
-    <AppShellPage>
+    <TabShellPage>
       <AppHeader
         title={statsLoading ? 'Match History' : stats?.player_name ?? 'Match History'}
         onTitleClick={goHome}
@@ -165,14 +166,14 @@ export function PlayerMatchesPage() {
               <p className="mb-0">No matches available for this player.</p>
             ) : (
               <>
-                <AppListGroup size="large">
+                <AppListGroup size="large" className="tt-match-history-list">
                   {matches.map((match, index) => (
                     <AppListItem
                       key={match.id}
                       iconClassName={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`}
                       title={`${match.opponent} · ${match.result}`}
                       subtitle={`${formatMatchDate(match.date)} · ${match.league}`}
-                      onClick={preventDefaultLink}
+                      onClick={openFixtureInLeaguesTab(match.fixture_id)}
                       borderless={index === matches.length - 1}
                     />
                   ))}
@@ -199,6 +200,6 @@ export function PlayerMatchesPage() {
           </AppCardContent>
         </AppCard>
       </AppPageContent>
-    </AppShellPage>
+    </TabShellPage>
   );
 }

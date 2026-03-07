@@ -19,6 +19,10 @@ const SearchQuerySchema = z.object({
     league_ids: z.string().optional(),
 });
 
+const H2HQuerySchema = z.object({
+    league_ids: z.string().optional(),
+});
+
 const LeadersQuerySchema = z.object({
     mode: z.enum(['win_pct', 'most_played', 'combined']).default('combined'),
     league_ids: z.string().optional(),
@@ -1423,6 +1427,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         id: z.string().uuid(),
                         opponentId: z.string().uuid(),
                     }),
+                    querystring: H2HQuerySchema,
                     response: {
                         200: z.object({
                             player1_wins: z.number().int(),
@@ -1436,6 +1441,11 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
             },
             async (request, reply) => {
                 const { id, opponentId } = request.params;
+                const leagueCsv = (request.query.league_ids ?? '')
+                    .split(',')
+                    .map((leagueId) => leagueId.trim())
+                    .filter((leagueId) => leagueId.length > 0)
+                    .join(',');
 
                 const matches = await sql<any>`
                     SELECT 
@@ -1469,6 +1479,7 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
                        OR (r.home_player_1_id = ${opponentId} AND r.away_player_1_id = ${id}))
                       AND r.is_doubles = false
                       AND r.deleted_at IS NULL
+                      AND (${leagueCsv} = '' OR s.league_id::text = ANY(string_to_array(${leagueCsv}, ',')))
                     ORDER BY f.date_played DESC
                 `.execute(db);
 

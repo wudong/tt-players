@@ -1,9 +1,11 @@
 import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import App from './App';
+import { FixturePage } from './FixturePage';
 import { isAppTab, TabNavigationProvider } from './navigation/tab-navigation';
 import { PlayerInsightsPage } from './PlayerInsightsPage';
 import { PlayerMatchesPage } from './PlayerMatchesPage';
 import { PlayerPage } from './PlayerPage';
+import { TeamPage } from './TeamPage';
 
 function LegacyPlayerRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
@@ -45,6 +47,8 @@ export function AppRouter() {
           <Route path="/tabs/:tabId/player/:playerId" element={<EnsureValidTab><PlayerPage /></EnsureValidTab>} />
           <Route path="/tabs/:tabId/player/:playerId/insights" element={<EnsureValidTab><PlayerInsightsPage /></EnsureValidTab>} />
           <Route path="/tabs/:tabId/player/:playerId/matches" element={<EnsureValidTab><PlayerMatchesPage /></EnsureValidTab>} />
+          <Route path="/tabs/:tabId/team/:teamId" element={<EnsureValidTab><TeamPage /></EnsureValidTab>} />
+          <Route path="/tabs/:tabId/fixture/:fixtureId" element={<EnsureValidTab><FixturePage /></EnsureValidTab>} />
           <Route path="/tabs/:tabId/*" element={<TabRootRedirect />} />
 
           <Route path="/players/:playerId" element={<LegacyPlayerRedirect />} />

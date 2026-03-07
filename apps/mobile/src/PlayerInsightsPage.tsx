@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import './app-shell.css';
 import { useTabNavigation } from './navigation/tab-navigation';
 import { apiFetch, type ExtendedPlayerStats, type PlayerInsights } from './player-shared';
+import { TabShellPage } from './TabShellPage';
 import {
   AppCard,
   AppCardContent,
@@ -13,7 +14,6 @@ import {
   AppLoadingCard,
   AppMessageCard,
   AppPageContent,
-  AppShellPage,
 } from './ui/appkit';
 
 export function PlayerInsightsPage() {
@@ -80,7 +80,7 @@ export function PlayerInsightsPage() {
   }, [playerId]);
 
   return (
-    <AppShellPage>
+    <TabShellPage>
       <AppHeader
         title={stats?.player_name ?? 'Insights'}
         onTitleClick={goHome}
@@ -158,6 +158,6 @@ export function PlayerInsightsPage() {
           </>
         )}
       </AppPageContent>
-    </AppShellPage>
+    </TabShellPage>
   );
 }

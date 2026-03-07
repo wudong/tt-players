@@ -3,6 +3,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@tt-players/db';
+import { resolveCompetitionSourceUrl } from './source-url.js';
 
 const ParamsSchema = z.object({
     id: z.string().uuid(),
@@ -20,6 +21,7 @@ const StandingItemSchema = z.object({
 });
 
 const ResponseSchema = z.object({
+    source_url: z.string().nullable(),
     data: z.array(StandingItemSchema),
 });
 
@@ -49,10 +51,20 @@ export function competitionsRoutes(db: Kysely<Database>): FastifyPluginAsync {
 
                 // Verify competition exists
                 const competition = await db
-                    .selectFrom('competitions')
-                    .select('id')
-                    .where('id', '=', id)
-                    .where('deleted_at', 'is', null)
+                    .selectFrom('competitions as c')
+                    .innerJoin('seasons as s', 's.id', 'c.season_id')
+                    .innerJoin('leagues as l', 'l.id', 's.league_id')
+                    .innerJoin('platforms as p', 'p.id', 'l.platform_id')
+                    .select([
+                        'c.id',
+                        'c.external_id as competition_external_id',
+                        'c.last_scraped_at',
+                        's.external_id as season_external_id',
+                        'l.external_id as league_external_id',
+                        'p.base_url as platform_base_url',
+                    ])
+                    .where('c.id', '=', id)
+                    .where('c.deleted_at', 'is', null)
                     .executeTakeFirst();
 
                 if (!competition) {
@@ -80,7 +92,18 @@ export function competitionsRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .orderBy('ls.position', 'asc')
                     .execute();
 
-                return reply.send({ data: rows });
+                const sourceUrl = await resolveCompetitionSourceUrl(
+                    db,
+                    {
+                        competitionExternalId: competition.competition_external_id,
+                        seasonExternalId: competition.season_external_id,
+                        leagueExternalId: competition.league_external_id,
+                        platformBaseUrl: competition.platform_base_url,
+                    },
+                    competition.last_scraped_at ?? null,
+                );
+
+                return reply.send({ source_url: sourceUrl, data: rows });
             },
         );
     };

@@ -2,15 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import './app-shell.css';
 import { H2HTabContent } from './H2HTabContent';
 import { LeaguesTabContent } from './LeaguesTabContent';
+import { TabFooterBar } from './TabFooterBar';
+import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { useTabNavigation, type AppTabId } from './navigation/tab-navigation';
-
-type FooterTab = {
-  id: string;
-  label: string;
-  iconClassName: string;
-  tabId?: AppTabId;
-  circle?: boolean;
-};
+import { useLeadersQuery, useLeaguesQuery, usePlayerSearchQuery } from './queries';
 
 type MenuId = 'menu-main' | 'menu-share' | 'menu-colors' | 'menu-leagues';
 type MenuPlacement = 'left' | 'right' | 'top' | 'bottom';
@@ -42,32 +37,6 @@ type PlayerSearchItem = {
   played: number;
   wins: number;
 };
-
-type PlayerSearchResponse = {
-  data: PlayerSearchItem[];
-};
-
-type DivisionItem = {
-  id: string;
-  name: string;
-};
-
-type LeagueWithDivisions = {
-  id: string;
-  name: string;
-  divisions: DivisionItem[];
-};
-
-type LeaguesResponse = {
-  data: LeagueWithDivisions[];
-};
-
-const footerTabs: FooterTab[] = [
-  { id: 'players', tabId: 'players', label: 'Players', iconClassName: 'fa fa-user-friends' },
-  { id: 'leagues', tabId: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
-  { id: 'h2h', tabId: 'h2h', label: 'H2H', iconClassName: 'fa fa-code-compare' },
-  { id: 'menu', label: 'Menu', iconClassName: 'fa fa-bars' },
-];
 
 const tabTitles: Record<AppTabId, string> = {
   players: 'Players',
@@ -105,7 +74,8 @@ const gradientOptions: { label: string; value: GradientName; iconClass: string }
 
 const HEADER_SWITCH_SCROLL = 40;
 const SEARCH_DEBOUNCE_MS = 250;
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+const TOP_PLAYERS_LIMIT = 12;
+const TOP_PLAYERS_MIN_PLAYED = 3;
 
 const THEME_STORAGE_KEY = 'TTPlayers-Theme';
 const HIGHLIGHT_STORAGE_KEY = 'TTPlayers-Highlight';
@@ -169,40 +139,73 @@ function App() {
   const { activeTab, handleSystemBack, navigateInActiveTab, switchTab } = useTabNavigation();
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
-  const [allLeagues, setAllLeagues] = useState<LeagueWithDivisions[]>([]);
   const [activeMenuId, setActiveMenuId] = useState<MenuId | null>(null);
   const [favouritePlayers, setFavouritePlayers] = useState<PlayerSearchItem[]>(() => parseStoredFavouritePlayers());
   const [isBooting, setIsBooting] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLeagueSelectionReady, setIsLeagueSelectionReady] = useState(false);
-  const [isLeaguesLoading, setIsLeaguesLoading] = useState(false);
   const [leagueQuery, setLeagueQuery] = useState('');
-  const [leaguesError, setLeaguesError] = useState<string | null>(null);
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [playersListTab, setPlayersListTab] = useState<'top' | 'trending'>('top');
   const [query, setQuery] = useState('');
   const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>([]);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<PlayerSearchItem[]>([]);
 
   const headerRef = useRef<HTMLElement | null>(null);
   const pageTitleRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedQuery = query.trim();
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const normalizedDebouncedQuery = debouncedQuery.trim();
   const normalizedLeagueQuery = leagueQuery.trim().toLowerCase();
+  const leaguesQuery = useLeaguesQuery();
+  const allLeagues = useMemo(
+    () => (Array.isArray(leaguesQuery.data?.data) ? leaguesQuery.data.data : []),
+    [leaguesQuery.data],
+  );
+  const isLeaguesLoading = leaguesQuery.isLoading;
+  const leaguesError = leaguesQuery.error instanceof Error ? leaguesQuery.error.message : null;
   const hasSelectedLeagues = selectedLeagueIds.length > 0;
-  const sortedSelectedLeagueIds = useMemo(() => [...selectedLeagueIds].sort(), [selectedLeagueIds]);
-  const selectedLeagueIdsKey = sortedSelectedLeagueIds.join(',');
+  const selectedLeagueNames = useMemo(() => {
+    if (selectedLeagueIds.length === 0) return [];
+    const leagueNameById = new Map(allLeagues.map((league) => [league.id, league.name]));
+    return selectedLeagueIds
+      .map((leagueId) => leagueNameById.get(leagueId))
+      .filter((name): name is string => Boolean(name));
+  }, [allLeagues, selectedLeagueIds]);
+  const searchScopeLabel = useMemo(() => {
+    if (selectedLeagueIds.length === 0) return 'All leagues';
+    if (selectedLeagueNames.length === 0) return `${selectedLeagueIds.length} selected`;
+    if (selectedLeagueNames.length <= 2) return selectedLeagueNames.join(', ');
+    return `${selectedLeagueNames.slice(0, 2).join(', ')} +${selectedLeagueNames.length - 2} more`;
+  }, [selectedLeagueIds.length, selectedLeagueNames]);
   const filteredLeagues = useMemo(() => {
     if (normalizedLeagueQuery.length === 0) return allLeagues;
     return allLeagues.filter((league) => league.name.toLowerCase().includes(normalizedLeagueQuery));
   }, [allLeagues, normalizedLeagueQuery]);
   const isSearchMode = normalizedQuery.length > 2;
+  const isShortSearchQuery = normalizedQuery.length > 0 && normalizedQuery.length <= 2;
   const shouldFetchPlayers = activeTab === 'players'
     && isLeagueSelectionReady
-    && hasSelectedLeagues
-    && (normalizedQuery.length === 0 || normalizedQuery.length > 2);
+    && (normalizedDebouncedQuery.length === 0 || normalizedDebouncedQuery.length > 2);
+  const playersSearchQuery = usePlayerSearchQuery(normalizedDebouncedQuery, selectedLeagueIds, {
+    enabled: shouldFetchPlayers,
+    allLeaguesCount: allLeagues.length,
+  });
+  const topPlayersQuery = useLeadersQuery({
+    mode: 'combined',
+    leagueIds: selectedLeagueIds,
+    limit: TOP_PLAYERS_LIMIT,
+    minPlayed: TOP_PLAYERS_MIN_PLAYED,
+    enabled: activeTab === 'players' && isLeagueSelectionReady,
+  });
+  const searchResults = playersSearchQuery.data?.data ?? [];
+  const topPlayers = topPlayersQuery.data?.data ?? [];
+  const topPlayersFormula = topPlayersQuery.data?.formula ?? null;
+  const isSearchLoading = shouldFetchPlayers
+    && (playersSearchQuery.isLoading || (playersSearchQuery.isFetching && !playersSearchQuery.data));
+  const isTopPlayersLoading = topPlayersQuery.isLoading || (topPlayersQuery.isFetching && !topPlayersQuery.data);
+  const searchError = playersSearchQuery.error instanceof Error ? playersSearchQuery.error.message : null;
+  const topPlayersError = topPlayersQuery.error instanceof Error ? topPlayersQuery.error.message : null;
   const activeMenuConfig = activeMenuId ? menuConfigs[activeMenuId] : null;
-  const trendingPlayer = normalizedQuery.length === 0 && hasSelectedLeagues ? (searchResults[0] ?? null) : null;
 
   const wrapperTransform = useMemo(() => {
     if (!activeMenuConfig || activeMenuConfig.effect === 'none') {
@@ -401,99 +404,34 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const abortController = new AbortController();
+    if (isLeaguesLoading) return;
 
-    const loadLeagues = async () => {
-      try {
-        setIsLeaguesLoading(true);
-        setLeaguesError(null);
+    if (leaguesError) {
+      setSelectedLeagueIds([]);
+      setIsLeagueSelectionReady(true);
+      return;
+    }
 
-        const response = await fetch(`${API_BASE_URL}/leagues`, { signal: abortController.signal });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+    const validLeagueIds = new Set(allLeagues.map((league) => league.id));
+    const storedSelection = parseStoredLeagueIds().filter((id) => validLeagueIds.has(id));
 
-        const payload = await response.json() as LeaguesResponse;
-        const leagues = Array.isArray(payload.data) ? payload.data : [];
-        const validLeagueIds = new Set(leagues.map((league) => league.id));
-        const storedSelection = parseStoredLeagueIds().filter((id) => validLeagueIds.has(id));
-        const initialSelection = storedSelection.length > 0
-          ? storedSelection
-          : leagues.map((league) => league.id);
-
-        setAllLeagues(leagues);
-        setSelectedLeagueIds(initialSelection);
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') return;
-        setAllLeagues([]);
-        setSelectedLeagueIds([]);
-        setLeaguesError((error as Error).message || 'Failed to load leagues');
-      } finally {
-        setIsLeaguesLoading(false);
-        setIsLeagueSelectionReady(true);
+    setSelectedLeagueIds((previous) => {
+      const validPrevious = previous.filter((id) => validLeagueIds.has(id));
+      if (validPrevious.length > 0) {
+        return validPrevious;
       }
-    };
+      return storedSelection.length > 0
+        ? storedSelection
+        : allLeagues.map((league) => league.id);
+    });
 
-    loadLeagues();
-
-    return () => {
-      abortController.abort();
-    };
-  }, []);
+    setIsLeagueSelectionReady(true);
+  }, [allLeagues, isLeaguesLoading, leaguesError]);
 
   useEffect(() => {
     if (!isLeagueSelectionReady) return;
     localStorage.setItem(LEAGUES_STORAGE_KEY, JSON.stringify(selectedLeagueIds));
   }, [isLeagueSelectionReady, selectedLeagueIds]);
-
-  useEffect(() => {
-    if (!shouldFetchPlayers) {
-      setSearchResults([]);
-      setSearchError(null);
-      setIsSearchLoading(false);
-      return;
-    }
-
-    const abortController = new AbortController();
-    const timerId = window.setTimeout(async () => {
-      try {
-        setIsSearchLoading(true);
-        setSearchError(null);
-
-        const params = new URLSearchParams();
-        if (normalizedQuery.length > 0) {
-          params.set('q', normalizedQuery);
-        }
-        if (sortedSelectedLeagueIds.length > 0 && sortedSelectedLeagueIds.length < allLeagues.length) {
-          params.set('league_ids', sortedSelectedLeagueIds.join(','));
-        }
-
-        const path = params.size > 0
-          ? `${API_BASE_URL}/players/search?${params.toString()}`
-          : `${API_BASE_URL}/players/search`;
-
-        const response = await fetch(path, { signal: abortController.signal });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const payload = await response.json() as PlayerSearchResponse;
-        setSearchResults(payload.data ?? []);
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') {
-          return;
-        }
-        setSearchError((error as Error).message || 'Failed to search players');
-      } finally {
-        setIsSearchLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      abortController.abort();
-      window.clearTimeout(timerId);
-    };
-  }, [allLeagues.length, normalizedQuery, selectedLeagueIdsKey, shouldFetchPlayers, sortedSelectedLeagueIds]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -617,6 +555,16 @@ function App() {
           <a href="#" className="header-icon header-icon-1" data-menu="menu-main" onClick={onMenuTrigger('menu-main')}>
             <i className="fas fa-bars" />
           </a>
+          <a
+            href="#"
+            className="header-icon header-icon-2 tt-header-league-filter"
+            data-menu="menu-leagues"
+            onClick={onMenuTrigger('menu-leagues')}
+            aria-label="Select leagues"
+          >
+            <i className="fas fa-filter" />
+            <span className="tt-page-league-count">{hasSelectedLeagues ? selectedLeagueIds.length : 'All'}</span>
+          </a>
           <a href="#" className="header-icon header-icon-3" data-menu="menu-share" onClick={onMenuTrigger('menu-share')}>
             <i className="fas fa-share-alt" />
           </a>
@@ -628,32 +576,22 @@ function App() {
           </a>
         </header>
 
-        <nav id="footer-bar" style={wrapperStyle} className="footer-bar-6">
-          {footerTabs.map((tab) => {
-            const classNames = [tab.tabId === activeTab ? 'active-nav' : '', tab.circle ? 'circle-nav' : '']
-              .filter(Boolean)
-              .join(' ');
-            const isMenuTab = tab.id === 'menu';
-
-            return (
-              <a
-                key={tab.id}
-                href="#"
-                className={classNames}
-                data-menu={isMenuTab ? 'menu-main' : undefined}
-                onClick={isMenuTab ? onMenuTrigger('menu-main') : onFooterTabClick(tab.tabId ?? 'players')}
-              >
-                <i className={tab.iconClassName} />
-                <span>{tab.label}</span>
-              </a>
-            );
-          })}
-        </nav>
+        <TabFooterBar reselectBehavior="root" />
 
         <div ref={pageTitleRef} className="page-title page-title-fixed">
           <h1>{tabTitles[activeTab]}</h1>
           <a href="#" className="page-title-icon shadow-xl bg-theme color-theme" data-menu="menu-share" onClick={onMenuTrigger('menu-share')}>
             <i className="fa fa-share-alt" />
+          </a>
+          <a
+            href="#"
+            className="page-title-icon shadow-xl bg-theme color-theme tt-page-league-filter"
+            data-menu="menu-leagues"
+            onClick={onMenuTrigger('menu-leagues')}
+            aria-label="Select leagues"
+          >
+            <i className="fa fa-filter" />
+            <span className="tt-page-league-count">{hasSelectedLeagues ? selectedLeagueIds.length : 'All'}</span>
           </a>
           <a href="#" className="page-title-icon shadow-xl bg-theme color-theme show-on-theme-light" data-toggle-theme onClick={toggleTheme}>
             <i className="fa fa-moon" />
@@ -671,27 +609,21 @@ function App() {
           {activeTab === 'players' ? (
             <>
               <div className="content mt-n4 mb-3">
-            <div className="tt-search-toolbar mt-4">
-              <div className="search-box search-dark shadow-sm border-0 bg-theme rounded-sm bottom-0 mb-0">
-                <i className="fa fa-search ms-1" />
-                <input
-                  type="text"
-                  className="border-0"
-                  placeholder="Search players..."
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </div>
-              <a
-                href="#"
-                data-menu="menu-leagues"
-                onClick={onMenuTrigger('menu-leagues')}
-                className="tt-league-trigger btn btn-s shadow-s rounded-s font-600 bg-highlight color-white text-uppercase"
-              >
-                <i className="fa fa-filter me-1" />
-                {isLeaguesLoading && !isLeagueSelectionReady ? 'Loading' : `Leagues (${selectedLeagueIds.length})`}
-              </a>
-            </div>
+                <div className="tt-search-toolbar mt-4">
+                  <div className="search-box search-dark shadow-sm border-0 bg-theme rounded-sm bottom-0 mb-0">
+                    <i className="fa fa-search ms-1" />
+                    <input
+                      type="text"
+                      className="border-0"
+                      placeholder="Search players..."
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                    />
+                  </div>
+                  <p className="tt-search-scope mb-0">
+                    Search scope: <strong>{searchScopeLabel}</strong>
+                  </p>
+                </div>
               </div>
 
               {favouritePlayers.length > 0 ? (
@@ -738,113 +670,187 @@ function App() {
             </div>
               ) : null}
 
-              {trendingPlayer ? (
-            <div
-              className="card card-style tt-trending-card"
-              data-card-height="210"
-              onClick={() => navigateInActiveTab(`player/${trendingPlayer.id}`)}
-            >
-              <div className="card-top px-3 py-3">
-                <span className="bg-white color-black rounded-sm btn btn-xs float-start font-700 font-12">Trending</span>
-                <a
-                  href="#"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    toggleFavouritePlayer(trendingPlayer);
-                  }}
-                  className="bg-white rounded-sm icon icon-xs float-end"
-                >
-                  <i className={`fa ${isFavouritePlayer(trendingPlayer.id) ? 'fa-heart color-red-dark' : 'fa-heart'} `} />
-                </a>
-              </div>
-              <div className="card-bottom px-3 py-3">
-                <h1 className="color-white mb-1">{trendingPlayer.name}</h1>
-                <p className="color-white opacity-80 mb-0">
-                  {getWinRate(trendingPlayer)}% win rate • {trendingPlayer.played} matches played
-                </p>
-              </div>
-              <div className="card-overlay bg-gradient opacity-30" />
-              <div className="card-overlay bg-gradient" />
-            </div>
-              ) : null}
-
-              <div className="card card-style mt-2">
-            <div className="content mb-0">
-              <div className="d-flex mb-2">
-                <div className="align-self-center">
-                  <h1 className="mb-0 font-16">{isSearchMode ? 'Search Results' : 'Trending Players'}</h1>
+              {isSearchMode || isShortSearchQuery ? (
+                <div className="card card-style mt-2">
+                  <div className="content mb-0">
+                    <div className="d-flex mb-2">
+                      <div className="align-self-center">
+                        <h1 className="mb-0 font-16">Search Results</h1>
+                      </div>
+                      <div className="ms-auto align-self-center">
+                        <span className="font-11 opacity-60">{listItems.length} players</span>
+                      </div>
+                    </div>
+                    {!isLeagueSelectionReady || isLeaguesLoading ? (
+                      <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+                    ) : leaguesError ? (
+                      <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
+                    ) : normalizedQuery.length > 0 && normalizedQuery.length <= 2 ? (
+                      <p className="mb-0">Type at least 3 characters to search players.</p>
+                    ) : isSearchLoading ? (
+                      <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading players...</p>
+                    ) : searchError ? (
+                      <p className="mb-0 color-red-dark">Failed to load players: {searchError}</p>
+                    ) : listItems.length === 0 ? (
+                      <p className="mb-0">No players found matching "{normalizedQuery}"</p>
+                    ) : (
+                      <div className="list-group list-custom-large tt-player-large-list tt-player-search-list">
+                        {listItems.map((player) => {
+                          const isFavourite = isFavouritePlayer(player.id);
+                          return (
+                            <a
+                              key={player.id}
+                              href="#"
+                              data-filter-item
+                              onClick={(event) => {
+                                event.preventDefault();
+                                navigateInActiveTab(`player/${player.id}`);
+                              }}
+                            >
+                              <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
+                              <span>{player.name}</span>
+                              <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
+                              <i
+                                className={`fa fa-heart tt-player-favourite-icon ${isFavourite ? 'color-red-dark' : 'color-theme opacity-40'}`}
+                                aria-label={isFavourite ? 'Remove favourite' : 'Add favourite'}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  toggleFavouritePlayer(player);
+                                }}
+                              />
+                              <i className="fa fa-angle-right" />
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="ms-auto align-self-center">
-                  <span className="font-11 opacity-60">{listItems.length} players</span>
-                </div>
-              </div>
-              {normalizedQuery.length === 0 && hasSelectedLeagues ? (
-                <p className="mt-n1 mb-2 font-11 opacity-60">Most played in the last 100 days</p>
-              ) : null}
-              {!isLeagueSelectionReady || isLeaguesLoading ? (
-                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
-              ) : leaguesError ? (
-                <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
-              ) : !hasSelectedLeagues ? (
-                <p className="mb-0">Select at least one league to view players.</p>
-              ) : normalizedQuery.length > 0 && normalizedQuery.length <= 2 ? (
-                <p className="mb-0">Type at least 3 characters to search players.</p>
-              ) : isSearchLoading ? (
-                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading players...</p>
-              ) : searchError ? (
-                <p className="mb-0 color-red-dark">Failed to load players: {searchError}</p>
-              ) : listItems.length === 0 ? (
-                <p className="mb-0">{isSearchMode ? `No players found matching "${normalizedQuery}"` : 'No trending players available yet.'}</p>
               ) : (
-                <div className="list-group list-custom-large tt-player-large-list tt-player-search-list">
-                  {listItems.map((player) => {
-                    const isFavourite = isFavouritePlayer(player.id);
-                    return (
+                <div className="card card-style mt-2">
+                  <div className="content mb-0">
+                    <div className="tab-controls tabs-small tabs-rounded" data-highlight="bg-highlight">
                       <a
-                        key={player.id}
                         href="#"
-                        data-filter-item
+                        className={playersListTab === 'top' ? 'bg-highlight color-white' : ''}
                         onClick={(event) => {
                           event.preventDefault();
-                          navigateInActiveTab(`player/${player.id}`);
+                          setPlayersListTab('top');
                         }}
                       >
-                        <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
-                        <span>{player.name}</span>
-                        <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
-                        <i
-                          className={`fa fa-heart tt-player-favourite-icon ${isFavourite ? 'color-red-dark' : 'color-theme opacity-40'}`}
-                          aria-label={isFavourite ? 'Remove favourite' : 'Add favourite'}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            toggleFavouritePlayer(player);
-                          }}
-                        />
-                        <i className="fa fa-angle-right" />
+                        Top Players
                       </a>
-                    );
-                  })}
+                      <a
+                        href="#"
+                        className={playersListTab === 'trending' ? 'bg-highlight color-white' : ''}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setPlayersListTab('trending');
+                        }}
+                      >
+                        Trending Players
+                      </a>
+                    </div>
+                    <div className="clearfix mb-3" />
+
+                    {playersListTab === 'top' ? (
+                      <>
+                        {topPlayersFormula ? (
+                          <p className="mt-n1 mb-2 font-11 opacity-60">{topPlayersFormula}</p>
+                        ) : (
+                          <p className="mt-n1 mb-2 font-11 opacity-60">Best win rate weighted by match volume.</p>
+                        )}
+                        {!isLeagueSelectionReady || isLeaguesLoading ? (
+                          <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+                        ) : isTopPlayersLoading ? (
+                          <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading top players...</p>
+                        ) : topPlayersError ? (
+                          <p className="mb-0 color-red-dark">Failed to load top players: {topPlayersError}</p>
+                        ) : topPlayers.length === 0 ? (
+                          <p className="mb-0">No top players available for the selected league scope.</p>
+                        ) : (
+                          <div className="list-group list-custom-large tt-player-large-list tt-top-players-list">
+                            {topPlayers.map((player) => (
+                              <a
+                                key={player.player_id}
+                                href="#"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  navigateInActiveTab(`player/${player.player_id}`);
+                                }}
+                              >
+                                <i className="tt-player-avatar bg-highlight color-white">{player.rank}</i>
+                                <span>{player.player_name}</span>
+                                <strong>{player.wins}W-{player.losses}L • {player.played} played • {Math.round(player.win_rate)}% WR</strong>
+                                <i className="fa fa-angle-right" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="mt-n1 mb-2 font-11 opacity-60">Most played in the last 100 days.</p>
+                        {!isLeagueSelectionReady || isLeaguesLoading ? (
+                          <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+                        ) : leaguesError ? (
+                          <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
+                        ) : isSearchLoading ? (
+                          <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading players...</p>
+                        ) : searchError ? (
+                          <p className="mb-0 color-red-dark">Failed to load players: {searchError}</p>
+                        ) : listItems.length === 0 ? (
+                          <p className="mb-0">No trending players available yet.</p>
+                        ) : (
+                          <div className="list-group list-custom-large tt-player-large-list tt-player-search-list">
+                            {listItems.map((player) => {
+                              const isFavourite = isFavouritePlayer(player.id);
+                              return (
+                                <a
+                                  key={player.id}
+                                  href="#"
+                                  data-filter-item
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    navigateInActiveTab(`player/${player.id}`);
+                                  }}
+                                >
+                                  <i className="tt-player-avatar bg-highlight color-white">{getInitials(player.name)}</i>
+                                  <span>{player.name}</span>
+                                  <strong>{getWinRate(player)}% WR • {player.played} matches</strong>
+                                  <i
+                                    className={`fa fa-heart tt-player-favourite-icon ${isFavourite ? 'color-red-dark' : 'color-theme opacity-40'}`}
+                                    aria-label={isFavourite ? 'Remove favourite' : 'Add favourite'}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      toggleFavouritePlayer(player);
+                                    }}
+                                  />
+                                  <i className="fa fa-angle-right" />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-              </div>
             </>
           ) : null}
 
           {activeTab === 'leagues' ? (
             <LeaguesTabContent
               selectedLeagueIds={selectedLeagueIds}
-              onOpenLeagueFilter={onMenuTrigger('menu-leagues')}
-              onOpenPlayer={(playerId) => navigateInActiveTab(`player/${playerId}`)}
             />
           ) : null}
 
           {activeTab === 'h2h' ? (
             <H2HTabContent
               selectedLeagueIds={selectedLeagueIds}
-              onOpenLeagueFilter={onMenuTrigger('menu-leagues')}
               onOpenPlayer={(playerId) => navigateInActiveTab(`player/${playerId}`)}
             />
           ) : null}

@@ -1,87 +1,55 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   apiFetch,
-  type LeaderboardMode,
-  type LeadersResponse,
-  type LeagueSeasonsResponse,
   type LeagueWithDivisions,
   type LeaguesResponse,
   type StandingsResponse,
 } from './player-shared';
-import { AppButtonLink, AppCard, AppCardContent, AppListGroup, AppListItem } from './ui/appkit';
+import { AppButtonLink, AppCard, AppCardContent } from './ui/appkit';
 
-type LeaguesView = 'tables' | 'leaders';
+type TeamRosterResponse = {
+  data: Array<{ id: string }>;
+};
 
-const MIN_PLAYED = 3;
+type DivisionSnapshot = {
+  divisionId: string;
+  divisionName: string;
+  teams: number;
+  players: number;
+  matches: number;
+};
+
+type LeagueSnapshot = {
+  divisions: DivisionSnapshot[];
+  totals: {
+    divisions: number;
+    teams: number;
+    players: number;
+    matches: number;
+  };
+};
 
 interface LeaguesTabContentProps {
   selectedLeagueIds: string[];
-  onOpenLeagueFilter: (event: MouseEvent<HTMLAnchorElement>) => void;
-  onOpenPlayer: (playerId: string) => void;
 }
 
-export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpenPlayer }: LeaguesTabContentProps) {
-  const [view, setView] = useState<LeaguesView>('tables');
-  const [seasonOptions, setSeasonOptions] = useState<Array<{ id: string; name: string; is_active: boolean }>>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
+export function LeaguesTabContent({ selectedLeagueIds }: LeaguesTabContentProps) {
   const [allSeasonLeagues, setAllSeasonLeagues] = useState<LeagueWithDivisions[]>([]);
-  const [isSeasonOptionsLoading, setIsSeasonOptionsLoading] = useState(true);
   const [isLeaguesLoading, setIsLeaguesLoading] = useState(true);
-  const [seasonOptionsError, setSeasonOptionsError] = useState<string | null>(null);
   const [leaguesError, setLeaguesError] = useState<string | null>(null);
 
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>('');
+  const [isLeagueChooserOpen, setIsLeagueChooserOpen] = useState(true);
 
   const [standings, setStandings] = useState<StandingsResponse | null>(null);
   const [isStandingsLoading, setIsStandingsLoading] = useState(false);
   const [standingsError, setStandingsError] = useState<string | null>(null);
-
-  const [leadersMode, setLeadersMode] = useState<LeaderboardMode>('combined');
-  const [leaders, setLeaders] = useState<LeadersResponse | null>(null);
-  const [isLeadersLoading, setIsLeadersLoading] = useState(false);
-  const [leadersError, setLeadersError] = useState<string | null>(null);
+  const [leagueSnapshot, setLeagueSnapshot] = useState<LeagueSnapshot | null>(null);
+  const [isLeagueSnapshotLoading, setIsLeagueSnapshotLoading] = useState(false);
+  const [leagueSnapshotError, setLeagueSnapshotError] = useState<string | null>(null);
 
   useEffect(() => {
-    const abortController = new AbortController();
-
-    const loadSeasons = async () => {
-      try {
-        setIsSeasonOptionsLoading(true);
-        setSeasonOptionsError(null);
-
-        const payload = await apiFetch<LeagueSeasonsResponse>('/leagues/seasons', abortController.signal);
-        const options = payload.data ?? [];
-        setSeasonOptions(options);
-
-        const activeSeason = options.find((season) => season.is_active);
-        const fallbackSeason = options[0]?.id ?? '';
-        setSelectedSeasonId((current) => (
-          current && options.some((season) => season.id === current)
-            ? current
-            : (activeSeason?.id ?? fallbackSeason)
-        ));
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') return;
-        setSeasonOptions([]);
-        setSeasonOptionsError((error as Error).message || 'Failed to load season options');
-        setSelectedSeasonId('');
-      } finally {
-        setIsSeasonOptionsLoading(false);
-      }
-    };
-
-    loadSeasons();
-    return () => abortController.abort();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedSeasonId) {
-      setAllSeasonLeagues([]);
-      setIsLeaguesLoading(false);
-      return;
-    }
-
     const abortController = new AbortController();
 
     const loadLeagues = async () => {
@@ -89,8 +57,8 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
         setIsLeaguesLoading(true);
         setLeaguesError(null);
 
-        const params = new URLSearchParams({ season_id: selectedSeasonId });
-        const payload = await apiFetch<LeaguesResponse>(`/leagues?${params.toString()}`, abortController.signal);
+        // Keep leagues list aligned with the global selector source.
+        const payload = await apiFetch<LeaguesResponse>('/leagues', abortController.signal);
         setAllSeasonLeagues(payload.data ?? []);
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
@@ -103,7 +71,7 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
 
     loadLeagues();
     return () => abortController.abort();
-  }, [selectedSeasonId]);
+  }, []);
 
   const visibleLeagues = useMemo(() => {
     if (allSeasonLeagues.length === 0) return [];
@@ -123,37 +91,49 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
     if (visibleLeagues.length === 0) {
       setSelectedLeagueId('');
       setSelectedDivisionId('');
+      setIsLeagueChooserOpen(true);
       return;
     }
 
-    const nextLeague = selectedLeague && visibleLeagues.some((league) => league.id === selectedLeague.id)
-      ? selectedLeague
-      : visibleLeagues[0];
+    const hasSelectedLeague = selectedLeagueId.length > 0;
+    const selectedLeagueStillVisible = selectedLeagueId.length > 0
+      && visibleLeagues.some((league) => league.id === selectedLeagueId);
 
-    if (!nextLeague) {
-      setSelectedLeagueId('');
-      setSelectedDivisionId('');
+    if (!selectedLeagueStillVisible) {
+      if (selectedLeagueIds.length > 0) {
+        const fallbackLeague = visibleLeagues[0];
+        setSelectedLeagueId(fallbackLeague.id);
+        setSelectedDivisionId(fallbackLeague.divisions[0]?.id ?? '');
+        setIsLeagueChooserOpen(false);
+      } else {
+        setSelectedLeagueId('');
+        setSelectedDivisionId('');
+        setIsLeagueChooserOpen(true);
+      }
       return;
     }
 
-    if (selectedLeagueId !== nextLeague.id) {
-      setSelectedLeagueId(nextLeague.id);
+    if (!hasSelectedLeague) {
+      setIsLeagueChooserOpen(true);
+      return;
     }
 
-    const hasSelectedDivision = nextLeague.divisions.some((division) => division.id === selectedDivisionId);
+    const currentLeague = visibleLeagues.find((league) => league.id === selectedLeagueId);
+    if (!currentLeague) return;
+
+    const hasSelectedDivision = currentLeague.divisions.some((division) => division.id === selectedDivisionId);
     if (!hasSelectedDivision) {
-      setSelectedDivisionId(nextLeague.divisions[0]?.id ?? '');
+      setSelectedDivisionId(currentLeague.divisions[0]?.id ?? '');
     }
-  }, [selectedDivisionId, selectedLeague, selectedLeagueId, visibleLeagues]);
+  }, [selectedDivisionId, selectedLeagueId, selectedLeagueIds.length, visibleLeagues]);
 
   useEffect(() => {
-    if (view !== 'tables' || !selectedDivisionId) {
+    if (!selectedDivisionId) {
       setStandings(null);
       setStandingsError(null);
       setIsStandingsLoading(false);
       return;
     }
-
     const abortController = new AbortController();
 
     const loadStandings = async () => {
@@ -176,151 +156,216 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
 
     loadStandings();
     return () => abortController.abort();
-  }, [selectedDivisionId, view]);
-
-  const visibleLeagueIds = useMemo(() => visibleLeagues.map((league) => league.id), [visibleLeagues]);
+  }, [selectedDivisionId]);
 
   useEffect(() => {
-    if (view !== 'leaders') {
-      setLeaders(null);
-      setLeadersError(null);
-      setIsLeadersLoading(false);
+    if (!selectedLeague || selectedLeague.divisions.length === 0) {
+      setLeagueSnapshot(null);
+      setLeagueSnapshotError(null);
+      setIsLeagueSnapshotLoading(false);
       return;
     }
 
     const abortController = new AbortController();
 
-    const loadLeaders = async () => {
+    const loadLeagueSnapshot = async () => {
       try {
-        setIsLeadersLoading(true);
-        setLeadersError(null);
+        setIsLeagueSnapshotLoading(true);
+        setLeagueSnapshotError(null);
 
-        const params = new URLSearchParams({
-          mode: leadersMode,
-          limit: leadersMode === 'win_pct' ? '10' : '20',
-          min_played: String(MIN_PLAYED),
+        const leaguePlayerIds = new Set<string>();
+        const divisionSnapshots = await Promise.all(
+          selectedLeague.divisions.map(async (division) => {
+            const standingsPayload = await apiFetch<StandingsResponse>(
+              `/competitions/${division.id}/standings`,
+              abortController.signal,
+            );
+
+            const teamIds = standingsPayload.data.map((row) => row.team_id);
+            const rosterPayloads = await Promise.all(
+              teamIds.map(async (teamId) => {
+                try {
+                  return await apiFetch<TeamRosterResponse>(`/teams/${teamId}/roster`, abortController.signal);
+                } catch {
+                  return { data: [] } satisfies TeamRosterResponse;
+                }
+              }),
+            );
+
+            const divisionPlayerIds = new Set<string>();
+            for (const rosterPayload of rosterPayloads) {
+              for (const player of rosterPayload.data) {
+                if (!player.id) continue;
+                divisionPlayerIds.add(player.id);
+                leaguePlayerIds.add(player.id);
+              }
+            }
+
+            const playedSum = standingsPayload.data.reduce((sum, row) => sum + row.played, 0);
+            const estimatedMatches = Math.round(playedSum / 2);
+
+            return {
+              divisionId: division.id,
+              divisionName: division.name,
+              teams: standingsPayload.data.length,
+              players: divisionPlayerIds.size,
+              matches: estimatedMatches,
+            } satisfies DivisionSnapshot;
+          }),
+        );
+
+        setLeagueSnapshot({
+          divisions: divisionSnapshots,
+          totals: {
+            divisions: divisionSnapshots.length,
+            teams: divisionSnapshots.reduce((sum, division) => sum + division.teams, 0),
+            players: leaguePlayerIds.size,
+            matches: divisionSnapshots.reduce((sum, division) => sum + division.matches, 0),
+          },
         });
-
-        if (selectedSeasonId) {
-          params.set('season_id', selectedSeasonId);
-        }
-        if (visibleLeagueIds.length > 0) {
-          params.set('league_ids', visibleLeagueIds.join(','));
-        }
-
-        const payload = await apiFetch<LeadersResponse>(`/players/leaders?${params.toString()}`, abortController.signal);
-        setLeaders(payload);
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
-        setLeaders(null);
-        setLeadersError((error as Error).message || 'Failed to load leaderboard');
+        setLeagueSnapshot(null);
+        setLeagueSnapshotError((error as Error).message || 'Failed to load league snapshot');
       } finally {
-        setIsLeadersLoading(false);
+        setIsLeagueSnapshotLoading(false);
       }
     };
 
-    loadLeaders();
+    loadLeagueSnapshot();
     return () => abortController.abort();
-  }, [leadersMode, selectedSeasonId, view, visibleLeagueIds]);
+  }, [selectedLeague]);
 
   const standingsRows = standings?.data ?? [];
   const standingsSourceUrl = standings?.source_url ?? null;
+  const selectedDivisionName = useMemo(
+    () => selectedLeague?.divisions.find((division) => division.id === selectedDivisionId)?.name ?? null,
+    [selectedLeague, selectedDivisionId],
+  );
+  const shouldShowAllLeagues = !selectedLeague || isLeagueChooserOpen;
+  const selectedLeagueCount = visibleLeagues.length;
+  const selectedLeagueCountLabel = `${selectedLeagueCount} league${selectedLeagueCount === 1 ? '' : 's'} selected`;
+  const canToggleLeagueList = Boolean(selectedLeague);
+  const leagueListToggleLabel = shouldShowAllLeagues ? 'Hide list' : 'Show list';
 
   return (
     <>
-      <div className="content mt-n4 mb-3">
-        <div className="tt-tab-toolbar">
-          <div>
-            <p className="font-11 opacity-70 mb-1">League Hub</p>
-            <h3 className="mb-0">League Central</h3>
-          </div>
-          <a
-            href="#"
-            data-menu="menu-leagues"
-            onClick={onOpenLeagueFilter}
-            className="tt-league-trigger btn btn-s shadow-s rounded-s font-600 bg-highlight color-white text-uppercase"
+      <div className="content mt-2 mb-2">
+        {visibleLeagues.length > 0 ? (
+          <button
+            type="button"
+            className="tt-league-context-toggle"
+            aria-expanded={shouldShowAllLeagues}
+            disabled={!canToggleLeagueList}
+            onClick={() => {
+              if (!canToggleLeagueList) return;
+              setIsLeagueChooserOpen((current) => !current);
+            }}
           >
-            <i className="fa fa-filter me-1" />
-            Leagues ({selectedLeagueIds.length})
-          </a>
-        </div>
+            <span className="tt-league-context-count">{selectedLeagueCountLabel}</span>
+            <span className="tt-league-context-state">
+              {leagueListToggleLabel}
+              <i className={shouldShowAllLeagues ? 'fa fa-chevron-up ms-1' : 'fa fa-chevron-down ms-1'} />
+            </span>
+          </button>
+        ) : null}
+
+        {leaguesError ? <p className="mb-0 mt-2 color-red-dark">Failed to load leagues: {leaguesError}</p> : null}
+        {isLeaguesLoading ? (
+          <p className="mb-0 mt-2"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
+        ) : null}
+        {!isLeaguesLoading && visibleLeagues.length === 0 ? (
+          <p className="mb-0 mt-2">No leagues are available for the active season.</p>
+        ) : null}
       </div>
 
-      <AppCard className="mt-2">
-        <AppCardContent className="mb-2">
-          <label className="font-12 opacity-70 mb-1" htmlFor="league-season-select">Season</label>
-          <select
-            id="league-season-select"
-            className="form-select"
-            value={selectedSeasonId}
-            onChange={(event) => setSelectedSeasonId(event.currentTarget.value)}
-            disabled={isSeasonOptionsLoading || seasonOptions.length === 0}
-          >
-            {seasonOptions.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name}{season.is_active ? ' (Current)' : ''}
-              </option>
-            ))}
-          </select>
-
-          <div className="tt-tab-toggle mt-3">
-            <button type="button" className={view === 'tables' ? 'active' : ''} onClick={() => setView('tables')}>
-              <i className="fa fa-table me-1" /> Tables
-            </button>
-            <button type="button" className={view === 'leaders' ? 'active' : ''} onClick={() => setView('leaders')}>
-              <i className="fa fa-trophy me-1" /> Leaders
-            </button>
-          </div>
-
-          {seasonOptionsError ? <p className="mb-0 mt-3 color-red-dark">Failed to load seasons: {seasonOptionsError}</p> : null}
-          {leaguesError ? <p className="mb-0 mt-2 color-red-dark">Failed to load leagues: {leaguesError}</p> : null}
-          {isLeaguesLoading ? (
-            <p className="mb-0 mt-3"><i className="fa fa-spinner fa-spin me-2" />Loading leagues...</p>
-          ) : null}
-          {!isLeaguesLoading && visibleLeagues.length === 0 ? (
-            <p className="mb-0 mt-3">No leagues are available for this season.</p>
-          ) : null}
-        </AppCardContent>
-      </AppCard>
-
-      {view === 'tables' && visibleLeagues.length > 0 ? (
+      {visibleLeagues.length > 0 ? (
         <>
-          <AppCard className="mt-2">
-            <AppCardContent className="mb-2">
-              <p className="mb-n1 color-highlight font-600">Leagues</p>
-              <h4 className="mb-2">Pick League & Division</h4>
-
-              <div className="tt-chip-row">
+          {shouldShowAllLeagues ? (
+            <div className="content pt-0">
+              <div className="tt-league-grid">
                 {visibleLeagues.map((league) => (
                   <button
                     key={league.id}
                     type="button"
-                    className={selectedLeagueId === league.id ? 'tt-chip active' : 'tt-chip'}
+                    className={selectedLeagueId === league.id ? 'tt-league-tile card card-style rounded-m p-3 active' : 'tt-league-tile card card-style rounded-m p-3'}
                     onClick={() => {
                       setSelectedLeagueId(league.id);
                       setSelectedDivisionId(league.divisions[0]?.id ?? '');
+                      setIsLeagueChooserOpen(false);
                     }}
                   >
-                    {league.name}
+                    <span className="tt-league-tile-tag">{selectedLeagueId === league.id ? 'Selected League' : 'League'}</span>
+                    <strong className="tt-league-tile-title">{league.name}</strong>
+                    <span className="tt-league-tile-meta">
+                      {league.divisions.length} division{league.divisions.length === 1 ? '' : 's'}
+                    </span>
                   </button>
                 ))}
               </div>
+            </div>
+          ) : null}
 
-              {!selectedLeague || selectedLeague.divisions.length === 0 ? (
-                <p className="mb-0 mt-2">No divisions found for this league.</p>
+          <AppCard className="mt-2">
+            <AppCardContent className="mb-2">
+              <div className="mb-2">
+                <p className="mb-n1 color-highlight font-600">League Snapshot</p>
+                <h4 className="mb-0">{selectedLeague?.name ?? 'Selected League'}</h4>
+              </div>
+
+              {isLeagueSnapshotLoading ? (
+                <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading league snapshot...</p>
+              ) : leagueSnapshotError ? (
+                <p className="mb-0 color-red-dark">Failed to load league snapshot: {leagueSnapshotError}</p>
+              ) : !leagueSnapshot ? (
+                <p className="mb-0">Snapshot is not available for this league yet.</p>
               ) : (
-                <div className="tt-chip-row mt-2">
-                  {selectedLeague.divisions.map((division) => (
-                    <button
-                      key={division.id}
-                      type="button"
-                      className={selectedDivisionId === division.id ? 'tt-chip active' : 'tt-chip'}
-                      onClick={() => setSelectedDivisionId(division.id)}
-                    >
-                      {division.name}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="tt-league-summary-grid">
+                    <div className="tt-league-kpi text-center">
+                      <h5 className="mb-0">{leagueSnapshot.totals.divisions}</h5>
+                      <p className="font-10 mb-0">Divisions</p>
+                    </div>
+                    <div className="tt-league-kpi text-center">
+                      <h5 className="mb-0">{leagueSnapshot.totals.teams}</h5>
+                      <p className="font-10 mb-0">Teams</p>
+                    </div>
+                    <div className="tt-league-kpi text-center">
+                      <h5 className="mb-0">{leagueSnapshot.totals.players}</h5>
+                      <p className="font-10 mb-0">Players</p>
+                    </div>
+                    <div className="tt-league-kpi text-center">
+                      <h5 className="mb-0">{leagueSnapshot.totals.matches}</h5>
+                      <p className="font-10 mb-0">Matches</p>
+                    </div>
+                  </div>
+
+                  <div className="tt-league-summary-list mt-3">
+                    {leagueSnapshot.divisions.map((division) => {
+                      const isActiveDivision = selectedDivisionId === division.divisionId;
+                      return (
+                        <button
+                          key={division.divisionId}
+                          type="button"
+                          className={isActiveDivision ? 'tt-league-summary-row-button tt-league-division-option active' : 'tt-league-summary-row-button tt-league-division-option'}
+                          onClick={() => setSelectedDivisionId(division.divisionId)}
+                        >
+                          <div className="d-flex align-items-start gap-2">
+                            <div className="flex-grow-1">
+                              <p className="mb-1 font-12 font-700">{division.divisionName}</p>
+                              <p className="mb-0 font-11 opacity-70">
+                                {division.players} players · {division.teams} teams · {division.matches} matches played
+                              </p>
+                            </div>
+                            <span className={isActiveDivision ? 'tt-league-division-status active ms-auto' : 'tt-league-division-status ms-auto'}>
+                              {isActiveDivision ? 'Selected' : 'View'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </AppCardContent>
           </AppCard>
@@ -330,7 +375,7 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
               <div className="d-flex mb-2">
                 <div className="align-self-center">
                   <p className="mb-n1 color-highlight font-600">Standings</p>
-                  <h4 className="mb-0">League Table</h4>
+                  <h4 className="mb-0">League Table{selectedDivisionName ? ` · ${selectedDivisionName}` : ''}</h4>
                 </div>
                 {standingsSourceUrl ? (
                   <div className="ms-auto align-self-center">
@@ -382,54 +427,6 @@ export function LeaguesTabContent({ selectedLeagueIds, onOpenLeagueFilter, onOpe
             </AppCardContent>
           </AppCard>
         </>
-      ) : null}
-
-      {view === 'leaders' ? (
-        <AppCard className="mt-2">
-          <AppCardContent className="mb-2">
-            <p className="mb-n1 color-highlight font-600">Leaders</p>
-            <h4 className="mb-2">Top Players</h4>
-
-            <div className="tt-tab-toggle mb-3">
-              <button type="button" className={leadersMode === 'win_pct' ? 'active' : ''} onClick={() => setLeadersMode('win_pct')}>
-                Best Win %
-              </button>
-              <button type="button" className={leadersMode === 'most_played' ? 'active' : ''} onClick={() => setLeadersMode('most_played')}>
-                Most Played
-              </button>
-              <button type="button" className={leadersMode === 'combined' ? 'active' : ''} onClick={() => setLeadersMode('combined')}>
-                Combined
-              </button>
-            </div>
-
-            {isLeadersLoading ? (
-              <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading leaderboard...</p>
-            ) : leadersError ? (
-              <p className="mb-0 color-red-dark">Failed to load leaders: {leadersError}</p>
-            ) : !leaders || leaders.data.length === 0 ? (
-              <p className="mb-0">No leaderboard data available for selected leagues.</p>
-            ) : (
-              <>
-                <p className="font-11 opacity-70 mb-2">{leaders.formula}</p>
-                <AppListGroup size="small">
-                  {leaders.data.map((row, index) => (
-                    <AppListItem
-                      key={row.player_id}
-                      iconClassName="fa fa-user rounded-xl shadow-xl bg-highlight color-white"
-                      title={`${row.rank}. ${row.player_name}`}
-                      subtitle={`${row.wins}W-${row.losses}L · ${row.played} played · ${Math.round(row.win_rate)}% WR`}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        onOpenPlayer(row.player_id);
-                      }}
-                      borderless={index === leaders.data.length - 1}
-                    />
-                  ))}
-                </AppListGroup>
-              </>
-            )}
-          </AppCardContent>
-        </AppCard>
       ) : null}
     </>
   );

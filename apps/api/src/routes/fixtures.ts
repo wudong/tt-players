@@ -3,6 +3,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@tt-players/db';
+import { resolveFixtureSourceUrl } from './source-url.js';
 
 const ParamsSchema = z.object({
     id: z.string().uuid(),
@@ -31,6 +32,7 @@ const FixtureMetaSchema = z.object({
     division_name: z.string(),
     home_team_name: z.string().nullable(),
     away_team_name: z.string().nullable(),
+    source_url: z.string().nullable(),
 });
 
 const ErrorSchema = z.object({
@@ -65,11 +67,18 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .innerJoin('competitions as c', 'c.id', 'f.competition_id')
                     .innerJoin('seasons as s', 's.id', 'c.season_id')
                     .innerJoin('leagues as l', 'l.id', 's.league_id')
+                    .innerJoin('platforms as p', 'p.id', 'l.platform_id')
                     .leftJoin('teams as ht', 'ht.id', 'f.home_team_id')
                     .leftJoin('teams as at', 'at.id', 'f.away_team_id')
                     .select([
                         'f.id',
+                        'f.external_id as fixture_external_id',
+                        'f.updated_at',
                         'f.date_played',
+                        'c.external_id as competition_external_id',
+                        's.external_id as season_external_id',
+                        'l.external_id as league_external_id',
+                        'p.base_url as platform_base_url',
                         'l.name as league_name',
                         'c.name as division_name',
                         'ht.name as home_team_name',
@@ -112,6 +121,18 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                     .orderBy('rubbers.created_at', 'asc')
                     .execute();
 
+                const sourceUrl = await resolveFixtureSourceUrl(
+                    db,
+                    fixture.fixture_external_id,
+                    {
+                        competitionExternalId: fixture.competition_external_id,
+                        seasonExternalId: fixture.season_external_id,
+                        leagueExternalId: fixture.league_external_id,
+                        platformBaseUrl: fixture.platform_base_url,
+                    },
+                    fixture.updated_at ?? null,
+                );
+
                 return reply.send({
                     fixture: {
                         id: fixture.id,
@@ -125,6 +146,7 @@ export function fixturesRoutes(db: Kysely<Database>): FastifyPluginAsync {
                         division_name: fixture.division_name,
                         home_team_name: fixture.home_team_name,
                         away_team_name: fixture.away_team_name,
+                        source_url: sourceUrl,
                     },
                     data: rubbers as any,
                 });

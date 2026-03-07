@@ -114,10 +114,6 @@ export function PlayerPage() {
       navigateInTab('leagues', relativePath);
     };
 
-  const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-  };
-
   useEffect(() => {
     const syncFromStorage = () => {
       setFavouritePlayers(parseStoredFavouritePlayers());
@@ -170,12 +166,19 @@ export function PlayerPage() {
               </AppCardContent>
               <AppCardContent className="mb-0">
                 <div className="row mb-0">
-                  <div className="col-4">
-                    <AppButtonLink full size="sm" className="font-13" onClick={onToggleFavourite}>
-                      {isFavourite ? 'Saved Favourite' : 'Save Favourite'}
+                  <div className="col-3">
+                    <AppButtonLink
+                      full
+                      size="sm"
+                      className="tt-favourite-action-button"
+                      tone={isFavourite ? 'highlight' : 'outline-highlight'}
+                      aria-label={isFavourite ? 'Remove favourite' : 'Save favourite'}
+                      onClick={onToggleFavourite}
+                    >
+                      <i className={`fa fa-heart ${isFavourite ? 'color-white' : 'color-highlight'}`} />
                     </AppButtonLink>
                   </div>
-                  <div className="col-4">
+                  <div className="col-9">
                     <AppButtonLink
                       full
                       size="sm"
@@ -184,11 +187,6 @@ export function PlayerPage() {
                       onClick={openSection(`player/${playerId}/insights`)}
                     >
                       Insights
-                    </AppButtonLink>
-                  </div>
-                  <div className="col-4">
-                    <AppButtonLink full size="sm" className="font-13" tone="outline-highlight" onClick={goHome}>
-                      Back Home
                     </AppButtonLink>
                   </div>
                 </div>
@@ -327,14 +325,14 @@ export function PlayerPage() {
                   <p className="mb-3">No recent matches found.</p>
                 ) : (
                   <>
-                    <AppListGroup size="large">
+                    <AppListGroup size="large" className="tt-match-history-list">
                       {recentMatches.map((match, index) => (
                         <AppListItem
                           key={match.id}
                           iconClassName={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`}
                           title={`${match.opponent} · ${match.result}`}
                           subtitle={`${formatMatchDate(match.date)} · ${match.league}`}
-                          onClick={preventDefaultLink}
+                          onClick={openInLeaguesTab(`fixture/${match.fixture_id}`)}
                           borderless={index === recentMatches.length - 1}
                         />
                       ))}

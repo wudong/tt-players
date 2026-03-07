@@ -76,6 +76,32 @@ export type LeagueSeasonsResponse = {
   data: LeagueSeason[];
 };
 
+export type FixtureStatus = 'upcoming' | 'completed' | 'postponed';
+
+export interface FixtureItem {
+  id: string;
+  competition_id: string;
+  external_id: string;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  home_team_name: string | null;
+  away_team_name: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  date_played: string;
+  status: FixtureStatus;
+  round_name: string | null;
+  round_order: number | null;
+}
+
+export interface FixturesResponse {
+  availability: 'available' | 'no_matches_yet' | 'source_data_missing';
+  total: number;
+  limit: number;
+  offset: number;
+  data: FixtureItem[];
+}
+
 export type ExtendedPlayerStats = {
   player_id: string;
   player_name: string;
@@ -146,6 +172,67 @@ export type H2HResponse = {
   encounters: RubberItem[];
 };
 
+export interface RosterItem {
+  id: string;
+  name: string;
+  played: number;
+  winRate: number;
+  wins: number;
+}
+
+export interface RosterResponse {
+  availability: 'available' | 'no_matches_yet' | 'source_data_missing';
+  data: RosterItem[];
+}
+
+export interface TeamFormResponse {
+  form: Array<'W' | 'L' | 'D'>;
+  position: number | null;
+  points: number | null;
+}
+
+export interface TeamSummaryResponse {
+  id: string;
+  name: string;
+  league_id: string | null;
+  league_name: string | null;
+  season_id: string | null;
+  season_name: string | null;
+  competition_id: string | null;
+  competition_name: string | null;
+}
+
+export interface FixtureRubberItem {
+  id: string;
+  fixture_id: string;
+  is_doubles: boolean;
+  home_player_1_id: string | null;
+  home_player_2_id: string | null;
+  away_player_1_id: string | null;
+  away_player_2_id: string | null;
+  home_player_1_name: string | null;
+  home_player_2_name: string | null;
+  away_player_1_name: string | null;
+  away_player_2_name: string | null;
+  home_games_won: number;
+  away_games_won: number;
+}
+
+export interface FixtureMeta {
+  id: string;
+  played_at: string | null;
+  league_name: string;
+  division_name: string;
+  home_team_name: string | null;
+  away_team_name: string | null;
+  source_url: string | null;
+}
+
+export interface FixtureRubbersResponse {
+  fixture: FixtureMeta;
+  data: FixtureRubberItem[];
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 export const FAVOURITES_STORAGE_KEY = 'tt_players_favourite_players';
 export const FAVOURITES_UPDATED_EVENT = 'tt_players_favourite_players_updated';
@@ -192,6 +279,11 @@ export function getInitials(name: string): string {
   return (parts[0] ?? 'P').slice(0, 2).toUpperCase();
 }
 
+export function calcWinRate(wins: number, played: number): number {
+  if (!played || played <= 0) return 0;
+  return Math.round((wins / played) * 100);
+}
+
 export function parseNamePair(text: string | null) {
   if (!text) return { name: 'N/A', meta: '' };
   const [name, meta] = text.split('(');
@@ -201,6 +293,27 @@ export function parseNamePair(text: string | null) {
 export function formatMatchDate(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function formatDate(value: string, options?: { includeTime?: boolean }): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  if (options?.includeTime) {
+    return parsed.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   return parsed.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
