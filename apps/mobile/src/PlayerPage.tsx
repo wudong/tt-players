@@ -67,7 +67,7 @@ export function PlayerPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('dashboard', 'root');
+    switchTab('players', 'root');
   };
 
   const onToggleFavourite = (event: MouseEvent<HTMLAnchorElement>) => {

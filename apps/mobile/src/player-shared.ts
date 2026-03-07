@@ -5,6 +5,77 @@ export type FavouritePlayer = {
   wins: number;
 };
 
+export type PlayerSearchItem = FavouritePlayer;
+
+export type PlayerSearchResponse = {
+  data: PlayerSearchItem[];
+};
+
+export type StandingItem = {
+  position: number;
+  team_id: string;
+  team_name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  points: number;
+};
+
+export type StandingsResponse = {
+  source_url: string | null;
+  data: StandingItem[];
+};
+
+export type LeaderboardMode = 'win_pct' | 'most_played' | 'combined';
+
+export type LeaderboardItem = {
+  rank: number;
+  player_id: string;
+  player_name: string;
+  played: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  score: number | null;
+};
+
+export type LeadersResponse = {
+  mode: LeaderboardMode;
+  formula: string;
+  min_played: number;
+  data: LeaderboardItem[];
+};
+
+export type DivisionItem = {
+  id: string;
+  name: string;
+  external_id?: string;
+};
+
+export type LeagueWithDivisions = {
+  id: string;
+  name: string;
+  platform?: string;
+  season_id?: string;
+  season?: string;
+  divisions: DivisionItem[];
+};
+
+export type LeaguesResponse = {
+  data: LeagueWithDivisions[];
+};
+
+export type LeagueSeason = {
+  id: string;
+  name: string;
+  is_active: boolean;
+};
+
+export type LeagueSeasonsResponse = {
+  data: LeagueSeason[];
+};
+
 export type ExtendedPlayerStats = {
   player_id: string;
   player_name: string;
@@ -67,6 +138,12 @@ export type RubbersResponse = {
   limit: number;
   offset: number;
   data: RubberItem[];
+};
+
+export type H2HResponse = {
+  player1_wins: number;
+  player2_wins: number;
+  encounters: RubberItem[];
 };
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';

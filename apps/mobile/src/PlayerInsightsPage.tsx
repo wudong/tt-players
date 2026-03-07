@@ -34,7 +34,7 @@ export function PlayerInsightsPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('dashboard', 'root');
+    switchTab('players', 'root');
   };
 
   const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {

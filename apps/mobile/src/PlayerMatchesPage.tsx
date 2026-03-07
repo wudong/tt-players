@@ -39,7 +39,7 @@ export function PlayerMatchesPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('dashboard', 'root');
+    switchTab('players', 'root');
   };
 
   const onLoadMore = (event: MouseEvent<HTMLAnchorElement>) => {

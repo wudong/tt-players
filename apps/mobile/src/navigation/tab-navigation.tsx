@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 
-export const APP_TABS = ['dashboard', 'leagues', 'players'] as const;
+export const APP_TABS = ['players', 'leagues', 'h2h'] as const;
 export type AppTabId = (typeof APP_TABS)[number];
 
 type TabStacks = Record<AppTabId, string[]>;
@@ -20,7 +20,7 @@ type ReselectBehavior = 'noop' | 'root';
 const TAB_STACKS_STORAGE_KEY = 'tt_players_mobile_tab_stacks_v1';
 const SCROLL_POSITIONS_STORAGE_KEY = 'tt_players_mobile_scroll_positions_v1';
 const SCROLL_PERSIST_DEBOUNCE_MS = 150;
-const DEFAULT_TAB: AppTabId = 'dashboard';
+const DEFAULT_TAB: AppTabId = 'players';
 
 type TabNavigationContextValue = {
   activeTab: AppTabId;
@@ -40,9 +40,9 @@ export function isAppTab(value: string): value is AppTabId {
 
 function getDefaultStacks(): TabStacks {
   return {
-    dashboard: ['/tabs/dashboard'],
-    leagues: ['/tabs/leagues'],
     players: ['/tabs/players'],
+    leagues: ['/tabs/leagues'],
+    h2h: ['/tabs/h2h'],
   };
 }
 

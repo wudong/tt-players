@@ -218,3 +218,174 @@ body.theme-dark .tt-form-result-loss {
 body.theme-dark .tt-player-summary-divider {
   border-top-color: rgba(255, 255, 255, 0.12);
 }
+
+.tt-tab-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tt-tab-toggle {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tt-tab-toggle button {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 8px 12px;
+}
+
+.tt-tab-toggle button.active {
+  background: var(--bs-highlight);
+  border-color: var(--bs-highlight);
+  color: #fff;
+}
+
+.tt-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tt-chip {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 9px 12px;
+}
+
+.tt-chip.active {
+  background: rgba(227, 28, 35, 0.14);
+  border-color: rgba(227, 28, 35, 0.4);
+}
+
+.tt-table-wrap {
+  overflow-x: auto;
+}
+
+.tt-standings-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tt-standings-table th,
+.tt-standings-table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tt-standings-table th:last-child,
+.tt-standings-table td:last-child {
+  text-align: right;
+}
+
+.tt-h2h-picker-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tt-h2h-picker-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tt-h2h-result-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.tt-h2h-scoreboard {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tt-h2h-scoreboard > div {
+  width: calc(50% - 8px);
+}
+
+.tt-h2h-scoreboard strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.tt-h2h-scoreboard span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.tt-h2h-bar {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+}
+
+.tt-h2h-bar-a {
+  background: linear-gradient(90deg, #1f8f50, #48b172);
+}
+
+.tt-h2h-bar-b {
+  background: linear-gradient(90deg, #c63a3a, #e65a5a);
+}
+
+body.theme-dark .tt-tab-toggle button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+body.theme-dark .tt-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+body.theme-dark .tt-chip.active {
+  background: rgba(227, 28, 35, 0.24);
+  border-color: rgba(227, 28, 35, 0.5);
+}
+
+body.theme-dark .tt-standings-table th,
+body.theme-dark .tt-standings-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.16);
+}
+
+body.theme-dark .tt-h2h-picker-card {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.theme-dark .tt-h2h-bar {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 620px) {
+  .tt-h2h-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tt-tab-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

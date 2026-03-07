@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import './app-shell.css';
+import { H2HTabContent } from './H2HTabContent';
+import { LeaguesTabContent } from './LeaguesTabContent';
 import { useTabNavigation, type AppTabId } from './navigation/tab-navigation';
 
 type FooterTab = {
@@ -61,16 +63,16 @@ type LeaguesResponse = {
 };
 
 const footerTabs: FooterTab[] = [
-  { id: 'dashboard', tabId: 'dashboard', label: 'Dashboard', iconClassName: 'fa fa-chart-line' },
-  { id: 'leagues', tabId: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
   { id: 'players', tabId: 'players', label: 'Players', iconClassName: 'fa fa-user-friends' },
+  { id: 'leagues', tabId: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
+  { id: 'h2h', tabId: 'h2h', label: 'H2H', iconClassName: 'fa fa-code-compare' },
   { id: 'menu', label: 'Menu', iconClassName: 'fa fa-bars' },
 ];
 
 const tabTitles: Record<AppTabId, string> = {
-  dashboard: 'Dashboard',
-  leagues: 'Leagues',
   players: 'Players',
+  leagues: 'Leagues',
+  h2h: 'Head to Head',
 };
 
 const menuConfigs: Record<MenuId, MenuConfig> = {
@@ -195,7 +197,8 @@ function App() {
     return allLeagues.filter((league) => league.name.toLowerCase().includes(normalizedLeagueQuery));
   }, [allLeagues, normalizedLeagueQuery]);
   const isSearchMode = normalizedQuery.length > 2;
-  const shouldFetchPlayers = isLeagueSelectionReady
+  const shouldFetchPlayers = activeTab === 'players'
+    && isLeagueSelectionReady
     && hasSelectedLeagues
     && (normalizedQuery.length === 0 || normalizedQuery.length > 2);
   const activeMenuConfig = activeMenuId ? menuConfigs[activeMenuId] : null;
@@ -638,7 +641,7 @@ function App() {
                 href="#"
                 className={classNames}
                 data-menu={isMenuTab ? 'menu-main' : undefined}
-                onClick={isMenuTab ? onMenuTrigger('menu-main') : onFooterTabClick(tab.tabId ?? 'dashboard')}
+                onClick={isMenuTab ? onMenuTrigger('menu-main') : onFooterTabClick(tab.tabId ?? 'players')}
               >
                 <i className={tab.iconClassName} />
                 <span>{tab.label}</span>
@@ -665,7 +668,9 @@ function App() {
         <div className="page-title-clear" />
 
         <main className="page-content mt-n1 app-shell-content" style={wrapperStyle}>
-          <div className="content mt-n4 mb-3">
+          {activeTab === 'players' ? (
+            <>
+              <div className="content mt-n4 mb-3">
             <div className="tt-search-toolbar mt-4">
               <div className="search-box search-dark shadow-sm border-0 bg-theme rounded-sm bottom-0 mb-0">
                 <i className="fa fa-search ms-1" />
@@ -687,9 +692,9 @@ function App() {
                 {isLeaguesLoading && !isLeagueSelectionReady ? 'Loading' : `Leagues (${selectedLeagueIds.length})`}
               </a>
             </div>
-          </div>
+              </div>
 
-          {favouritePlayers.length > 0 ? (
+              {favouritePlayers.length > 0 ? (
             <div className="card card-style mt-2">
               <div className="content mb-0">
                 <div className="d-flex mb-2">
@@ -731,9 +736,9 @@ function App() {
                 </div>
               </div>
             </div>
-          ) : null}
+              ) : null}
 
-          {trendingPlayer ? (
+              {trendingPlayer ? (
             <div
               className="card card-style tt-trending-card"
               data-card-height="210"
@@ -762,9 +767,9 @@ function App() {
               <div className="card-overlay bg-gradient opacity-30" />
               <div className="card-overlay bg-gradient" />
             </div>
-          ) : null}
+              ) : null}
 
-          <div className="card card-style mt-2">
+              <div className="card card-style mt-2">
             <div className="content mb-0">
               <div className="d-flex mb-2">
                 <div className="align-self-center">
@@ -824,7 +829,25 @@ function App() {
                 </div>
               )}
             </div>
-          </div>
+              </div>
+            </>
+          ) : null}
+
+          {activeTab === 'leagues' ? (
+            <LeaguesTabContent
+              selectedLeagueIds={selectedLeagueIds}
+              onOpenLeagueFilter={onMenuTrigger('menu-leagues')}
+              onOpenPlayer={(playerId) => navigateInActiveTab(`player/${playerId}`)}
+            />
+          ) : null}
+
+          {activeTab === 'h2h' ? (
+            <H2HTabContent
+              selectedLeagueIds={selectedLeagueIds}
+              onOpenLeagueFilter={onMenuTrigger('menu-leagues')}
+              onOpenPlayer={(playerId) => navigateInActiveTab(`player/${playerId}`)}
+            />
+          ) : null}
         </main>
 
         <div
@@ -849,9 +872,9 @@ function App() {
           <div className="mt-4" />
           <h6 className="menu-divider">Library</h6>
           <div className="list-group list-custom-small list-menu">
-            <a href="#" onClick={onMenuTabClick('dashboard')}>
-              <i className="fa fa-chart-line gradient-red color-white" />
-              <span>Home</span>
+            <a href="#" onClick={onMenuTabClick('players')}>
+              <i className="fa fa-user-friends gradient-magenta color-white" />
+              <span>Players</span>
               <i className="fa fa-angle-right" />
             </a>
             <a href="#" onClick={onMenuTabClick('leagues')}>
@@ -859,9 +882,9 @@ function App() {
               <span>Leagues</span>
               <i className="fa fa-angle-right" />
             </a>
-            <a href="#" onClick={onMenuTabClick('players')}>
-              <i className="fa fa-user-friends gradient-magenta color-white" />
-              <span>Players</span>
+            <a href="#" onClick={onMenuTabClick('h2h')}>
+              <i className="fa fa-code-compare gradient-red color-white" />
+              <span>Head to Head</span>
               <i className="fa fa-angle-right" />
             </a>
           </div>

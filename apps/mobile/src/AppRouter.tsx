@@ -7,29 +7,29 @@ import { PlayerPage } from './PlayerPage';
 
 function LegacyPlayerRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
-  return <Navigate to={`/tabs/dashboard/player/${playerId}`} replace />;
+  return <Navigate to={`/tabs/players/player/${playerId}`} replace />;
 }
 
 function LegacyPlayerInsightsRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
-  return <Navigate to={`/tabs/dashboard/player/${playerId}/insights`} replace />;
+  return <Navigate to={`/tabs/players/player/${playerId}/insights`} replace />;
 }
 
 function LegacyPlayerMatchesRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
-  return <Navigate to={`/tabs/dashboard/player/${playerId}/matches`} replace />;
+  return <Navigate to={`/tabs/players/player/${playerId}/matches`} replace />;
 }
 
 function TabRootRedirect() {
-  const { tabId = 'dashboard' } = useParams<{ tabId: string }>();
-  const safeTab = isAppTab(tabId) ? tabId : 'dashboard';
+  const { tabId = 'players' } = useParams<{ tabId: string }>();
+  const safeTab = isAppTab(tabId) ? tabId : 'players';
   return <Navigate to={`/tabs/${safeTab}`} replace />;
 }
 
 function EnsureValidTab({ children }: { children: JSX.Element }) {
   const { tabId = '' } = useParams<{ tabId: string }>();
   if (!isAppTab(tabId)) {
-    return <Navigate to="/tabs/dashboard" replace />;
+    return <Navigate to="/tabs/players" replace />;
   }
   return children;
 }
@@ -39,7 +39,7 @@ export function AppRouter() {
     <HashRouter>
       <TabNavigationProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/tabs/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/tabs/players" replace />} />
 
           <Route path="/tabs/:tabId" element={<EnsureValidTab><App /></EnsureValidTab>} />
           <Route path="/tabs/:tabId/player/:playerId" element={<EnsureValidTab><PlayerPage /></EnsureValidTab>} />
@@ -51,7 +51,7 @@ export function AppRouter() {
           <Route path="/players/:playerId/insights" element={<LegacyPlayerInsightsRedirect />} />
           <Route path="/players/:playerId/matches" element={<LegacyPlayerMatchesRedirect />} />
 
-          <Route path="*" element={<Navigate to="/tabs/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/tabs/players" replace />} />
         </Routes>
       </TabNavigationProvider>
     </HashRouter>
