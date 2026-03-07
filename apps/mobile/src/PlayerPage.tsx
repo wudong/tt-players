@@ -4,19 +4,19 @@ import './app-shell.css';
 import { useTabNavigation } from './navigation/tab-navigation';
 import {
   FAVOURITES_UPDATED_EVENT,
-  apiFetch,
   formatMatchDate,
   getInitials,
   parseStoredFavouritePlayers,
   persistFavouritePlayers,
-  type ExtendedPlayerStats,
   type FavouritePlayer,
-  type PlayerCurrentSeasonAffiliation,
-  type PlayerCurrentSeasonAffiliationsResponse,
-  type PlayerInsights,
-  type RubbersResponse,
-  type RubberItem,
 } from './player-shared';
+import {
+  usePlayerCurrentSeasonAffiliationsQuery,
+  usePlayerExtendedStatsQuery,
+  usePlayerInsightsQuery,
+  usePlayerRubbersQuery,
+} from './queries';
+import { TabShellPage } from './TabShellPage';
 import {
   AppButtonLink,
   AppCard,
@@ -28,26 +28,36 @@ import {
   AppLoadingCard,
   AppMessageCard,
   AppPageContent,
-  AppShellPage,
 } from './ui/appkit';
 
 export function PlayerPage() {
-  const { goBackInActiveTab, navigateInActiveTab, switchTab } = useTabNavigation();
+  const { goBackInActiveTab, navigateInActiveTab, navigateInTab, switchTab } = useTabNavigation();
   const { playerId = '' } = useParams<{ playerId: string }>();
 
-  const [stats, setStats] = useState<ExtendedPlayerStats | null>(null);
-  const [statsError, setStatsError] = useState<string | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [affiliations, setAffiliations] = useState<PlayerCurrentSeasonAffiliation[]>([]);
-  const [affiliationsError, setAffiliationsError] = useState<string | null>(null);
-  const [affiliationsLoading, setAffiliationsLoading] = useState(true);
-  const [recentMatches, setRecentMatches] = useState<RubberItem[]>([]);
-  const [recentMatchesError, setRecentMatchesError] = useState<string | null>(null);
-  const [recentMatchesLoading, setRecentMatchesLoading] = useState(true);
-  const [insights, setInsights] = useState<PlayerInsights | null>(null);
-  const [insightsLoading, setInsightsLoading] = useState(true);
-  const [insightsError, setInsightsError] = useState<string | null>(null);
   const [favouritePlayers, setFavouritePlayers] = useState<FavouritePlayer[]>(() => parseStoredFavouritePlayers());
+
+  const statsQuery = usePlayerExtendedStatsQuery(playerId, Boolean(playerId));
+  const affiliationsQuery = usePlayerCurrentSeasonAffiliationsQuery(playerId, Boolean(playerId));
+  const recentMatchesQuery = usePlayerRubbersQuery(playerId, 10, 0, Boolean(playerId));
+  const insightsQuery = usePlayerInsightsQuery(playerId, Boolean(playerId));
+
+  const stats = statsQuery.data ?? null;
+  const statsError = playerId
+    ? (statsQuery.error instanceof Error ? statsQuery.error.message : null)
+    : 'Missing player id';
+  const statsLoading = statsQuery.isLoading;
+
+  const affiliations = affiliationsQuery.data?.data ?? [];
+  const affiliationsError = affiliationsQuery.error instanceof Error ? affiliationsQuery.error.message : null;
+  const affiliationsLoading = affiliationsQuery.isLoading;
+
+  const recentMatches = recentMatchesQuery.data?.data ?? [];
+  const recentMatchesError = recentMatchesQuery.error instanceof Error ? recentMatchesQuery.error.message : null;
+  const recentMatchesLoading = recentMatchesQuery.isLoading;
+
+  const insights = insightsQuery.data ?? null;
+  const insightsError = insightsQuery.error instanceof Error ? insightsQuery.error.message : null;
+  const insightsLoading = insightsQuery.isLoading;
 
   const winRate = useMemo(() => {
     if (!stats || stats.total <= 0) return 0;
@@ -97,6 +107,13 @@ export function PlayerPage() {
       navigateInActiveTab(relativePath);
     };
 
+  const openInLeaguesTab =
+    (relativePath: string) =>
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      navigateInTab('leagues', relativePath);
+    };
+
   const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
   };
@@ -114,111 +131,8 @@ export function PlayerPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!playerId) {
-      setStats(null);
-      setStatsError('Missing player id');
-      setStatsLoading(false);
-      setAffiliations([]);
-      setAffiliationsError('Missing player id');
-      setAffiliationsLoading(false);
-      setRecentMatches([]);
-      setRecentMatchesError('Missing player id');
-      setRecentMatchesLoading(false);
-      setInsights(null);
-      setInsightsLoading(false);
-      setInsightsError('Missing player id');
-      return;
-    }
-
-    const abortController = new AbortController();
-    let isActive = true;
-
-    const loadProfile = async () => {
-      setStatsLoading(true);
-      setAffiliationsLoading(true);
-      setRecentMatchesLoading(true);
-      setInsightsLoading(true);
-      setStatsError(null);
-      setAffiliationsError(null);
-      setRecentMatchesError(null);
-      setInsightsError(null);
-
-      try {
-        const [statsResult, affiliationsResult, rubbersResult, insightsResult] = await Promise.allSettled([
-          apiFetch<ExtendedPlayerStats>(`/players/${playerId}/stats/extended`, abortController.signal),
-          apiFetch<PlayerCurrentSeasonAffiliationsResponse>(`/players/${playerId}/affiliations/current-season`, abortController.signal),
-          apiFetch<RubbersResponse>(`/players/${playerId}/rubbers?limit=10&offset=0`, abortController.signal),
-          apiFetch<PlayerInsights>(`/players/${playerId}/insights`, abortController.signal),
-        ]);
-        if (!isActive) return;
-
-        if (statsResult.status === 'fulfilled') {
-          setStats(statsResult.value);
-          setStatsError(null);
-        } else {
-          const reason = statsResult.reason as Error;
-          if (reason.name !== 'AbortError') {
-            setStats(null);
-            setStatsError(reason.message || 'Failed to load player profile');
-          }
-        }
-
-        if (affiliationsResult.status === 'fulfilled') {
-          setAffiliations(affiliationsResult.value.data ?? []);
-          setAffiliationsError(null);
-        } else {
-          const reason = affiliationsResult.reason as Error;
-          if (reason.name !== 'AbortError') {
-            setAffiliations([]);
-            setAffiliationsError(reason.message || 'Failed to load current season clubs');
-          }
-        }
-
-        if (rubbersResult.status === 'fulfilled') {
-          setRecentMatches(rubbersResult.value.data ?? []);
-          setRecentMatchesError(null);
-        } else {
-          const reason = rubbersResult.reason as Error;
-          if (reason.name !== 'AbortError') {
-            setRecentMatches([]);
-            setRecentMatchesError(reason.message || 'Failed to load recent matches');
-          }
-        }
-
-        if (insightsResult.status === 'fulfilled') {
-          setInsights(insightsResult.value);
-          setInsightsError(null);
-        } else {
-          const reason = insightsResult.reason as Error;
-          if (reason.name !== 'AbortError') {
-            setInsights(null);
-            setInsightsError(reason.message || 'Failed to load form insights');
-          }
-        }
-      } catch (error) {
-        if ((error as Error).name === 'AbortError' || !isActive) return;
-        setStats(null);
-        setStatsError((error as Error).message || 'Failed to load player profile');
-      } finally {
-        if (!isActive) return;
-        setStatsLoading(false);
-        setAffiliationsLoading(false);
-        setRecentMatchesLoading(false);
-        setInsightsLoading(false);
-      }
-    };
-
-    loadProfile();
-
-    return () => {
-      isActive = false;
-      abortController.abort();
-    };
-  }, [playerId]);
-
   return (
-    <AppShellPage>
+    <TabShellPage>
       <AppHeader
         title={stats?.player_name ?? 'Player'}
         onTitleClick={goHome}
@@ -347,7 +261,7 @@ export function PlayerPage() {
                         iconClassName="fa fa-table-tennis rounded-xl shadow-xl bg-blue-dark color-white"
                         title={affiliation.team_name}
                         subtitle={`${affiliation.league_name} · ${affiliation.competition_name} · ${affiliation.season_name}`}
-                        onClick={preventDefaultLink}
+                        onClick={openInLeaguesTab(`team/${affiliation.team_id}`)}
                         borderless={index === affiliations.length - 1}
                       />
                     ))}
@@ -440,6 +354,6 @@ export function PlayerPage() {
           </>
         )}
       </AppPageContent>
-    </AppShellPage>
+    </TabShellPage>
   );
 }

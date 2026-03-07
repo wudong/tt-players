@@ -29,6 +29,7 @@ type TabNavigationContextValue = {
   goBackInActiveTab: (fallbackRelativePath?: string) => void;
   handleSystemBack: () => boolean;
   navigateInActiveTab: (relativePath?: string) => void;
+  navigateInTab: (tab: AppTabId, relativePath?: string) => void;
   switchTab: (tab: AppTabId, reselectBehavior?: ReselectBehavior) => void;
 };
 
@@ -242,6 +243,11 @@ export function TabNavigationProvider({ children }: { children: ReactNode }) {
     navigate(buildTabPath(activeTab, relativePath));
   }, [activeTab, navigate, saveScrollPositionForCurrentPath]);
 
+  const navigateInTab = useCallback((tab: AppTabId, relativePath = '') => {
+    saveScrollPositionForCurrentPath();
+    navigate(buildTabPath(tab, relativePath));
+  }, [navigate, saveScrollPositionForCurrentPath]);
+
   const goBackInActiveTab = useCallback((fallbackRelativePath = '') => {
     saveScrollPositionForCurrentPath();
 
@@ -284,8 +290,9 @@ export function TabNavigationProvider({ children }: { children: ReactNode }) {
     goBackInActiveTab,
     handleSystemBack,
     navigateInActiveTab,
+    navigateInTab,
     switchTab,
-  }), [activeTab, canGoBackInActiveTab, goBackInActiveTab, handleSystemBack, navigateInActiveTab, switchTab]);
+  }), [activeTab, canGoBackInActiveTab, goBackInActiveTab, handleSystemBack, navigateInActiveTab, navigateInTab, switchTab]);
 
   return (
     <TabNavigationContext.Provider value={value}>
