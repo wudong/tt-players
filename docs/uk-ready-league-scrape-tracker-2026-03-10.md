@@ -1,14 +1,14 @@
 # UK Ready League Scrape Tracker
 
-Last updated: 2026-03-14T11:01:55.282Z
+Last updated: 2026-03-14T15:15:12.142Z
 
 ## Summary
 
 - Total ready leagues: 190
-- Completed: 27
+- Completed: 33
 - In progress: 1
 - Partial: 0
-- Pending: 162
+- Pending: 156
 
 ## England
 
@@ -41,13 +41,13 @@ Last updated: 2026-03-14T11:01:55.282Z
 | Cleveland | Cleveland Table Tennis League | 1/1 (completed) | 3/3 (completed) | completed | 2026-03-14T10:32:02.719Z | 2026-03-14T10:33:26.154Z | ttleagues | https://cleveland.ttleagues.com |
 | Cleveland | Middlesbrough Table Tennis League | 3/3 (completed) | 6/6 (completed) | completed | 2026-03-14T10:33:26.157Z | 2026-03-14T10:37:33.475Z | ttleagues | https://middlesbrough.ttleagues.com |
 | Cleveland | Stockton Table Tennis League | 3/3 (completed) | 13/13 (completed) | completed | 2026-03-14T10:37:33.479Z | 2026-03-14T10:49:02.034Z | ttleagues | https://stockton.ttleagues.com |
-| Cornwall | North Cornwall Table Tennis League | 2/2 (completed) | 5/16 (partial) | in_progress | 2026-03-14T10:49:02.040Z |  | tt365 | https://www.tabletennis365.com/northcornwall |
-| Cornwall | West Cornwall Table Tennis League | 0/4 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://westcornwall.ttleagues.com |
-| Cumbria | Barrow Table Tennis League | 0/2 (pending) | 0/0 (not_required) | pending |  |  | ttleagues | https://barrow.ttleagues.com |
-| Derbyshire | Chesterfield Table Tennis League | 0/4 (pending) | 0/6 (pending) | pending |  |  | ttleagues | https://chesterfield.ttleagues.com |
-| Derbyshire | Derby & District Table Tennis Association | 0/4 (pending) | 0/21 (pending) | pending |  |  | ttleagues | https://derbydistrict.ttleagues.com |
-| Derbyshire | Matlock Table Tennis League | 0/2 (pending) | 0/10 (pending) | pending |  |  | ttleagues | https://matlock.ttleagues.com |
-| Devonshire | Exeter Table Tennis League | 0/4 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://exeter.ttleagues.com |
+| Cornwall | North Cornwall Table Tennis League | 2/2 (completed) | 16/16 (completed) | completed | 2026-03-14T10:49:02.040Z | 2026-03-14T11:28:19.373Z | tt365 | https://www.tabletennis365.com/northcornwall |
+| Cornwall | West Cornwall Table Tennis League | 4/4 (completed) | 14/14 (completed) | completed | 2026-03-14T11:28:19.378Z | 2026-03-14T11:46:32.414Z | ttleagues | https://westcornwall.ttleagues.com |
+| Cumbria | Barrow Table Tennis League | 2/2 (completed) | 0/0 (not_required) | completed | 2026-03-14T11:46:32.417Z | 2026-03-14T11:47:58.092Z | ttleagues | https://barrow.ttleagues.com |
+| Derbyshire | Chesterfield Table Tennis League | 4/4 (completed) | 6/6 (completed) | completed | 2026-03-14T11:47:58.098Z | 2026-03-14T11:54:27.429Z | ttleagues | https://chesterfield.ttleagues.com |
+| Derbyshire | Derby & District Table Tennis Association | 4/4 (completed) | 21/21 (completed) | completed | 2026-03-14T11:54:27.432Z | 2026-03-14T15:06:38.357Z | ttleagues | https://derbydistrict.ttleagues.com |
+| Derbyshire | Matlock Table Tennis League | 2/2 (completed) | 10/10 (completed) | completed | 2026-03-14T15:06:38.369Z | 2026-03-14T15:15:12.140Z | ttleagues | https://matlock.ttleagues.com |
+| Devonshire | Exeter Table Tennis League | 0/4 (pending) | 0/14 (pending) | in_progress | 2026-03-14T15:15:12.141Z |  | ttleagues | https://exeter.ttleagues.com |
 | Devonshire | South Devon and Torbay Table Tennis League | 0/4 (pending) | 0/20 (pending) | pending |  |  | ttleagues | https://southdevonandtorbay.ttleagues.com |
 | Dorset | Blackmore Vale Table Tennis League | 0/2 (pending) | 0/2 (pending) | pending |  |  | ttleagues | https://blackmorevale.ttleagues.com |
 | Dorset | Weymouth Table Tennis League | 0/3 (pending) | 0/15 (pending) | pending |  |  | ttleagues | https://weymouth.ttleagues.com |

@@ -6,6 +6,8 @@ import { PlayerInsightsPage } from './PlayerInsightsPage';
 import { PlayerMatchesPage } from './PlayerMatchesPage';
 import { PlayerPage } from './PlayerPage';
 import { TeamPage } from './TeamPage';
+import PWAReloadPrompt from './PWAReloadPrompt';
+import PWAInstallSheet from './PWAInstallSheet';
 
 function LegacyPlayerRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
@@ -39,6 +41,8 @@ function EnsureValidTab({ children }: { children: JSX.Element }) {
 export function AppRouter() {
   return (
     <HashRouter>
+      <PWAReloadPrompt />
+      <PWAInstallSheet />
       <TabNavigationProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/tabs/home" replace />} />

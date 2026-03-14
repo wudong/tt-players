@@ -599,3 +599,238 @@ Started: 2026-03-13T09:12:12.594Z
 - 2026-03-14T10:49:02.043Z starting 28/190: North Cornwall Table Tennis League (England / Cornwall), current_targets=2, history_targets=16
 - 2026-03-14T10:51:55.273Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162
 - 2026-03-14T11:01:55.284Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162
+- 2026-03-14T11:11:55.281Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162
+- 2026-03-14T11:21:55.266Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162
+- 2026-03-14T11:28:19.377Z completed 28/190: North Cornwall Table Tennis League, current=2/2, history=16/16, overall=completed, jobs_processed=1452, jobs_failed=0
+- 2026-03-14T11:28:19.380Z starting 29/190: West Cornwall Table Tennis League (England / Cornwall), current_targets=4, history_targets=14
+- 2026-03-14T11:31:55.265Z checkpoint (10 minute timer): completed=28, partial=0, in_progress=1, pending=161
+- 2026-03-14T11:41:55.266Z checkpoint (10 minute timer): completed=28, partial=0, in_progress=1, pending=161
+- 2026-03-14T11:46:32.416Z completed 29/190: West Cornwall Table Tennis League, current=4/4, history=14/14, overall=completed, jobs_processed=72, jobs_failed=0
+- 2026-03-14T11:46:32.418Z starting 30/190: Barrow Table Tennis League (England / Cumbria), current_targets=2, history_targets=0
+- 2026-03-14T11:47:58.097Z completed 30/190: Barrow Table Tennis League, current=2/2, history=0/0, overall=completed, jobs_processed=8, jobs_failed=0
+- 2026-03-14T11:47:58.100Z starting 31/190: Chesterfield Table Tennis League (England / Derbyshire), current_targets=4, history_targets=6
+- 2026-03-14T11:51:55.267Z checkpoint (10 minute timer): completed=30, partial=0, in_progress=1, pending=159
+- 2026-03-14T11:54:27.431Z completed 31/190: Chesterfield Table Tennis League, current=4/4, history=6/6, overall=completed, jobs_processed=39, jobs_failed=1
+- 2026-03-14T11:54:27.432Z failure samples for Chesterfield Table Tennis League: processLogTask: {"logId":"3bed307a-0e15-4839-a7c3-241249515a94","competitionId":"b3168bda-52a0-4652-92f3-a761ad87a789","platformId":"c7560866-58f1-45f8-9406-570341fab522","platformType":"ttleagues-bundle"}: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      4,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      4,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      5,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      5,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      6,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      6,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      7,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      7,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      8,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      8,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      9,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      9,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  }
+]
+- 2026-03-14T11:54:27.433Z starting 32/190: Derby & District Table Tennis Association (England / Derbyshire), current_targets=4, history_targets=21
+- 2026-03-14T12:01:55.277Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T12:19:36.747Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T12:29:36.659Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T12:39:36.640Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T12:49:36.629Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T12:59:36.684Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T13:09:36.691Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T13:19:36.696Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:00:53.107Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:10:53.112Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:20:53.118Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:30:53.086Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:40:53.087Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T14:50:53.078Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T15:03:39.249Z checkpoint (10 minute timer): completed=31, partial=0, in_progress=1, pending=158
+- 2026-03-14T15:06:38.368Z completed 32/190: Derby & District Table Tennis Association, current=4/4, history=21/21, overall=completed, jobs_processed=99, jobs_failed=1
+- 2026-03-14T15:06:38.369Z failure samples for Derby & District Table Tennis Association: processLogTask: {"logId":"7e0a90fa-e093-4922-8302-a317130dc109","competitionId":"c9e9445d-8540-4885-93f6-7def8cce6ff7","platformId":"c7560866-58f1-45f8-9406-570341fab522","platformType":"ttleagues-bundle"}: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      5,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      5,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      6,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      6,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      7,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      7,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      8,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      8,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      9,
+      "homeScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  },
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      9,
+      "awayScore"
+    ],
+    "message": "Invalid input: expected number, received null"
+  }
+]
+- 2026-03-14T15:06:38.373Z starting 33/190: Matlock Table Tennis League (England / Derbyshire), current_targets=2, history_targets=10
+- 2026-03-14T15:13:39.291Z checkpoint (10 minute timer): completed=32, partial=0, in_progress=1, pending=157
+- 2026-03-14T15:15:12.141Z completed 33/190: Matlock Table Tennis League, current=2/2, history=10/10, overall=completed, jobs_processed=48, jobs_failed=0
+- 2026-03-14T15:15:12.143Z starting 34/190: Exeter Table Tennis League (England / Devonshire), current_targets=4, history_targets=14
