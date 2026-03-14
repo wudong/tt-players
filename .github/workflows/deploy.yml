@@ -38,4 +38,4 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
 
       - name: Deploy to Netlify
-        run: npx netlify-cli deploy --dir=apps/web/dist --prod --no-build --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --filter=@tt-players/web
+        run: npx netlify-cli deploy --dir=apps/mobile/dist --prod --no-build --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --filter=@tt-players/mobile
