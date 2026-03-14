@@ -595,3 +595,7 @@ Started: 2026-03-13T09:12:12.594Z
 - 2026-03-14T10:37:33.478Z completed 26/190: Middlesbrough Table Tennis League, current=3/3, history=6/6, overall=completed, jobs_processed=36, jobs_failed=0
 - 2026-03-14T10:37:33.483Z starting 27/190: Stockton Table Tennis League (England / Cleveland), current_targets=3, history_targets=13
 - 2026-03-14T10:41:55.254Z checkpoint (10 minute timer): completed=26, partial=0, in_progress=1, pending=163
+- 2026-03-14T10:49:02.039Z completed 27/190: Stockton Table Tennis League, current=3/3, history=13/13, overall=completed, jobs_processed=64, jobs_failed=0
+- 2026-03-14T10:49:02.043Z starting 28/190: North Cornwall Table Tennis League (England / Cornwall), current_targets=2, history_targets=16
+- 2026-03-14T10:51:55.273Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162
+- 2026-03-14T11:01:55.284Z checkpoint (10 minute timer): completed=27, partial=0, in_progress=1, pending=162

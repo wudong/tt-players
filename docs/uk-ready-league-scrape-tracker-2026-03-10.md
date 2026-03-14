@@ -1,14 +1,14 @@
 # UK Ready League Scrape Tracker
 
-Last updated: 2026-03-14T10:41:55.252Z
+Last updated: 2026-03-14T11:01:55.282Z
 
 ## Summary
 
 - Total ready leagues: 190
-- Completed: 26
+- Completed: 27
 - In progress: 1
 - Partial: 0
-- Pending: 163
+- Pending: 162
 
 ## England
 
@@ -40,8 +40,8 @@ Last updated: 2026-03-14T10:41:55.252Z
 | Cheshire\|Lancashire | Lancashire And Cheshire Table Tennis League | 3/3 (completed) | 6/6 (completed) | completed | 2026-03-14T10:30:33.334Z | 2026-03-14T10:32:02.717Z | ttleagues | https://lancashireandcheshire.ttleagues.com |
 | Cleveland | Cleveland Table Tennis League | 1/1 (completed) | 3/3 (completed) | completed | 2026-03-14T10:32:02.719Z | 2026-03-14T10:33:26.154Z | ttleagues | https://cleveland.ttleagues.com |
 | Cleveland | Middlesbrough Table Tennis League | 3/3 (completed) | 6/6 (completed) | completed | 2026-03-14T10:33:26.157Z | 2026-03-14T10:37:33.475Z | ttleagues | https://middlesbrough.ttleagues.com |
-| Cleveland | Stockton Table Tennis League | 3/3 (completed) | 2/13 (partial) | in_progress | 2026-03-14T10:37:33.479Z |  | ttleagues | https://stockton.ttleagues.com |
-| Cornwall | North Cornwall Table Tennis League | 0/2 (pending) | 0/16 (pending) | pending |  |  | tt365 | https://www.tabletennis365.com/northcornwall |
+| Cleveland | Stockton Table Tennis League | 3/3 (completed) | 13/13 (completed) | completed | 2026-03-14T10:37:33.479Z | 2026-03-14T10:49:02.034Z | ttleagues | https://stockton.ttleagues.com |
+| Cornwall | North Cornwall Table Tennis League | 2/2 (completed) | 5/16 (partial) | in_progress | 2026-03-14T10:49:02.040Z |  | tt365 | https://www.tabletennis365.com/northcornwall |
 | Cornwall | West Cornwall Table Tennis League | 0/4 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://westcornwall.ttleagues.com |
 | Cumbria | Barrow Table Tennis League | 0/2 (pending) | 0/0 (not_required) | pending |  |  | ttleagues | https://barrow.ttleagues.com |
 | Derbyshire | Chesterfield Table Tennis League | 0/4 (pending) | 0/6 (pending) | pending |  |  | ttleagues | https://chesterfield.ttleagues.com |
