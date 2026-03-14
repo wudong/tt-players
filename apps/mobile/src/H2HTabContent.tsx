@@ -13,6 +13,7 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 interface H2HTabContentProps {
   selectedLeagueIds: string[];
+  leagueScopeLabel: string;
   onOpenPlayer: (playerId: string) => void;
 }
 
@@ -47,7 +48,7 @@ function buildH2HPath(playerId: string, opponentId: string, leagueIds: string[])
     : `/players/${playerId}/h2h/${opponentId}`;
 }
 
-export function H2HTabContent({ selectedLeagueIds, onOpenPlayer }: H2HTabContentProps) {
+export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlayer }: H2HTabContentProps) {
   const [playerA, setPlayerA] = useState<PlayerSearchItem | null>(null);
   const [playerB, setPlayerB] = useState<PlayerSearchItem | null>(null);
 
@@ -67,8 +68,6 @@ export function H2HTabContent({ selectedLeagueIds, onOpenPlayer }: H2HTabContent
 
   const sortedLeagueIds = useMemo(() => [...selectedLeagueIds].sort(), [selectedLeagueIds]);
   const selectedLeagueIdsKey = sortedLeagueIds.join(',');
-  const leagueScopeLabel = selectedLeagueIds.length === 0 ? 'All leagues' : `${selectedLeagueIds.length} selected leagues`;
-
   const normalizedQueryA = queryA.trim();
   const normalizedQueryB = queryB.trim();
 

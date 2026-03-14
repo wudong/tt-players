@@ -7,7 +7,7 @@ interface UsePageNavigationOptions {
 }
 
 export function usePageNavigation(options: UsePageNavigationOptions = {}) {
-  const { backPath, homeTab = 'players' } = options;
+  const { backPath, homeTab = 'home' } = options;
   const { goBackInActiveTab, switchTab, navigateInActiveTab, navigateInTab } = useTabNavigation();
 
   const goBack = useCallback(

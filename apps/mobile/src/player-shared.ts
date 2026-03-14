@@ -53,12 +53,19 @@ export type DivisionItem = {
   external_id?: string;
 };
 
+export type RegionItem = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
 export type LeagueWithDivisions = {
   id: string;
   name: string;
   platform?: string;
   season_id?: string;
   season?: string;
+  regions?: RegionItem[];
   divisions: DivisionItem[];
 };
 

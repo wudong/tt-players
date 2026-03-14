@@ -24,7 +24,7 @@ export function LeagueSelectionPage() {
         if (!normalizedQuery) return allLeagues;
         return allLeagues.filter((league) => {
             const inName = league.name.toLowerCase().includes(normalizedQuery);
-            const inRegion = leagueRegionLabels(league.name)
+            const inRegion = leagueRegionLabels(league)
                 .some((label) => label.toLowerCase().includes(normalizedQuery));
             return inName || inRegion;
         });
@@ -64,27 +64,29 @@ export function LeagueSelectionPage() {
                     </IonCardContent>
                 </IonCard>
 
-                <IonCard>
-                    <IonCardContent>
-                        <h2>Regions</h2>
-                        <div>
-                            {regionBuckets.map((bucket) => {
-                                const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
-                                return (
-                                    <IonChip
-                                        key={bucket.id}
-                                        color={allSelected ? 'primary' : undefined}
-                                        outline={!allSelected}
-                                       
-                                        onClick={() => toggleRegion(bucket.leagueIds)}
-                                    >
-                                        {bucket.label} ({bucket.leagueIds.length})
-                                    </IonChip>
-                                );
-                            })}
-                        </div>
-                    </IonCardContent>
-                </IonCard>
+                {regionBuckets.length > 0 ? (
+                    <IonCard>
+                        <IonCardContent>
+                            <h2>Regions</h2>
+                            <div>
+                                {regionBuckets.map((bucket) => {
+                                    const allSelected = bucket.leagueIds.every((id) => selectedLeagueIds.includes(id));
+                                    return (
+                                        <IonChip
+                                            key={bucket.id}
+                                            color={allSelected ? 'primary' : undefined}
+                                            outline={!allSelected}
+                                           
+                                            onClick={() => toggleRegion(bucket.leagueIds)}
+                                        >
+                                            {bucket.label} ({bucket.leagueIds.length})
+                                        </IonChip>
+                                    );
+                                })}
+                            </div>
+                        </IonCardContent>
+                    </IonCard>
+                ) : null}
 
                 {isLoading ? (
                     <div><IonSpinner name="crescent" /></div>
@@ -94,7 +96,7 @@ export function LeagueSelectionPage() {
                     <IonList lines="none">
                         {filteredLeagues.map((league) => {
                             const isSelected = selectedLeagueIds.includes(league.id);
-                            const regionLabels = leagueRegionLabels(league.name);
+                            const regionLabels = leagueRegionLabels(league);
                             return (
                                 <IonItem
                                     key={league.id}

@@ -8,6 +8,7 @@ type FooterItem = {
 };
 
 const footerItems: FooterItem[] = [
+  { id: 'home', label: 'Home', iconClassName: 'fa fa-home' },
   { id: 'players', label: 'Players', iconClassName: 'fa fa-user-friends' },
   { id: 'leagues', label: 'Leagues', iconClassName: 'fa fa-table-tennis' },
   { id: 'h2h', label: 'H2H', iconClassName: 'fa fa-code-compare' },

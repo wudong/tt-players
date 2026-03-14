@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import * as cheerio from 'cheerio';
 import type { Kysely } from 'kysely';
 import type { Database } from '@tt-players/db';
+import { fetchWithTT365Policy } from './tt365-http.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +41,7 @@ interface LeagueConfig {
     baseUrl: string;
     divisions: (TT365Division | TTLeaguesDivision)[];
     history?: HistoryConfig;
+    regions?: string[];
 }
 
 // ─── Output: scrape target ────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ export interface ScrapeTarget {
 
 export interface BootstrapOptions {
     includeHistory?: boolean;
+    leagueNames?: string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -66,6 +69,10 @@ const TT365_BASE = 'https://www.tabletennis365.com';
 const TTL_API_BASE = 'https://ttleagues-api.azurewebsites.net/api';
 const DEFAULT_HISTORY_MAX_SEASONS = 3;
 const CUP_NAME_PATTERN = /\b(cup|knockout|ko|trophy|plate|shield)\b/i;
+const CONFIG_FILES = [
+    '../config/leagues.json',
+    '../config/uk-leagues.generated.json',
+];
 
 interface TT365ArchiveSeason {
     seasonToken: string;
@@ -95,6 +102,15 @@ function normalizeExternalId(value: string): string {
     return value.trim().toLowerCase().replace(/\s+/g, '-');
 }
 
+function normalizeRegionSlug(value: string): string {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function titleCaseFromSlug(slug: string): string {
     return slug
         .replace(/[_-]+/g, ' ')
@@ -112,7 +128,7 @@ function getLeaguePathSegment(baseUrl: string): string {
 }
 
 async function fetchText(url: string, headers: Record<string, string> = {}): Promise<string> {
-    const res = await fetch(url, { headers });
+    const res = await fetchWithTT365Policy(url, { headers });
     if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
     }
@@ -120,7 +136,7 @@ async function fetchText(url: string, headers: Record<string, string> = {}): Pro
 }
 
 async function fetchJson<T>(url: string, headers: Record<string, string> = {}): Promise<T> {
-    const res = await fetch(url, { headers });
+    const res = await fetchWithTT365Policy(url, { headers });
     if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
     }
@@ -328,6 +344,31 @@ async function discoverTTLeaguesHistoricalTargets(
     return targets;
 }
 
+function readLeagueConfigs(): LeagueConfig[] {
+    const merged = new Map<string, LeagueConfig>();
+
+    for (const relativePath of CONFIG_FILES) {
+        const configPath = resolve(__dirname, relativePath);
+        let parsed: LeagueConfig[];
+
+        try {
+            parsed = JSON.parse(readFileSync(configPath, 'utf-8')) as LeagueConfig[];
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (/no such file/i.test(message)) continue;
+            throw error;
+        }
+
+        for (const league of parsed) {
+            if (!merged.has(league.externalId)) {
+                merged.set(league.externalId, league);
+            }
+        }
+    }
+
+    return Array.from(merged.values());
+}
+
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
 /**
@@ -338,9 +379,13 @@ export async function bootstrap(
     db: Kysely<Database>,
     options: BootstrapOptions = {},
 ): Promise<ScrapeTarget[]> {
-    const { includeHistory = false } = options;
-    const configPath = resolve(__dirname, '../config/leagues.json');
-    const leagues: LeagueConfig[] = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const { includeHistory = false, leagueNames } = options;
+    const leagueNameFilter = leagueNames && leagueNames.length > 0
+        ? new Set(leagueNames)
+        : null;
+    const leagues = readLeagueConfigs().filter((league) =>
+        leagueNameFilter ? leagueNameFilter.has(league.leagueName) : true,
+    );
 
     const targets: ScrapeTarget[] = [];
 
@@ -353,6 +398,7 @@ export async function bootstrap(
 
         // ── 2. Upsert League ──────────────────────────────────────────────
         const leagueId = await upsertLeague(db, platformId, league.externalId, league.leagueName);
+        await syncLeagueRegions(db, leagueId, league.regions ?? []);
 
         // ── 3. Upsert current season ──────────────────────────────────────
         const seasonId = await upsertSeason(
@@ -477,6 +523,85 @@ async function upsertLeague(
         .returning('id')
         .executeTakeFirstOrThrow();
     return row.id;
+}
+
+async function upsertRegion(
+    db: Kysely<Database>,
+    name: string,
+): Promise<string> {
+    const slug = normalizeRegionSlug(name);
+    const existing = await db
+        .selectFrom('regions')
+        .select(['id', 'name'])
+        .where('slug', '=', slug)
+        .executeTakeFirst();
+
+    if (existing) {
+        if (existing.name !== name) {
+            await db
+                .updateTable('regions')
+                .set({ name })
+                .where('id', '=', existing.id)
+                .execute();
+        }
+        return existing.id;
+    }
+
+    const row = await db
+        .insertInto('regions')
+        .values({ slug, name })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+    return row.id;
+}
+
+async function syncLeagueRegions(
+    db: Kysely<Database>,
+    leagueId: string,
+    regionNames: string[],
+): Promise<void> {
+    const uniqueRegionNames = Array.from(new Set(
+        regionNames
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0),
+    ));
+
+    const regionIds: string[] = [];
+    for (const regionName of uniqueRegionNames) {
+        regionIds.push(await upsertRegion(db, regionName));
+    }
+
+    const existingLinks = await db
+        .selectFrom('league_regions')
+        .select(['id', 'region_id'])
+        .where('league_id', '=', leagueId)
+        .execute();
+
+    const existingRegionIds = new Set(existingLinks.map((row) => row.region_id));
+    for (const regionId of regionIds) {
+        if (existingRegionIds.has(regionId)) continue;
+        await db
+            .insertInto('league_regions')
+            .values({
+                league_id: leagueId,
+                region_id: regionId,
+            })
+            .execute();
+    }
+
+    if (regionIds.length === 0) {
+        await db
+            .deleteFrom('league_regions')
+            .where('league_id', '=', leagueId)
+            .execute();
+        return;
+    }
+
+    await db
+        .deleteFrom('league_regions')
+        .where('league_id', '=', leagueId)
+        .where('region_id', 'not in', regionIds)
+        .execute();
 }
 
 async function upsertSeason(

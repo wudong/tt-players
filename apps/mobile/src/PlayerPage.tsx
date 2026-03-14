@@ -77,7 +77,7 @@ export function PlayerPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('players', 'root');
+    switchTab('home', 'root');
   };
 
   const onToggleFavourite = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -221,7 +221,7 @@ export function PlayerPage() {
                     <span className="tt-form-recent-empty">-</span>
                   ) : (
                     <div className="tt-form-recent-list">
-                      {recentResults.map((result, index) => (
+                      {recentResults.map((result: any, index: number) => (
                         <span
                           key={`${result}-${index}`}
                           className={`tt-form-result-pill ${result === 'W' ? 'tt-form-result-win' : 'tt-form-result-loss'}`}
@@ -253,7 +253,7 @@ export function PlayerPage() {
                   <p className="mb-0">No active-season clubs found.</p>
                 ) : (
                   <AppListGroup size="large" className="tt-season-list">
-                    {affiliations.map((affiliation, index) => (
+                    {affiliations.map((affiliation: any, index: number) => (
                       <AppListItem
                         key={`${affiliation.team_id}-${affiliation.competition_name}-${affiliation.season_id}`}
                         iconClassName="fa fa-table-tennis rounded-xl shadow-xl bg-blue-dark color-white"
@@ -326,7 +326,7 @@ export function PlayerPage() {
                 ) : (
                   <>
                     <AppListGroup size="large" className="tt-match-history-list">
-                      {recentMatches.map((match, index) => (
+                      {recentMatches.map((match: any, index: number) => (
                         <AppListItem
                           key={match.id}
                           iconClassName={`fa ${match.isWin ? 'fa-check' : 'fa-times'} rounded-xl shadow-xl ${match.isWin ? 'bg-green-dark' : 'bg-red-dark'} color-white`}

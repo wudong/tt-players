@@ -65,6 +65,26 @@ These tables map the structure of the data scraped from the websites. All scrape
 
 **Unique constraint:** `UNIQUE(platform_id, external_id)` — for UPSERT deduplication.
 
+### **regions**
+
+| Column | Type | Constraints | Description |
+| :---- | :---- | :---- | :---- |
+| id | UUID | Primary Key |  |
+| slug | String | Unique | Stable lookup key, e.g. `essex`, `wales`, `north-east` |
+| name | String |  | Human label for search/filter UI |
+| created\_at | Timestamp | Default: Now() |  |
+
+### **league\_regions**
+
+| Column | Type | Constraints | Description |
+| :---- | :---- | :---- | :---- |
+| id | UUID | Primary Key |  |
+| league\_id | UUID | FK \-> leagues(id) |  |
+| region\_id | UUID | FK \-> regions(id) |  |
+| created\_at | Timestamp | Default: Now() |  |
+
+**Unique constraint:** `UNIQUE(league_id, region_id)` — allows a league to belong to multiple regions without duplicates.
+
 ### **seasons**
 
 | Column | Type | Constraints | Description |

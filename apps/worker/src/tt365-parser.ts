@@ -15,6 +15,10 @@ function normalizeText(raw: string): string {
     return raw.replace(/\s+/g, ' ').trim();
 }
 
+function isForfeitCellText(text: string): boolean {
+    return normalizeText(text).toLowerCase().includes('forfeit');
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -58,6 +62,7 @@ function parseGameCountsFromCellText(cellText: string): { homeGamesWon: number; 
     let homeGamesWon = 0;
     let awayGamesWon = 0;
     let gameCount = 0;
+    const winningGames = 3;
 
     for (const match of cellText.matchAll(gamePattern)) {
         const home = parseInt(match[1], 10);
@@ -66,6 +71,11 @@ function parseGameCountsFromCellText(cellText: string): { homeGamesWon: number; 
         gameCount += 1;
         if (home > away) homeGamesWon += 1;
         else if (away > home) awayGamesWon += 1;
+
+        // TT365 can include extra trailing game tokens in some cards; treat rubbers as first-to-3.
+        if (homeGamesWon >= winningGames || awayGamesWon >= winningGames) {
+            break;
+        }
     }
 
     if (gameCount === 0) return null;
@@ -136,6 +146,7 @@ export interface TT365PlayerStatsTarget {
 
 export interface TT365PlayerMatchResult {
     opponentExternalId: string;
+    matchDate: string | null;
     playerGamesWon: number;
     opponentGamesWon: number;
 }
@@ -228,6 +239,8 @@ export function parseTT365PlayerResultsForMatch(
         const opponentExternalId = extractPlayerIdFromHref(opponentHref);
         if (!opponentExternalId) return;
 
+        const matchDate = normalizeText($(row).find('time[datetime]').first().attr('datetime') ?? '') || null;
+
         const gamesCell = $(cells[cells.length - 2]);
         const gameSpans = gamesCell.find('.game').toArray();
         const gamesCellText = gameSpans.length > 0
@@ -251,6 +264,7 @@ export function parseTT365PlayerResultsForMatch(
 
         results.push({
             opponentExternalId,
+            matchDate,
             playerGamesWon,
             opponentGamesWon,
         });
@@ -315,8 +329,10 @@ export function parseTT365MatchCard(
         const rubberIndex = rubbers.length + 1;
 
         // ── Home player(s) ────────────────────────────────────────────────
-        const homePlayerLinks = $(cells[0]).find('a');
+        const homeCell = $(cells[0]);
+        const homePlayerLinks = homeCell.find('a');
         const homePlayers: string[] = [];
+        let homeIsForfeit = false;
         homePlayerLinks.each((_j, a) => {
             const href = $(a).attr('href') || '';
             const name = normalizeText($(a).text());
@@ -326,17 +342,19 @@ export function parseTT365MatchCard(
                 playerMap.set(extId, { externalId: extId, name });
             }
         });
+        if (homePlayerLinks.length === 0 && isForfeitCellText(homeCell.text())) {
+            homeIsForfeit = true;
+        }
 
         // ── Away player(s) ────────────────────────────────────────────────
-        const awayPlayerLinks = $(cells[1]).find('a');
+        const awayCell = $(cells[1]);
+        const awayPlayerLinks = awayCell.find('a');
         const awayPlayers: string[] = [];
-        let isForfeit = false;
+        let awayIsForfeit = false;
 
         if (awayPlayerLinks.length === 0) {
-            // Check for forfeit
-            const cellText = normalizeText($(cells[1]).text()).toLowerCase();
-            if (cellText.includes('forfeit')) {
-                isForfeit = true;
+            if (isForfeitCellText(awayCell.text())) {
+                awayIsForfeit = true;
             }
         } else {
             awayPlayerLinks.each((_j, a) => {
@@ -364,6 +382,7 @@ export function parseTT365MatchCard(
         const isDoubles = homePlayers.length > 1 || awayPlayers.length > 1;
 
         // ── Outcome type ──────────────────────────────────────────────────
+        const isForfeit = homeIsForfeit || awayIsForfeit;
         const outcomeType: OutcomeType = isForfeit ? 'walkover' : 'normal';
 
         rubbers.push({

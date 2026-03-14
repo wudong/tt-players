@@ -1,7 +1,7 @@
 import { quickAddJob, runMigrations, runOnce } from 'graphile-worker';
 import { db } from '@tt-players/db';
 import { bootstrap, type ScrapeTarget } from './bootstrap.js';
-import { taskList } from './worker.js';
+import { taskList } from './task-list.js';
 import dotenv from 'dotenv';
 import { sql } from 'kysely';
 import { runStartupRecovery } from './startup-recovery.js';

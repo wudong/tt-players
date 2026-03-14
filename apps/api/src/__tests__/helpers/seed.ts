@@ -13,10 +13,11 @@ import * as m005 from '../../../../../packages/db/src/migrations/005_make_rubber
 import * as m006 from '../../../../../packages/db/src/migrations/006_add_canonical_player_id_to_external_players.js';
 import * as m007 from '../../../../../packages/db/src/migrations/007_add_performance_indexes.js';
 import * as m008 from '../../../../../packages/db/src/migrations/008_create_cache_entries.js';
+import * as m009 from '../../../../../packages/db/src/migrations/009_create_regions.js';
 
 const { Pool } = pg;
 
-const TEST_DB_NAME = 'tt_players_api_test';
+const TEST_DB_NAME = `tt_players_api_test_${process.pid}_${process.env.VITEST_POOL_ID ?? 'main'}`;
 const ADMIN_DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/postgres';
 export const TEST_DATABASE_URL = `postgres://postgres:postgres@localhost:5432/${TEST_DB_NAME}`;
 
@@ -31,6 +32,7 @@ class StaticMigrationProvider implements MigrationProvider {
             '006_add_canonical_player_id_to_external_players': m006,
             '007_add_performance_indexes': m007,
             '008_create_cache_entries': m008,
+            '009_create_regions': m009,
         };
     }
 }
@@ -51,7 +53,7 @@ export async function createTestDatabase(): Promise<void> {
 }
 
 export async function dropTestDatabase(db: Kysely<Database>): Promise<void> {
-    await db.destroy();
+    await db?.destroy?.();
     const adminPool = new Pool({ connectionString: ADMIN_DATABASE_URL });
     await adminPool.query(`
         SELECT pg_terminate_backend(pg_stat_activity.pid)
@@ -77,6 +79,7 @@ export async function runMigrations(db: Kysely<Database>): Promise<void> {
 export interface SeedIds {
     platformId: string;
     leagueId: string;
+    regionId: string;
     seasonId: string;
     competitionId: string;
     homeTeamId: string;
@@ -106,6 +109,23 @@ export async function seedTestData(db: Kysely<Database>): Promise<SeedIds> {
             name: 'Test League',
         })
         .returning('id')
+        .execute();
+
+    const [region] = await db
+        .insertInto('regions')
+        .values({
+            slug: 'test-region',
+            name: 'Test Region',
+        })
+        .returning('id')
+        .execute();
+
+    await db
+        .insertInto('league_regions')
+        .values({
+            league_id: league!.id,
+            region_id: region!.id,
+        })
         .execute();
 
     // Season
@@ -244,6 +264,7 @@ export async function seedTestData(db: Kysely<Database>): Promise<SeedIds> {
     return {
         platformId: platform!.id,
         leagueId: league!.id,
+        regionId: region!.id,
         seasonId: season!.id,
         competitionId: competition!.id,
         homeTeamId: homeTeam!.id,

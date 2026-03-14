@@ -192,8 +192,35 @@ describe('TT365 Cheerio Parser', () => {
 
             expect(rows).toEqual([{
                 opponentExternalId: '2002',
+                matchDate: '2025-09-08',
                 playerGamesWon: 3,
                 opponentGamesWon: 1,
+            }]);
+        });
+
+        it('caps parsed game totals at first-to-3 when extra game tokens are present', async () => {
+            const { parseTT365PlayerResultsForMatch } = await import('../tt365-parser.js');
+            const html = `
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="/League/Results/Player/Statistics/S1/Opponent_A/2002">Opponent A</a></td>
+                      <td></td>
+                      <td>Team A</td>
+                      <td><time datetime="2025-09-08">08/09/2025</time></td>
+                      <td><span class="game">2-11</span><span class="game">3-11</span><span class="game">7-11</span><span class="game">7-11</span><span class="game">6-11</span></td>
+                      <td class="right"><a href="/League/Results/S1/D1/MatchCard/9001">Loss</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const rows = parseTT365PlayerResultsForMatch(html, '9001');
+            expect(rows).toEqual([{
+                opponentExternalId: '2002',
+                matchDate: '2025-09-08',
+                playerGamesWon: 0,
+                opponentGamesWon: 3,
             }]);
         });
     });
@@ -353,6 +380,39 @@ describe('TT365 Cheerio Parser', () => {
             expect(forfeit.awayPlayers).toEqual([]);
         });
 
+        it('should set empty homePlayers array when home side is Forfeit', async () => {
+            const { parseTT365MatchCard } = await import('../tt365-parser.js');
+            const html = `
+                <div id="CardSummary">
+                  <div class="teamNames">
+                    <a href="/Southend/Results/Team/Statistics/Winter_League_22-23/Division_1/Rawreth_D">Rawreth D</a>
+                    <a href="/Southend/Results/Team/Statistics/Winter_League_22-23/Division_1/Stanford_A">Stanford A</a>
+                  </div>
+                  <time datetime="2023-03-14"></time>
+                </div>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td class="homePlayer"><span class="playerName">Forfeit</span></td>
+                      <td class="awayPlayer"><a href="/Southend/Results/Player/Statistics/Winter_League_22-23/Dave_Hancox/337501">Dave Hancox</a></td>
+                      <td class="games">
+                        <span class="game">6-11</span>
+                        <span class="game">8-11</span>
+                        <span class="game">4-11</span>
+                      </td>
+                      <td class="score">0-1</td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const parsed = parseTT365MatchCard(html, '401900');
+            expect(parsed.rubbers).toHaveLength(1);
+            expect(parsed.rubbers[0].outcomeType).toBe('walkover');
+            expect(parsed.rubbers[0].homePlayers).toEqual([]);
+            expect(parsed.rubbers[0].awayPlayers).toEqual(['337501']);
+        });
+
         it('should list both player IDs in the doubles rubber', () => {
             const doubles = result.rubbers[9];
             expect(doubles.homePlayers).toEqual(['401745', '395890']); // Chandler, Ward
@@ -406,6 +466,72 @@ describe('TT365 Cheerio Parser', () => {
             expect(result.rubbers).toHaveLength(1);
             expect(result.rubbers[0].homeGamesWon).toBe(1);
             expect(result.rubbers[0].awayGamesWon).toBe(0);
+        });
+
+        it('derives rubber score from Games column when Score is 0-1/1-0', async () => {
+            const { parseTT365MatchCard } = await import('../tt365-parser.js');
+            const html = `
+                <div id="CardSummary">
+                  <div class="teamNames">
+                    <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Brentwood_A">Brentwood A</a>
+                    <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Billericay_C">Billericay C</a>
+                  </div>
+                  <time datetime="2026-03-05"></time>
+                </div>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Ricky_Paris/395894">Ricky Paris</a></td>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Neil_Freeman/395910">Neil Freeman</a></td>
+                      <td>
+                        <span class="game">7-11</span>
+                        <span class="game">6-11</span>
+                        <span class="game">11-7</span>
+                        <span class="game">1-11</span>
+                      </td>
+                      <td>0-1</td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const result = parseTT365MatchCard(html, '459633');
+            expect(result.rubbers).toHaveLength(1);
+            expect(result.rubbers[0].homeGamesWon).toBe(1);
+            expect(result.rubbers[0].awayGamesWon).toBe(3);
+        });
+
+        it('caps game-based rubber score at first-to-3 when extra game rows exist', async () => {
+            const { parseTT365MatchCard } = await import('../tt365-parser.js');
+            const html = `
+                <div id="CardSummary">
+                  <div class="teamNames">
+                    <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Brentwood_A">Brentwood A</a>
+                    <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Billericay_C">Billericay C</a>
+                  </div>
+                  <time datetime="2026-03-05"></time>
+                </div>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Ricky_Paris/395894">Ricky Paris</a></td>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Neil_Freeman/395910">Neil Freeman</a></td>
+                      <td>
+                        <span class="game">7-11</span>
+                        <span class="game">6-11</span>
+                        <span class="game">1-11</span>
+                        <span class="game">1-11</span>
+                      </td>
+                      <td>0-1</td>
+                    </tr>
+                  </tbody>
+                </table>
+            `;
+
+            const result = parseTT365MatchCard(html, '459633');
+            expect(result.rubbers).toHaveLength(1);
+            expect(result.rubbers[0].homeGamesWon).toBe(0);
+            expect(result.rubbers[0].awayGamesWon).toBe(3);
         });
     });
 });

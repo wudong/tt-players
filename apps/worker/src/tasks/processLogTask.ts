@@ -8,6 +8,7 @@ import {
     parseTT365PlayerStatsTargets,
     parseTT365Standings,
 } from '../tt365-parser.js';
+import { fetchWithTT365Policy } from '../tt365-http.js';
 import { loadTTLeaguesData } from '../loader.js';
 import { reconcilePlayersByName } from '../player-reconciler.js';
 
@@ -15,12 +16,32 @@ const TT365_RECHECK_UPCOMING_MS = 12 * 60 * 60 * 1000; // 12h
 const TT365_RECHECK_POSTPONED_MS = 2 * 24 * 60 * 60 * 1000; // 2d
 const TT365_RECHECK_COMPLETED_MS = 14 * 24 * 60 * 60 * 1000; // 14d
 const TT365_FORCE_FIXTURES_REFRESH = process.env['TT365_FORCE_FIXTURES_REFRESH'] === '1';
-const TT365_FORCE_PLAYER_STATS_REFRESH = process.env['TT365_FORCE_PLAYER_STATS_REFRESH'] === '1';
-const TT365_PLAYER_STATS_RECHECK_MS = Number(
-    process.env['TT365_PLAYER_STATS_RECHECK_MS'] ?? `${12 * 60 * 60 * 1000}`,
-);
 const SCRAPE_JOB_SPEC = { maxAttempts: 1 };
-const TT365_PLAYER_STATS_SCRAPE_JOB_SPEC = { maxAttempts: 1 };
+const TT365_PLAYER_STATS_FETCH_RETRIES = Number(
+    process.env['TT365_PLAYER_STATS_FETCH_RETRIES'] ?? '2',
+);
+const TT365_PLAYER_STATS_RETRY_DELAY_MS = Number(
+    process.env['TT365_PLAYER_STATS_RETRY_DELAY_MS'] ?? '1000',
+);
+const TT365_PLAYER_STATS_FETCH_TIMEOUT_MS = Number(
+    process.env['TT365_PLAYER_STATS_FETCH_TIMEOUT_MS'] ?? '15000',
+);
+const TT365_PLAYER_STATS_CACHE_TTL_MS = Number(
+    process.env['TT365_PLAYER_STATS_CACHE_TTL_MS'] ?? '1800000',
+);
+
+type TT365PlayerStatsCacheEntry = {
+    fetchedAtMs: number;
+    body: string;
+};
+
+const tt365PlayerStatsCache = new Map<string, TT365PlayerStatsCacheEntry>();
+const tt365PlayerStatsInFlight = new Map<string, Promise<string>>();
+
+export function __resetTT365PlayerStatsCacheForTests(): void {
+    tt365PlayerStatsCache.clear();
+    tt365PlayerStatsInFlight.clear();
+}
 
 type AddJobSpec = {
     maxAttempts?: number;
@@ -46,8 +67,8 @@ export interface ProcessLogPayload {
  * - "ttleagues-bundle": bundled {standings, matches, sets} from scrapeMatchesTask
  * - "tt365" standings: parses standings HTML, upserts teams + standings
  * - "tt365" fixtures: extracts MatchCard links and queues scrapeUrlTask jobs
- * - "tt365" matchcard: parses match card HTML, upserts fixture/rubbers, queues player-stat jobs
- * - "tt365" playerstats: updates singles rubber scores from player results page
+ * - "tt365" matchcard: parses match card HTML, upserts fixture/rubbers from game scores
+ * - "tt365" playerstats: compatibility no-op; logs are marked processed
  */
 export const processLogTask: Task = async (payload, helpers) => {
     const {
@@ -351,20 +372,275 @@ function extractMatchIdFromEndpoint(endpointUrl: string): string | null {
     return match?.[1] ?? null;
 }
 
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractTT365FooterScore(
+    html: string,
+): { homeRubbersWon: number; awayRubbersWon: number } | null {
+    const match = html.match(
+        /<td[^>]*class=["'][^"']*\bresult\b[^"']*["'][^>]*>\s*(\d+)\s*-\s*(\d+)\s*<\/td>/i,
+    );
+    if (!match) return null;
+    return {
+        homeRubbersWon: Number.parseInt(match[1], 10),
+        awayRubbersWon: Number.parseInt(match[2], 10),
+    };
+}
+
+function aggregateTT365RubberWins(parsed: ReturnType<typeof parseTT365MatchCard>): {
+    homeRubbersWon: number;
+    awayRubbersWon: number;
+} {
+    let homeRubbersWon = 0;
+    let awayRubbersWon = 0;
+
+    for (const rubber of parsed.rubbers) {
+        if (rubber.homeGamesWon > rubber.awayGamesWon) homeRubbersWon += 1;
+        else if (rubber.awayGamesWon > rubber.homeGamesWon) awayRubbersWon += 1;
+    }
+
+    return { homeRubbersWon, awayRubbersWon };
+}
+
+function isTT365MatchCardConsistent(
+    html: string,
+    parsed: ReturnType<typeof parseTT365MatchCard>,
+): boolean {
+    const footerScore = extractTT365FooterScore(html);
+    if (!footerScore) return true;
+
+    const aggregateScore = aggregateTT365RubberWins(parsed);
+    return (
+        aggregateScore.homeRubbersWon === footerScore.homeRubbersWon
+        && aggregateScore.awayRubbersWon === footerScore.awayRubbersWon
+    );
+}
+
+function hasImpossibleTT365RubberScores(
+    parsed: ReturnType<typeof parseTT365MatchCard>,
+): boolean {
+    return parsed.rubbers.some(
+        (rubber) => rubber.homeGamesWon > 3 || rubber.awayGamesWon > 3,
+    );
+}
+
+function isTT365WalkoverOnlyMatchCard(
+    parsed: ReturnType<typeof parseTT365MatchCard>,
+): boolean {
+    return parsed.rubbers.length > 0
+        && parsed.rubbers.every((rubber) => rubber.outcomeType === 'walkover');
+}
+
+async function fetchTextWithRetry(url: string): Promise<string> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= TT365_PLAYER_STATS_FETCH_RETRIES; attempt += 1) {
+        try {
+            const response = await fetchWithTT365Policy(
+                url,
+                undefined,
+                {
+                    maxAttempts: 1,
+                    timeoutMs: TT365_PLAYER_STATS_FETCH_TIMEOUT_MS,
+                },
+            );
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+            return await response.text();
+        } catch (error) {
+            lastError = error;
+            if (attempt < TT365_PLAYER_STATS_FETCH_RETRIES) {
+                await sleep(TT365_PLAYER_STATS_RETRY_DELAY_MS);
+            }
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+function getCachedTT365PlayerStatsBody(url: string): string | null {
+    const entry = tt365PlayerStatsCache.get(url);
+    if (!entry) return null;
+
+    const ageMs = Date.now() - entry.fetchedAtMs;
+    if (ageMs > TT365_PLAYER_STATS_CACHE_TTL_MS) {
+        tt365PlayerStatsCache.delete(url);
+        return null;
+    }
+
+    return entry.body;
+}
+
+async function fetchTT365PlayerStatsBody(url: string): Promise<string> {
+    const cached = getCachedTT365PlayerStatsBody(url);
+    if (cached !== null) return cached;
+
+    const existingInFlight = tt365PlayerStatsInFlight.get(url);
+    if (existingInFlight) return existingInFlight;
+
+    const inFlight = (async () => {
+        const body = await fetchTextWithRetry(url);
+        tt365PlayerStatsCache.set(url, {
+            fetchedAtMs: Date.now(),
+            body,
+        });
+        return body;
+    })().finally(() => {
+        tt365PlayerStatsInFlight.delete(url);
+    });
+
+    tt365PlayerStatsInFlight.set(url, inFlight);
+    return inFlight;
+}
+
+function isUsablePlayerStatsScore(
+    homeGamesWon: number,
+    awayGamesWon: number,
+): boolean {
+    return homeGamesWon >= 0
+        && awayGamesWon >= 0
+        && homeGamesWon <= 3
+        && awayGamesWon <= 3
+        && (homeGamesWon > awayGamesWon || awayGamesWon > homeGamesWon);
+}
+
+type TT365FallbackStatsResult = {
+    playerExternalId: string;
+    opponentExternalId: string;
+    playerGamesWon: number;
+    opponentGamesWon: number;
+};
+
+async function buildTT365PlayerStatsLookup(
+    parsed: ReturnType<typeof parseTT365MatchCard>,
+    rawMatchCardHtml: string,
+    matchCardUrl: string,
+    matchExternalId: string,
+    fixtureDatePlayed: string | null,
+    helpers: { logger: { info: (msg: string) => void } },
+): Promise<Map<string, TT365FallbackStatsResult>> {
+    const targets = parseTT365PlayerStatsTargets(rawMatchCardHtml, matchCardUrl);
+    const lookup = new Map<string, TT365FallbackStatsResult>();
+
+    for (const target of targets) {
+        try {
+            const playerStatsHtml = await fetchTT365PlayerStatsBody(target.url);
+            const rows = parseTT365PlayerResultsForMatch(
+                playerStatsHtml,
+                matchExternalId,
+            );
+
+            for (const row of rows) {
+                if (fixtureDatePlayed && row.matchDate !== fixtureDatePlayed) {
+                    continue;
+                }
+                if (!isUsablePlayerStatsScore(row.playerGamesWon, row.opponentGamesWon)) {
+                    continue;
+                }
+
+                const key = `${target.playerExternalId}|${row.opponentExternalId}`;
+                if (!lookup.has(key)) {
+                    lookup.set(key, {
+                        playerExternalId: target.playerExternalId,
+                        opponentExternalId: row.opponentExternalId,
+                        playerGamesWon: row.playerGamesWon,
+                        opponentGamesWon: row.opponentGamesWon,
+                    });
+                }
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            helpers.logger.info(
+                `processLogTask: TT365 player-stats fetch failed for ${target.url}: ${message}`,
+            );
+        }
+    }
+
+    return lookup;
+}
+
+function findTT365FallbackRubberScore(
+    rubber: ReturnType<typeof parseTT365MatchCard>['rubbers'][number],
+    lookup: Map<string, TT365FallbackStatsResult>,
+): { homeGamesWon: number; awayGamesWon: number } | null {
+    const tryPair = (
+        homePlayerExternalId: string,
+        awayPlayerExternalId: string,
+    ): { homeGamesWon: number; awayGamesWon: number } | null => {
+        const direct = lookup.get(`${homePlayerExternalId}|${awayPlayerExternalId}`);
+        if (direct) {
+            return {
+                homeGamesWon: direct.playerGamesWon,
+                awayGamesWon: direct.opponentGamesWon,
+            };
+        }
+
+        const reverse = lookup.get(`${awayPlayerExternalId}|${homePlayerExternalId}`);
+        if (reverse) {
+            return {
+                homeGamesWon: reverse.opponentGamesWon,
+                awayGamesWon: reverse.playerGamesWon,
+            };
+        }
+
+        return null;
+    };
+
+    for (const homePlayerExternalId of rubber.homePlayers) {
+        for (const awayPlayerExternalId of rubber.awayPlayers) {
+            const score = tryPair(homePlayerExternalId, awayPlayerExternalId);
+            if (score) return score;
+        }
+    }
+
+    return null;
+}
+
+async function applyTT365PlayerStatsFallback(
+    parsed: ReturnType<typeof parseTT365MatchCard>,
+    rawMatchCardHtml: string,
+    matchCardUrl: string,
+    matchExternalId: string,
+    helpers: { logger: { info: (msg: string) => void } },
+): Promise<{ parsed: ReturnType<typeof parseTT365MatchCard>; replacements: number }> {
+    const lookup = await buildTT365PlayerStatsLookup(
+        parsed,
+        rawMatchCardHtml,
+        matchCardUrl,
+        matchExternalId,
+        parsed.fixture.datePlayed,
+        helpers,
+    );
+
+    let replacements = 0;
+    const rubbers = parsed.rubbers.map((rubber) => {
+        const fallback = findTT365FallbackRubberScore(rubber, lookup);
+        if (!fallback) return rubber;
+        replacements += 1;
+        return {
+            ...rubber,
+            homeGamesWon: fallback.homeGamesWon,
+            awayGamesWon: fallback.awayGamesWon,
+        };
+    });
+
+    return {
+        parsed: {
+            ...parsed,
+            rubbers,
+        },
+        replacements,
+    };
+}
+
 async function processTT365MatchCard(
     log: { id: string; raw_payload: string; endpoint_url: string },
     competitionId: string,
     platformId: string,
     logId: string,
     payloadMatchExternalId: string | undefined,
-    helpers: {
-        addJob: (
-            identifier: string,
-            payload: unknown,
-            spec?: AddJobSpec,
-        ) => Promise<unknown>;
-        logger: { info: (msg: string) => void };
-    },
+    helpers: { logger: { info: (msg: string) => void } },
 ): Promise<boolean> {
     const matchExternalId =
         payloadMatchExternalId ?? extractMatchIdFromEndpoint(log.endpoint_url);
@@ -374,7 +650,70 @@ async function processTT365MatchCard(
         );
     }
 
-    const parsed = parseTT365MatchCard(log.raw_payload, matchExternalId);
+    let parsed = parseTT365MatchCard(log.raw_payload, matchExternalId);
+
+    const matchCardConsistent = isTT365MatchCardConsistent(log.raw_payload, parsed);
+    const hasImpossibleScores = hasImpossibleTT365RubberScores(parsed);
+
+    if (!matchCardConsistent || hasImpossibleScores) {
+        helpers.logger.info(
+            `processLogTask: TT365 match-card log ${logId} failed validation (consistent=${matchCardConsistent}, impossible_scores=${hasImpossibleScores}); attempting player-stats fallback`,
+        );
+
+        const fallback = await applyTT365PlayerStatsFallback(
+            parsed,
+            log.raw_payload,
+            log.endpoint_url,
+            matchExternalId,
+            helpers,
+        );
+        parsed = fallback.parsed;
+        const fallbackConsistent = isTT365MatchCardConsistent(log.raw_payload, parsed);
+        const fallbackHasImpossibleScores = hasImpossibleTT365RubberScores(parsed);
+        let usedWalkoverBypass = false;
+
+        if (
+            fallback.replacements === 0
+            || fallbackHasImpossibleScores
+        ) {
+            if (
+                fallback.replacements === 0
+                && !fallbackHasImpossibleScores
+                && isTT365WalkoverOnlyMatchCard(parsed)
+            ) {
+                usedWalkoverBypass = true;
+                helpers.logger.info(
+                    `processLogTask: TT365 match-card log ${logId} fallback unresolved but payload is walkover-only; bypassing strict consistency checks`,
+                );
+            } else {
+                helpers.logger.info(
+                    `processLogTask: TT365 match-card log ${logId} fallback failed (replacements=${fallback.replacements}, impossible_scores=${fallbackHasImpossibleScores}), marking failed`,
+                );
+                await db
+                    .updateTable('raw_scrape_logs')
+                    .set({ status: 'failed' })
+                    .where('id', '=', logId)
+                    .execute();
+                return false;
+            }
+        }
+
+        if (!fallbackConsistent && fallback.replacements > 0) {
+            helpers.logger.info(
+                `processLogTask: TT365 match-card log ${logId} footer remains inconsistent after fallback; trusting player-stats scores`,
+            );
+        }
+
+        if (fallback.replacements > 0) {
+            helpers.logger.info(
+                `processLogTask: TT365 match-card log ${logId} recovered via player-stats fallback (${fallback.replacements} rubbers patched)`,
+            );
+        } else if (usedWalkoverBypass) {
+            helpers.logger.info(
+                `processLogTask: TT365 match-card log ${logId} processed using walkover-only bypass`,
+            );
+        }
+    }
 
     if (
         !parsed.fixture.homeTeamExternalId ||
@@ -410,223 +749,21 @@ async function processTT365MatchCard(
         scrapeLogIds: [logId],
     });
 
-    // Queue player statistics scrapes as the source-of-truth for singles scores.
-    const playerStatsTargets = parseTT365PlayerStatsTargets(
-        log.raw_payload,
-        log.endpoint_url,
-    );
-
-    const season = await db
-        .selectFrom('competitions as c')
-        .innerJoin('seasons as s', 's.id', 'c.season_id')
-        .select(['s.is_active'])
-        .where('c.id', '=', competitionId)
-        .executeTakeFirst();
-    const isActiveSeason = season?.is_active === true;
-
-    const existingPlayerStatLogs = playerStatsTargets.length > 0
-        ? await db
-            .selectFrom('raw_scrape_logs')
-            .select(({ fn, ref }) => [
-                'endpoint_url',
-                fn.max(ref('scraped_at')).as('last_scraped_at'),
-            ])
-            .where('status', '=', 'processed')
-            .where(
-                'endpoint_url',
-                'in',
-                playerStatsTargets.map((target) => target.url),
-            )
-            .groupBy('endpoint_url')
-            .execute()
-        : [];
-
-    const existingByUrl = new Map(
-        existingPlayerStatLogs.map((row) => [row.endpoint_url, row.last_scraped_at]),
-    );
-
-    const nowMs = Date.now();
-    const queuePlayerStatsTargets = playerStatsTargets.filter((target) => {
-        if (TT365_FORCE_PLAYER_STATS_REFRESH) return true;
-
-        const lastScrapedAt = existingByUrl.get(target.url);
-        if (!lastScrapedAt) return true;
-
-        // Historical seasons are one-off snapshots unless explicitly forced.
-        if (!isActiveSeason) return false;
-
-        const ageMs = nowMs - new Date(lastScrapedAt).getTime();
-        return ageMs >= TT365_PLAYER_STATS_RECHECK_MS;
-    });
-
-    for (const target of queuePlayerStatsTargets) {
-        await helpers.addJob('scrapeUrlTask', {
-            url: target.url,
-            platformId,
-            platformType: 'tt365',
-            competitionId,
-            tt365DataType: 'playerstats',
-            matchExternalId,
-            playerExternalId: target.playerExternalId,
-        }, {
-            ...TT365_PLAYER_STATS_SCRAPE_JOB_SPEC,
-            jobKey: `tt365-playerstats:${competitionId}:${target.seasonToken}:${target.playerExternalId}`,
-        });
-    }
-
     helpers.logger.info(
-        `processLogTask: TT365 match-card log ${logId} processed (${parsed.rubbers.length} rubbers, queued ${queuePlayerStatsTargets.length} player stats pages)`,
+        `processLogTask: TT365 match-card log ${logId} processed (${parsed.rubbers.length} rubbers)`,
     );
     return true;
 }
 
-function extractPlayerIdFromPlayerStatsUrl(endpointUrl: string): string | null {
-    const match = endpointUrl.match(/\/results\/player\/statistics\/[^/]+\/[^/]+\/(\d+)(?:[/?#]|$)/i);
-    return match?.[1] ?? null;
-}
-
 async function processTT365PlayerStats(
-    log: { id: string; raw_payload: string; endpoint_url: string },
-    competitionId: string,
-    platformId: string,
+    _log: { id: string; raw_payload: string; endpoint_url: string },
+    _competitionId: string,
+    _platformId: string,
     logId: string,
-    payloadMatchExternalId: string | undefined,
-    payloadPlayerExternalId: string | undefined,
+    _payloadMatchExternalId: string | undefined,
+    _payloadPlayerExternalId: string | undefined,
     helpers: { logger: { info: (msg: string) => void } },
 ): Promise<boolean> {
-    const matchExternalId =
-        payloadMatchExternalId ?? extractMatchIdFromEndpoint(log.endpoint_url);
-    if (!matchExternalId) {
-        throw new Error(
-            `processLogTask: TT365 player-stats log ${logId} missing matchExternalId`,
-        );
-    }
-
-    const playerExternalId =
-        payloadPlayerExternalId ?? extractPlayerIdFromPlayerStatsUrl(log.endpoint_url);
-    if (!playerExternalId) {
-        throw new Error(
-            `processLogTask: TT365 player-stats log ${logId} missing playerExternalId`,
-        );
-    }
-
-    const fixture = await db
-        .selectFrom('fixtures')
-        .select(['id'])
-        .where('competition_id', '=', competitionId)
-        .where('external_id', '=', matchExternalId)
-        .where('deleted_at', 'is', null)
-        .executeTakeFirst();
-
-    if (!fixture) {
-        helpers.logger.info(
-            `processLogTask: TT365 player-stats log ${logId} fixture ${matchExternalId} missing, marking failed`,
-        );
-        await db
-            .updateTable('raw_scrape_logs')
-            .set({ status: 'failed' })
-            .where('id', '=', logId)
-            .execute();
-        return false;
-    }
-
-    const observations = parseTT365PlayerResultsForMatch(log.raw_payload, matchExternalId);
-    if (observations.length === 0) {
-        await db
-            .updateTable('raw_scrape_logs')
-            .set({ status: 'processed' })
-            .where('id', '=', logId)
-            .execute();
-        helpers.logger.info(
-            `processLogTask: TT365 player-stats log ${logId} has no rows for match ${matchExternalId}, marked processed`,
-        );
-        return true;
-    }
-
-    const externalIds = Array.from(
-        new Set([playerExternalId, ...observations.map((row) => row.opponentExternalId)]),
-    );
-
-    const players = await db
-        .selectFrom('external_players')
-        .select(['id', 'external_id', 'canonical_player_id'])
-        .where('platform_id', '=', platformId)
-        .where('deleted_at', 'is', null)
-        .where('external_id', 'in', externalIds)
-        .execute();
-
-    const playerIdByExternal = new Map(
-        players
-            .filter((p) => p.external_id !== null)
-            .map((p) => [p.external_id as string, p.canonical_player_id ?? p.id]),
-    );
-
-    const fixtureRubbers = await db
-        .selectFrom('rubbers')
-        .select([
-            'id',
-            'home_player_1_id',
-            'away_player_1_id',
-            'home_games_won',
-            'away_games_won',
-        ])
-        .where('fixture_id', '=', fixture.id)
-        .where('is_doubles', '=', false)
-        .where('deleted_at', 'is', null)
-        .execute();
-
-    const scraperPlayerId = playerIdByExternal.get(playerExternalId);
-    if (!scraperPlayerId) {
-        await db
-            .updateTable('raw_scrape_logs')
-            .set({ status: 'processed' })
-            .where('id', '=', logId)
-            .execute();
-        helpers.logger.info(
-            `processLogTask: TT365 player-stats log ${logId} player ${playerExternalId} not found in external_players`,
-        );
-        return true;
-    }
-
-    let updates = 0;
-    const usedRubberIds = new Set<string>();
-    for (const row of observations) {
-        const opponentId = playerIdByExternal.get(row.opponentExternalId);
-        if (!opponentId) continue;
-
-        const matchingRubber = fixtureRubbers.find((rubber) => {
-            if (usedRubberIds.has(rubber.id)) return false;
-            return (
-                (rubber.home_player_1_id === scraperPlayerId && rubber.away_player_1_id === opponentId) ||
-                (rubber.home_player_1_id === opponentId && rubber.away_player_1_id === scraperPlayerId)
-            );
-        });
-        if (!matchingRubber) continue;
-
-        usedRubberIds.add(matchingRubber.id);
-        const playerIsHome = matchingRubber.home_player_1_id === scraperPlayerId;
-        const homeGamesWon = playerIsHome ? row.playerGamesWon : row.opponentGamesWon;
-        const awayGamesWon = playerIsHome ? row.opponentGamesWon : row.playerGamesWon;
-
-        if (
-            matchingRubber.home_games_won === homeGamesWon &&
-            matchingRubber.away_games_won === awayGamesWon
-        ) {
-            continue;
-        }
-
-        await db
-            .updateTable('rubbers')
-            .set({
-                home_games_won: homeGamesWon,
-                away_games_won: awayGamesWon,
-                updated_at: new Date(),
-            })
-            .where('id', '=', matchingRubber.id)
-            .execute();
-        updates += 1;
-    }
-
     await db
         .updateTable('raw_scrape_logs')
         .set({ status: 'processed' })
@@ -634,7 +771,7 @@ async function processTT365PlayerStats(
         .execute();
 
     helpers.logger.info(
-        `processLogTask: TT365 player-stats log ${logId} applied ${updates} score updates for match ${matchExternalId}`,
+        `processLogTask: TT365 player-stats log ${logId} processed as no-op (score overrides disabled)`,
     );
     return true;
 }

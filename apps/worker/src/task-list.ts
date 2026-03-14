@@ -1,0 +1,62 @@
+import type { ScrapeTarget } from './bootstrap.js';
+import { scrapeUrlTask } from './tasks/scrapeUrlTask.js';
+import { processLogTask } from './tasks/processLogTask.js';
+import { scrapeMatchesTask } from './tasks/scrapeMatchesTask.js';
+
+let scheduledScrapeTargets: ScrapeTarget[] = [];
+
+const SCRAPE_JOB_SPEC = { maxAttempts: 1 };
+
+export function setScheduledScrapeTargets(targets: ScrapeTarget[]): void {
+    scheduledScrapeTargets = targets;
+}
+
+const scheduleScrapeTasks = async (
+    _payload: unknown,
+    helpers: { addJob: Function; logger: { info: (msg: string) => void } },
+) => {
+    const activeTargets = scheduledScrapeTargets.filter((target) => !target.isHistorical);
+    const historicalCount = scheduledScrapeTargets.length - activeTargets.length;
+    helpers.logger.info(
+        `scheduleScrapeTasks: queuing ${activeTargets.length} active targets (skipping ${historicalCount} historical targets)`,
+    );
+
+    for (const target of activeTargets) {
+        await helpers.addJob('scrapeUrlTask', {
+            url: target.url,
+            platformId: target.platformId,
+            platformType: target.platformType,
+            competitionId: target.competitionId,
+            tt365DataType: target.platformType === 'tt365' ? 'standings' : undefined,
+        }, SCRAPE_JOB_SPEC);
+        helpers.logger.info(`  → Queued standings: ${target.leagueName} - ${target.divisionName}`);
+
+        if (target.platformType === 'tt365' && target.fixturesUrl) {
+            await helpers.addJob('scrapeUrlTask', {
+                url: target.fixturesUrl,
+                platformId: target.platformId,
+                platformType: target.platformType,
+                competitionId: target.competitionId,
+                tt365DataType: 'fixtures',
+            }, SCRAPE_JOB_SPEC);
+            helpers.logger.info(`  → Queued fixtures:  ${target.leagueName} - ${target.divisionName}`);
+        }
+
+        if (target.platformType === 'ttleagues' && target.divisionExtId) {
+            await helpers.addJob('scrapeMatchesTask', {
+                divisionId: target.divisionExtId,
+                platformId: target.platformId,
+                platformType: target.platformType,
+                competitionId: target.competitionId,
+            }, SCRAPE_JOB_SPEC);
+            helpers.logger.info(`  → Queued matches:   ${target.leagueName} - ${target.divisionName}`);
+        }
+    }
+};
+
+export const taskList = {
+    scrapeUrlTask,
+    processLogTask,
+    scrapeMatchesTask,
+    scheduleScrapeTasks,
+};

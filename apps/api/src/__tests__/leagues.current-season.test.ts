@@ -60,5 +60,12 @@ describe('GET /api/leagues current-season filter', () => {
         expect(league).toBeDefined();
         expect(league.season).toBe('2024/25');
         expect(league.divisions.map((d: { name: string }) => d.name)).not.toContain('Old Division');
+        expect(league.regions).toEqual([
+            {
+                id: ids.regionId,
+                slug: 'test-region',
+                name: 'Test Region',
+            },
+        ]);
     });
 });

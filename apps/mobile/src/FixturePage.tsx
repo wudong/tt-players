@@ -21,7 +21,7 @@ function shortName(name: string | null): string {
 }
 
 export function FixturePage() {
-  const { goBack, goHome, navigate } = usePageNavigation({ homeTab: 'leagues' });
+  const { goBack, goHome, navigate } = usePageNavigation();
   const { fixtureId = '' } = useParams<{ fixtureId: string }>();
 
   const rubbersQuery = useFixtureRubbersQuery(fixtureId, Boolean(fixtureId));
@@ -53,7 +53,7 @@ export function FixturePage() {
         title={fixtureMeta ? title : 'Fixture'}
         onTitleClick={goHome}
         leftAction={{ iconClassName: 'fas fa-chevron-left', onClick: goBack, position: 1, ariaLabel: 'Back' }}
-        rightAction={{ iconClassName: 'fas fa-home', onClick: goHome, position: 4, ariaLabel: 'Leagues' }}
+        rightAction={{ iconClassName: 'fas fa-home', onClick: goHome, position: 4, ariaLabel: 'Home' }}
       />
       <AppHeaderSpacer />
 
@@ -63,7 +63,7 @@ export function FixturePage() {
             title="Missing fixture"
             message="Fixture id is missing from the route."
             tone="danger"
-            action={{ label: 'Back to Leagues', onClick: goHome }}
+            action={{ label: 'Back Home', onClick: goHome }}
           />
         ) : rubbersQuery.isLoading && !fixtureMeta ? (
           <AppLoadingCard message="Loading fixture details..." />
@@ -72,7 +72,7 @@ export function FixturePage() {
             title="Fixture unavailable"
             message={pageError ?? 'Failed to load this fixture.'}
             tone="danger"
-            action={{ label: 'Back to Leagues', onClick: goHome }}
+            action={{ label: 'Back Home', onClick: goHome }}
           />
         ) : (
           <>
@@ -118,7 +118,7 @@ export function FixturePage() {
                   <p className="mb-0">No matches found for this fixture.</p>
                 ) : (
                   <div className="tt-rubber-list">
-                    {rubbers.map((rubber) => {
+                    {rubbers.map((rubber: any) => {
                       const homePlayers = [
                         { id: rubber.home_player_1_id, name: rubber.home_player_1_name },
                         ...(rubber.is_doubles ? [{ id: rubber.home_player_2_id, name: rubber.home_player_2_name }] : []),
@@ -140,10 +140,10 @@ export function FixturePage() {
                             </span>
                           </div>
                           <p className="mb-2">
-                            {(homePlayers.map((player) => player.name).join(' & ') || 'Unknown')} vs {(awayPlayers.map((player) => player.name).join(' & ') || 'Unknown')}
+                            {(homePlayers.map((player: any) => player.name).join(' & ') || 'Unknown')} vs {(awayPlayers.map((player: any) => player.name).join(' & ') || 'Unknown')}
                           </p>
                           <div className="tt-rubber-player-links">
-                            {homePlayers.map((player) => (
+                            {homePlayers.map((player: any) => (
                               <AppButtonLink
                                 key={`home-${player.id ?? player.name}`}
                                 size="s"
@@ -153,7 +153,7 @@ export function FixturePage() {
                                 {shortName(player.name)}
                               </AppButtonLink>
                             ))}
-                            {awayPlayers.map((player) => (
+                            {awayPlayers.map((player: any) => (
                               <AppButtonLink
                                 key={`away-${player.id ?? player.name}`}
                                 size="s"

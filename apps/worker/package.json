@@ -8,7 +8,9 @@
         "test:watch": "vitest",
         "worker:start": "tsx src/worker.ts",
         "worker:scrape": "tsx src/scrape-once.ts",
-        "worker:migrate": "tsx -e \"import { runMigrations } from 'graphile-worker'; runMigrations({ connectionString: process.env.DATABASE_URL }).then(() => console.log('Done'));\""
+        "scrape:uk": "tsx src/scrape-uk-ready-leagues.ts",
+        "worker:migrate": "tsx -e \"import { runMigrations } from 'graphile-worker'; runMigrations({ connectionString: process.env.DATABASE_URL }).then(() => console.log('Done'));\"",
+        "research:uk": "tsx src/research-uk-leagues.ts"
     },
     "dependencies": {
         "@tt-players/db": "workspace:*",

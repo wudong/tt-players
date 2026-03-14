@@ -23,15 +23,15 @@ function LegacyPlayerMatchesRedirect() {
 }
 
 function TabRootRedirect() {
-  const { tabId = 'players' } = useParams<{ tabId: string }>();
-  const safeTab = isAppTab(tabId) ? tabId : 'players';
+  const { tabId = 'home' } = useParams<{ tabId: string }>();
+  const safeTab = isAppTab(tabId) ? tabId : 'home';
   return <Navigate to={`/tabs/${safeTab}`} replace />;
 }
 
 function EnsureValidTab({ children }: { children: JSX.Element }) {
   const { tabId = '' } = useParams<{ tabId: string }>();
   if (!isAppTab(tabId)) {
-    return <Navigate to="/tabs/players" replace />;
+    return <Navigate to="/tabs/home" replace />;
   }
   return children;
 }
@@ -41,7 +41,7 @@ export function AppRouter() {
     <HashRouter>
       <TabNavigationProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/tabs/players" replace />} />
+          <Route path="/" element={<Navigate to="/tabs/home" replace />} />
 
           <Route path="/tabs/:tabId" element={<EnsureValidTab><App /></EnsureValidTab>} />
           <Route path="/tabs/:tabId/player/:playerId" element={<EnsureValidTab><PlayerPage /></EnsureValidTab>} />
@@ -55,7 +55,7 @@ export function AppRouter() {
           <Route path="/players/:playerId/insights" element={<LegacyPlayerInsightsRedirect />} />
           <Route path="/players/:playerId/matches" element={<LegacyPlayerMatchesRedirect />} />
 
-          <Route path="*" element={<Navigate to="/tabs/players" replace />} />
+          <Route path="*" element={<Navigate to="/tabs/home" replace />} />
         </Routes>
       </TabNavigationProvider>
     </HashRouter>

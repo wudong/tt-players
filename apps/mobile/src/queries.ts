@@ -21,7 +21,7 @@ import {
 export function useLeaguesQuery(seasonId?: string, enabled = true) {
   return useQuery({
     queryKey: ['leagues', seasonId ?? 'active'],
-    queryFn: ({ signal }) => {
+    queryFn: ({ signal }: { signal: AbortSignal }) => {
       if (!seasonId) {
         return apiFetch<LeaguesResponse>('/leagues', signal);
       }
@@ -35,7 +35,7 @@ export function useLeaguesQuery(seasonId?: string, enabled = true) {
 export function useLeagueSeasonsQuery() {
   return useQuery({
     queryKey: ['leagues', 'seasons'],
-    queryFn: ({ signal }) => apiFetch<LeagueSeasonsResponse>('/leagues/seasons', signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<LeagueSeasonsResponse>('/leagues/seasons', signal),
   });
 }
 
@@ -50,7 +50,7 @@ export function usePlayerSearchQuery(query: string, leagueIds: string[], options
 
   return useQuery({
     queryKey: ['players', 'search', normalized, sortedLeagueIds.join(','), options.allLeaguesCount ?? -1],
-    queryFn: ({ signal }) => {
+    queryFn: ({ signal }: { signal: AbortSignal }) => {
       const params = new URLSearchParams();
       if (normalized.length > 0) {
         params.set('q', normalized);
@@ -77,7 +77,7 @@ export function usePlayerSearchQuery(query: string, leagueIds: string[], options
 export function useStandingsQuery(competitionId: string, enabled: boolean) {
   return useQuery({
     queryKey: ['standings', competitionId],
-    queryFn: ({ signal }) => apiFetch<StandingsResponse>(`/competitions/${competitionId}/standings`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<StandingsResponse>(`/competitions/${competitionId}/standings`, signal),
     enabled,
   });
 }
@@ -103,7 +103,7 @@ export function useLeadersQuery(options: LeadersQueryOptions) {
       options.minPlayed,
       options.seasonId ?? '',
     ],
-    queryFn: ({ signal }) => {
+    queryFn: ({ signal }: { signal: AbortSignal }) => {
       const params = new URLSearchParams({
         mode: options.mode,
         limit: String(options.limit),
@@ -124,7 +124,7 @@ export function useLeadersQuery(options: LeadersQueryOptions) {
 export function usePlayerExtendedStatsQuery(playerId: string, enabled = true) {
   return useQuery({
     queryKey: ['players', playerId, 'stats', 'extended'],
-    queryFn: ({ signal }) => apiFetch<ExtendedPlayerStats>(`/players/${playerId}/stats/extended`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<ExtendedPlayerStats>(`/players/${playerId}/stats/extended`, signal),
     enabled: enabled && Boolean(playerId),
   });
 }
@@ -132,7 +132,7 @@ export function usePlayerExtendedStatsQuery(playerId: string, enabled = true) {
 export function usePlayerCurrentSeasonAffiliationsQuery(playerId: string, enabled = true) {
   return useQuery({
     queryKey: ['players', playerId, 'affiliations', 'current-season'],
-    queryFn: ({ signal }) => apiFetch<PlayerCurrentSeasonAffiliationsResponse>(`/players/${playerId}/affiliations/current-season`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<PlayerCurrentSeasonAffiliationsResponse>(`/players/${playerId}/affiliations/current-season`, signal),
     enabled: enabled && Boolean(playerId),
   });
 }
@@ -140,7 +140,7 @@ export function usePlayerCurrentSeasonAffiliationsQuery(playerId: string, enable
 export function usePlayerRubbersQuery(playerId: string, limit: number, offset: number, enabled = true) {
   return useQuery({
     queryKey: ['players', playerId, 'rubbers', limit, offset],
-    queryFn: ({ signal }) => apiFetch<RubbersResponse>(`/players/${playerId}/rubbers?limit=${limit}&offset=${offset}`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<RubbersResponse>(`/players/${playerId}/rubbers?limit=${limit}&offset=${offset}`, signal),
     enabled: enabled && Boolean(playerId),
   });
 }
@@ -148,7 +148,7 @@ export function usePlayerRubbersQuery(playerId: string, limit: number, offset: n
 export function usePlayerInsightsQuery(playerId: string, enabled = true) {
   return useQuery({
     queryKey: ['players', playerId, 'insights'],
-    queryFn: ({ signal }) => apiFetch<PlayerInsights>(`/players/${playerId}/insights`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<PlayerInsights>(`/players/${playerId}/insights`, signal),
     enabled: enabled && Boolean(playerId),
   });
 }
@@ -156,7 +156,7 @@ export function usePlayerInsightsQuery(playerId: string, enabled = true) {
 export function usePlayerH2HQuery(playerId1: string, playerId2: string, enabled = true) {
   return useQuery({
     queryKey: ['players', 'h2h', playerId1, playerId2],
-    queryFn: ({ signal }) => apiFetch<H2HResponse>(`/players/${playerId1}/h2h/${playerId2}`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<H2HResponse>(`/players/${playerId1}/h2h/${playerId2}`, signal),
     enabled: enabled && Boolean(playerId1) && Boolean(playerId2),
   });
 }
@@ -164,7 +164,7 @@ export function usePlayerH2HQuery(playerId1: string, playerId2: string, enabled 
 export function useTeamSummaryQuery(teamId: string, enabled = true) {
   return useQuery({
     queryKey: ['teams', teamId, 'summary'],
-    queryFn: ({ signal }) => apiFetch<TeamSummaryResponse>(`/teams/${teamId}/summary`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<TeamSummaryResponse>(`/teams/${teamId}/summary`, signal),
     enabled: enabled && Boolean(teamId),
   });
 }
@@ -172,7 +172,7 @@ export function useTeamSummaryQuery(teamId: string, enabled = true) {
 export function useTeamFormQuery(teamId: string, enabled = true) {
   return useQuery({
     queryKey: ['teams', teamId, 'form'],
-    queryFn: ({ signal }) => apiFetch<TeamFormResponse>(`/teams/${teamId}/form`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<TeamFormResponse>(`/teams/${teamId}/form`, signal),
     enabled: enabled && Boolean(teamId),
   });
 }
@@ -180,7 +180,7 @@ export function useTeamFormQuery(teamId: string, enabled = true) {
 export function useTeamRosterQuery(teamId: string, enabled = true) {
   return useQuery({
     queryKey: ['teams', teamId, 'roster'],
-    queryFn: ({ signal }) => apiFetch<RosterResponse>(`/teams/${teamId}/roster`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<RosterResponse>(`/teams/${teamId}/roster`, signal),
     enabled: enabled && Boolean(teamId),
   });
 }
@@ -188,7 +188,7 @@ export function useTeamRosterQuery(teamId: string, enabled = true) {
 export function useTeamFixturesQuery(teamId: string, limit = 20, offset = 0, enabled = true) {
   return useQuery({
     queryKey: ['teams', teamId, 'fixtures', limit, offset],
-    queryFn: ({ signal }) => apiFetch<FixturesResponse>(`/teams/${teamId}/fixtures?limit=${limit}&offset=${offset}`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<FixturesResponse>(`/teams/${teamId}/fixtures?limit=${limit}&offset=${offset}`, signal),
     enabled: enabled && Boolean(teamId),
   });
 }
@@ -196,7 +196,7 @@ export function useTeamFixturesQuery(teamId: string, limit = 20, offset = 0, ena
 export function useFixtureRubbersQuery(fixtureId: string, enabled = true) {
   return useQuery({
     queryKey: ['fixtures', fixtureId, 'rubbers'],
-    queryFn: ({ signal }) => apiFetch<FixtureRubbersResponse>(`/fixtures/${fixtureId}/rubbers`, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) => apiFetch<FixtureRubbersResponse>(`/fixtures/${fixtureId}/rubbers`, signal),
     enabled: enabled && Boolean(fixtureId),
   });
 }

@@ -2,6 +2,22 @@
   min-height: 100dvh;
 }
 
+:root {
+  --tt-home-surface: rgba(255, 255, 255, 0.84);
+  --tt-home-border: rgba(15, 23, 42, 0.08);
+  --tt-home-text: #10233b;
+  --tt-home-muted: rgba(16, 35, 59, 0.66);
+  --tt-home-shadow: 0 20px 42px rgba(15, 23, 42, 0.08);
+}
+
+body.theme-dark {
+  --tt-home-surface: rgba(15, 23, 42, 0.74);
+  --tt-home-border: rgba(148, 163, 184, 0.16);
+  --tt-home-text: rgba(248, 250, 252, 0.94);
+  --tt-home-muted: rgba(226, 232, 240, 0.74);
+  --tt-home-shadow: none;
+}
+
 .app-shell-page {
   min-height: 100dvh;
   transition: background-image 300ms ease;
@@ -101,6 +117,177 @@ body.theme-dark .list-custom-large a {
   padding-bottom: 4px;
 }
 
+.tt-league-selector-page {
+  min-height: calc(100dvh - 170px);
+}
+
+.tt-league-selector-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.tt-inline-action {
+  background: none;
+  border: 0;
+  color: var(--highlight);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+.tt-league-selector-hint {
+  color: rgba(15, 23, 42, 0.62);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.tt-league-selector-limit-note {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tt-league-selector-section-title {
+  color: rgba(15, 23, 42, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tt-selected-league-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tt-selected-league-pill {
+  align-items: center;
+  background: rgba(227, 28, 35, 0.12);
+  border: 1px solid rgba(227, 28, 35, 0.34);
+  border-radius: 999px;
+  color: inherit;
+  display: inline-flex;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  max-width: 100%;
+  padding: 8px 10px;
+}
+
+.tt-selected-league-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-region-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tt-region-chip {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  color: inherit;
+  display: inline-flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.tt-region-chip.active {
+  background: rgba(227, 28, 35, 0.14);
+  border-color: rgba(227, 28, 35, 0.36);
+}
+
+.tt-region-chip-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tt-region-chip-meta {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tt-league-selector-list {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.tt-league-selector-row {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  color: inherit;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 62px;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.tt-league-selector-row:last-child {
+  border-bottom: 0;
+}
+
+.tt-league-selector-row.is-selected {
+  background: rgba(227, 28, 35, 0.08);
+}
+
+.tt-league-selector-row-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tt-league-selector-row-title {
+  color: rgba(15, 23, 42, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.tt-league-selector-row-meta {
+  color: rgba(15, 23, 42, 0.64);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tt-league-selector-row-action {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tt-league-selector-row-action.is-add {
+  color: #1f8f50;
+}
+
+.tt-league-selector-row-action.is-remove {
+  color: #c63a3a;
+}
+
 .app-skeleton-row {
   height: 12px;
   border-radius: 8px;
@@ -143,6 +330,146 @@ body.theme-dark .list-custom-large a {
 
 .tt-trending-card {
   cursor: pointer;
+}
+
+.tt-home-stat-card {
+  background: var(--tt-home-surface);
+  border: 1px solid var(--tt-home-border);
+  border-radius: 18px;
+  box-shadow: var(--tt-home-shadow);
+  height: 100%;
+  padding: 14px 12px;
+}
+
+.tt-home-stat-label {
+  color: var(--tt-home-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tt-home-stat-value {
+  color: var(--tt-home-text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.tt-home-shortcuts {
+  display: grid;
+  gap: 12px;
+}
+
+.tt-home-shortcut-card {
+  align-items: flex-start;
+  background: var(--tt-home-surface);
+  border: 1px solid var(--tt-home-border);
+  border-radius: 22px;
+  box-shadow: var(--tt-home-shadow);
+  color: inherit !important;
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  text-decoration: none;
+}
+
+.tt-home-shortcut-icon {
+  align-items: center;
+  background: linear-gradient(160deg, rgba(227, 28, 35, 0.14), rgba(227, 28, 35, 0.04));
+  border-radius: 18px;
+  color: var(--highlight);
+  display: inline-flex;
+  flex: 0 0 48px;
+  font-size: 20px;
+  height: 48px;
+  justify-content: center;
+  margin-top: 2px;
+  width: 48px;
+}
+
+.tt-home-shortcut-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tt-home-shortcut-eyebrow {
+  color: var(--highlight);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tt-home-shortcut-copy h4 {
+  color: var(--tt-home-text);
+}
+
+.tt-home-shortcut-copy p:not(.tt-home-shortcut-eyebrow) {
+  color: var(--tt-home-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tt-home-shortcut-meta {
+  background: rgba(227, 28, 35, 0.08);
+  border-radius: 999px;
+  color: var(--tt-home-text);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.tt-home-shortcut-arrow {
+  align-self: center;
+  color: var(--tt-home-muted);
+  margin-top: 0;
+}
+
+.tt-home-leaders-list a {
+  min-height: 76px;
+}
+
+.tt-home-rank-badge {
+  align-items: center;
+  background: linear-gradient(135deg, #e31c23, #ff7a5c);
+  border-radius: 999px;
+  color: #fff !important;
+  display: inline-flex;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  height: 38px;
+  justify-content: center;
+  min-width: 38px;
+}
+
+.tt-home-league-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tt-home-league-pill {
+  background: var(--tt-home-surface);
+  border: 1px solid var(--tt-home-border);
+  border-radius: 999px;
+  color: var(--tt-home-text);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.tt-home-league-pill-muted {
+  color: var(--tt-home-muted);
+}
+
+.tt-home-scope-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .tt-player-summary-avatar {
@@ -373,6 +700,59 @@ body.theme-dark .tt-search-scope {
 
 body.theme-dark .tt-search-scope strong {
   color: rgba(255, 255, 255, 0.88);
+}
+
+body.theme-dark .tt-league-selector-hint {
+  color: rgba(233, 239, 248, 0.72);
+}
+
+body.theme-dark .tt-league-selector-limit-note {
+  color: rgba(233, 239, 248, 0.76);
+}
+
+body.theme-dark .tt-league-selector-section-title {
+  color: rgba(233, 239, 248, 0.78);
+}
+
+body.theme-dark .tt-selected-league-pill {
+  background: rgba(227, 28, 35, 0.22);
+  border-color: rgba(227, 28, 35, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.theme-dark .tt-region-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+body.theme-dark .tt-region-chip.active {
+  background: rgba(227, 28, 35, 0.24);
+  border-color: rgba(227, 28, 35, 0.52);
+}
+
+body.theme-dark .tt-region-chip-meta {
+  color: rgba(233, 239, 248, 0.72);
+}
+
+body.theme-dark .tt-league-selector-list {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.theme-dark .tt-league-selector-row {
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+body.theme-dark .tt-league-selector-row.is-selected {
+  background: rgba(227, 28, 35, 0.2);
+}
+
+body.theme-dark .tt-league-selector-row-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.theme-dark .tt-league-selector-row-meta {
+  color: rgba(233, 239, 248, 0.7);
 }
 
 body.theme-dark .tt-league-summary-row-button {

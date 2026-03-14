@@ -34,7 +34,7 @@ export function PlayerInsightsPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('players', 'root');
+    switchTab('home', 'root');
   };
 
   const preventDefaultLink = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -142,7 +142,7 @@ export function PlayerInsightsPage() {
                   <p className="mb-0">Not enough history yet.</p>
                 ) : (
                   <AppListGroup size="small">
-                    {insights.career_by_year.map((year, index) => (
+                    {insights.career_by_year.map((year: any, index: number) => (
                       <AppListItem
                         key={year.year}
                         iconClassName="fa fa-calendar-alt rounded-xl shadow-xl bg-green-dark color-white"

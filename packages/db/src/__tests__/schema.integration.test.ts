@@ -11,6 +11,8 @@ import * as m004 from '../migrations/004_create_raw_scrape_logs.js';
 import * as m005 from '../migrations/005_make_rubber_players_nullable.js';
 import * as m006 from '../migrations/006_add_canonical_player_id_to_external_players.js';
 import * as m007 from '../migrations/007_add_performance_indexes.js';
+import * as m008 from '../migrations/008_create_cache_entries.js';
+import * as m009 from '../migrations/009_create_regions.js';
 
 const { Pool } = pg;
 
@@ -35,6 +37,8 @@ class StaticMigrationProvider implements MigrationProvider {
             '005_make_rubber_players_nullable': m005,
             '006_add_canonical_player_id_to_external_players': m006,
             '007_add_performance_indexes': m007,
+            '008_create_cache_entries': m008,
+            '009_create_regions': m009,
         };
     }
 }
@@ -270,6 +274,8 @@ describe('Database Schema Integration Tests', () => {
         const expectedTables = [
             'platforms',
             'leagues',
+            'regions',
+            'league_regions',
             'seasons',
             'competitions',
             'teams',
@@ -278,6 +284,7 @@ describe('Database Schema Integration Tests', () => {
             'fixtures',
             'rubbers',
             'raw_scrape_logs',
+            'cache_entries',
         ];
 
         it('should have all expected tables', async () => {

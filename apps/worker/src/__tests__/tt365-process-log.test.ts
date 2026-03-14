@@ -39,6 +39,7 @@ let testDb: Kysely<Database>;
 let platformId: string;
 let competitionId: string;
 let processLogTask: any;
+let resetTT365PlayerStatsCacheForTests: (() => void) | null = null;
 let appDb: Kysely<Database> | null = null;
 
 const fixturesHtml = readFileSync(
@@ -62,6 +63,196 @@ const playerStatsHtmlFor458829 = `
     </tr>
   </tbody>
 </table>
+`;
+
+const tt365InconsistentMatchCardHtml = `
+<div id="PublicMatchCardTypeA">
+  <div id="CardSummary" class="divStyle">
+    <div class="teamNames">
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Brentwood_A">Brentwood A</a>
+      <span>v</span>
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Billericay_A">Billericay A</a>
+    </div>
+    <div>Match Date: <time datetime="2025-10-23">23 Oct 2025</time></div>
+  </div>
+  <div id="CardResults" class="tableStyle">
+    <table>
+      <tbody>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Gary_Ward/395890">Gary Ward</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+          <td class="games">
+            <span class="game">7-11</span>
+            <span class="game">8-11</span>
+            <span class="game">6-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Darren_Holmes/395892">Darren Holmes</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+          <td class="games">
+            <span class="game">9-11</span>
+            <span class="game">7-11</span>
+            <span class="game">8-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr class="foot">
+          <td class="auth" colspan="3">Submitted By: Gary Ward :: Approved By: Gary Ward :: Completed By: Gary Ward</td>
+          <td class="result">1 - 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;
+
+const tt365ImpossibleScoreMatchCardHtml = `
+<div id="PublicMatchCardTypeA">
+  <div id="CardSummary" class="divStyle">
+    <div class="teamNames">
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Brentwood_A">Brentwood A</a>
+      <span>v</span>
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Billericay_A">Billericay A</a>
+    </div>
+    <div>Match Date: <time datetime="2025-10-23">23 Oct 2025</time></div>
+  </div>
+  <div id="CardResults" class="tableStyle">
+    <table>
+      <tbody>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Gary_Ward/395890">Gary Ward</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+          <td class="games">
+            <span class="game">11-8</span>
+            <span class="game">11-9</span>
+            <span class="game">11-7</span>
+            <span class="game">11-6</span>
+          </td>
+          <td class="score">1-0</td>
+        </tr>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Darren_Holmes/395892">Darren Holmes</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+          <td class="games">
+            <span class="game">9-11</span>
+            <span class="game">7-11</span>
+            <span class="game">8-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr class="foot">
+          <td class="auth" colspan="3">Submitted By: Gary Ward :: Approved By: Gary Ward :: Completed By: Gary Ward</td>
+          <td class="result">1 - 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;
+
+const tt365ImpossibleWrongFooterMatchCardHtml = `
+<div id="PublicMatchCardTypeA">
+  <div id="CardSummary" class="divStyle">
+    <div class="teamNames">
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Brentwood_A">Brentwood A</a>
+      <span>v</span>
+      <a href="/Brentwood/Results/Team/Statistics/Winter_2025/Premier_Division/Billericay_A">Billericay A</a>
+    </div>
+    <div>Match Date: <time datetime="2025-10-23">23 Oct 2025</time></div>
+  </div>
+  <div id="CardResults" class="tableStyle">
+    <table>
+      <tbody>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Gary_Ward/395890">Gary Ward</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+          <td class="games">
+            <span class="game">11-8</span>
+            <span class="game">11-9</span>
+            <span class="game">11-7</span>
+            <span class="game">11-6</span>
+          </td>
+          <td class="score">1-0</td>
+        </tr>
+        <tr>
+          <td class="homePlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Darren_Holmes/395892">Darren Holmes</a></td>
+          <td class="awayPlayer"><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+          <td class="games">
+            <span class="game">9-11</span>
+            <span class="game">7-11</span>
+            <span class="game">8-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr class="foot">
+          <td class="auth" colspan="3">Submitted By: Gary Ward :: Approved By: Gary Ward :: Completed By: Gary Ward</td>
+          <td class="result">0 - 2</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;
+
+const tt365WalkoverOnlyInconsistentMatchCardHtml = `
+<div id="PublicMatchCardTypeA">
+  <div id="CardSummary" class="divStyle">
+    <div class="teamNames">
+      <a href="/Southend/Results/Team/Statistics/Winter_League_22-23/Division_1/Rawreth_D">Rawreth D</a>
+      <span>v</span>
+      <a href="/Southend/Results/Team/Statistics/Winter_League_22-23/Division_1/Stanford_A">Stanford A</a>
+    </div>
+    <div>Match Date: <time datetime="2023-03-14">14 Mar 2023</time></div>
+  </div>
+  <div id="CardResults" class="tableStyle">
+    <table>
+      <tbody>
+        <tr>
+          <td class="homePlayer">
+            <div class="players">
+              <span class="player"><span class="playerName">Forfeit</span></span>
+            </div>
+          </td>
+          <td class="awayPlayer">
+            <div class="players winner">
+              <span class="player"><span class="playerName"><a href="/Southend/Results/Player/Statistics/Winter_League_22-23/Dave_Hancox/337501">Dave Hancox</a></span></span>
+            </div>
+          </td>
+          <td class="games">
+            <span class="game">6-11</span>
+            <span class="game">8-11</span>
+            <span class="game">4-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr>
+          <td class="homePlayer">
+            <div class="players">
+              <span class="player"><span class="playerName">Forfeit</span></span>
+            </div>
+          </td>
+          <td class="awayPlayer">
+            <div class="players winner">
+              <span class="player"><span class="playerName"><a href="/Southend/Results/Player/Statistics/Winter_League_22-23/Russell_Bright/337496">Russell Bright</a></span></span>
+            </div>
+          </td>
+          <td class="games">
+            <span class="game">7-11</span>
+            <span class="game">4-11</span>
+            <span class="game">8-11</span>
+          </td>
+          <td class="score">0-1</td>
+        </tr>
+        <tr class="foot">
+          <td class="auth" colspan="3">Submitted By: Example :: Approved By: Example :: Completed By: Example</td>
+          <td class="result">1 - 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 `;
 
 async function createTestDatabase(): Promise<void> {
@@ -152,7 +343,10 @@ describe('processLogTask TT365 modes', () => {
         competitionId = competition.id;
 
         process.env['DATABASE_URL'] = TEST_DATABASE_URL;
-        ({ processLogTask } = await import('../tasks/processLogTask.js'));
+        ({
+            processLogTask,
+            __resetTT365PlayerStatsCacheForTests: resetTT365PlayerStatsCacheForTests,
+        } = await import('../tasks/processLogTask.js'));
         ({ db: appDb } = await import('@tt-players/db'));
     }, 30_000);
 
@@ -165,6 +359,8 @@ describe('processLogTask TT365 modes', () => {
     }, 15_000);
 
     beforeEach(async () => {
+        vi.restoreAllMocks();
+        resetTT365PlayerStatsCacheForTests?.();
         await testDb.deleteFrom('rubbers').execute();
         await testDb.deleteFrom('league_standings').execute();
         await testDb.deleteFrom('fixtures').execute();
@@ -333,22 +529,8 @@ describe('processLogTask TT365 modes', () => {
         const teams = await testDb.selectFrom('teams').selectAll().execute();
         expect(teams).toHaveLength(2);
 
-        // 5 unique players on the card -> 5 player statistics scrapes queued
-        expect(addJob).toHaveBeenCalledTimes(5);
-        expect(addJob).toHaveBeenCalledWith(
-            'scrapeUrlTask',
-            expect.objectContaining({
-                competitionId,
-                platformId,
-                platformType: 'tt365',
-                tt365DataType: 'playerstats',
-                matchExternalId: '458829',
-            }),
-            expect.objectContaining({
-                maxAttempts: 1,
-                jobKey: expect.stringContaining('tt365-playerstats:'),
-            }),
-        );
+        // Match-card processing should not queue player statistics jobs anymore.
+        expect(addJob).not.toHaveBeenCalled();
 
         const updated = await testDb
             .selectFrom('raw_scrape_logs')
@@ -358,59 +540,381 @@ describe('processLogTask TT365 modes', () => {
         expect(updated.status).toBe('processed');
     });
 
-    it('does not requeue historical player-stats pages when already processed', async () => {
+    it('uses player-stats fallback when the match-card payload is inconsistent', async () => {
         const matchCardUrl =
-            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/458829';
-        const existingPlayerStatsUrl =
-            'https://www.tabletennis365.com/Brentwood/Results/Player/Statistics/Winter_2025/Arron_Chandler/401745';
+            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900001';
 
-        await testDb
-            .insertInto('raw_scrape_logs')
-            .values({
-                platform_id: platformId,
-                endpoint_url: existingPlayerStatsUrl,
-                raw_payload: '<html></html>',
-                payload_hash: createHash('sha256').update('<html></html>').digest('hex'),
-                status: 'processed',
-            })
-            .executeTakeFirstOrThrow();
-
-        const [log] = await testDb
+        const [currentLog] = await testDb
             .insertInto('raw_scrape_logs')
             .values({
                 platform_id: platformId,
                 endpoint_url: matchCardUrl,
-                raw_payload: matchCardHtml,
-                payload_hash: createHash('sha256').update(matchCardHtml).digest('hex'),
+                raw_payload: tt365InconsistentMatchCardHtml,
+                payload_hash: createHash('sha256').update(tt365InconsistentMatchCardHtml).digest('hex'),
                 status: 'pending',
             })
             .returning('id')
             .execute();
 
-        const addJob = vi.fn(async () => undefined);
-        const payload: ProcessLogPayload = {
-            logId: log.id,
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : String(input?.url ?? '');
+
+            if (url.includes('/Gary_Ward/395890')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+                      <td></td><td>Navestock A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">11-8</span><span class="game">11-7</span><span class="game">9-11</span><span class="game">11-9</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900001">Win</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            if (url.includes('/Darren_Holmes/395892')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+                      <td></td><td>Billericay A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">9-11</span><span class="game">7-11</span><span class="game">8-11</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900001">Loss</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            return new Response('<table><tbody></tbody></table>', { status: 200 });
+        });
+
+        await processLogTask({
+            logId: currentLog.id,
             competitionId,
             platformId,
             platformType: 'tt365',
             tt365DataType: 'matchcard',
-            matchExternalId: '458829',
-        };
-
-        await processLogTask(payload, {
-            addJob,
+            matchExternalId: '900001',
+        }, {
+            addJob: async () => undefined,
             logger: { info: () => undefined },
         });
 
-        expect(addJob).toHaveBeenCalledTimes(4);
-        expect(addJob).not.toHaveBeenCalledWith(
-            'scrapeUrlTask',
-            expect.objectContaining({ url: existingPlayerStatsUrl }),
-            expect.anything(),
-        );
+        const rubbers = await testDb
+            .selectFrom('rubbers')
+            .select(['home_games_won', 'away_games_won'])
+            .orderBy('external_id')
+            .execute();
+
+        expect(rubbers).toHaveLength(2);
+        expect(rubbers[0]).toMatchObject({ home_games_won: 3, away_games_won: 1 });
+        expect(rubbers[1]).toMatchObject({ home_games_won: 0, away_games_won: 3 });
+
+        const processedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', currentLog.id)
+            .executeTakeFirstOrThrow();
+        expect(processedLog.status).toBe('processed');
     });
 
-    it('updates singles rubber scores from TT365 player statistics rows', async () => {
+    it('falls back when a match-card has impossible game scores even if footer totals are consistent', async () => {
+        const matchCardUrl =
+            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900003';
+
+        const [currentLog] = await testDb
+            .insertInto('raw_scrape_logs')
+            .values({
+                platform_id: platformId,
+                endpoint_url: matchCardUrl,
+                raw_payload: tt365ImpossibleScoreMatchCardHtml,
+                payload_hash: createHash('sha256').update(tt365ImpossibleScoreMatchCardHtml).digest('hex'),
+                status: 'pending',
+            })
+            .returning('id')
+            .execute();
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : String(input?.url ?? '');
+
+            if (url.includes('/Gary_Ward/395890')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+                      <td></td><td>Navestock A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">11-8</span><span class="game">11-7</span><span class="game">11-9</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900003">Win</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            if (url.includes('/Darren_Holmes/395892')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+                      <td></td><td>Billericay A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">9-11</span><span class="game">7-11</span><span class="game">8-11</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900003">Loss</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            return new Response('<table><tbody></tbody></table>', { status: 200 });
+        });
+
+        await processLogTask({
+            logId: currentLog.id,
+            competitionId,
+            platformId,
+            platformType: 'tt365',
+            tt365DataType: 'matchcard',
+            matchExternalId: '900003',
+        }, {
+            addJob: async () => undefined,
+            logger: { info: () => undefined },
+        });
+
+        const rubbers = await testDb
+            .selectFrom('rubbers')
+            .select(['home_games_won', 'away_games_won'])
+            .orderBy('external_id')
+            .execute();
+
+        expect(rubbers).toHaveLength(2);
+        expect(rubbers[0]).toMatchObject({ home_games_won: 3, away_games_won: 0 });
+        expect(rubbers[1]).toMatchObject({ home_games_won: 0, away_games_won: 3 });
+
+        const processedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', currentLog.id)
+            .executeTakeFirstOrThrow();
+        expect(processedLog.status).toBe('processed');
+    });
+
+    it('trusts player-stats fallback even when footer remains inconsistent', async () => {
+        const matchCardUrl =
+            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900004';
+
+        const [currentLog] = await testDb
+            .insertInto('raw_scrape_logs')
+            .values({
+                platform_id: platformId,
+                endpoint_url: matchCardUrl,
+                raw_payload: tt365ImpossibleWrongFooterMatchCardHtml,
+                payload_hash: createHash('sha256').update(tt365ImpossibleWrongFooterMatchCardHtml).digest('hex'),
+                status: 'pending',
+            })
+            .returning('id')
+            .execute();
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : String(input?.url ?? '');
+
+            if (url.includes('/Gary_Ward/395890')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+                      <td></td><td>Navestock A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">11-8</span><span class="game">11-7</span><span class="game">11-9</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900004">Win</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            if (url.includes('/Darren_Holmes/395892')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+                      <td></td><td>Billericay A</td>
+                      <td><time datetime="2025-10-23">23/10/2025</time></td>
+                      <td><span class="game">9-11</span><span class="game">7-11</span><span class="game">8-11</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900004">Loss</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            return new Response('<table><tbody></tbody></table>', { status: 200 });
+        });
+
+        await processLogTask({
+            logId: currentLog.id,
+            competitionId,
+            platformId,
+            platformType: 'tt365',
+            tt365DataType: 'matchcard',
+            matchExternalId: '900004',
+        }, {
+            addJob: async () => undefined,
+            logger: { info: () => undefined },
+        });
+
+        const rubbers = await testDb
+            .selectFrom('rubbers')
+            .select(['home_games_won', 'away_games_won'])
+            .orderBy('external_id')
+            .execute();
+
+        expect(rubbers).toHaveLength(2);
+        expect(rubbers[0]).toMatchObject({ home_games_won: 3, away_games_won: 0 });
+        expect(rubbers[1]).toMatchObject({ home_games_won: 0, away_games_won: 3 });
+
+        const processedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', currentLog.id)
+            .executeTakeFirstOrThrow();
+        expect(processedLog.status).toBe('processed');
+    });
+
+    it('bypasses strict consistency failure for walkover-only match cards', async () => {
+        const matchCardUrl =
+            'https://www.tabletennis365.com/Southend/Results/Winter_League_22-23/Division_1/MatchCard/901000';
+
+        const [currentLog] = await testDb
+            .insertInto('raw_scrape_logs')
+            .values({
+                platform_id: platformId,
+                endpoint_url: matchCardUrl,
+                raw_payload: tt365WalkoverOnlyInconsistentMatchCardHtml,
+                payload_hash: createHash('sha256').update(tt365WalkoverOnlyInconsistentMatchCardHtml).digest('hex'),
+                status: 'pending',
+            })
+            .returning('id')
+            .execute();
+
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('<table><tbody></tbody></table>', { status: 200 }),
+        );
+
+        await processLogTask({
+            logId: currentLog.id,
+            competitionId,
+            platformId,
+            platformType: 'tt365',
+            tt365DataType: 'matchcard',
+            matchExternalId: '901000',
+        }, {
+            addJob: async () => undefined,
+            logger: { info: () => undefined },
+        });
+
+        const rubbers = await testDb
+            .selectFrom('rubbers')
+            .select(['home_games_won', 'away_games_won', 'outcome_type'])
+            .orderBy('external_id')
+            .execute();
+
+        expect(rubbers).toHaveLength(2);
+        expect(rubbers[0]).toMatchObject({
+            home_games_won: 0,
+            away_games_won: 3,
+            outcome_type: 'walkover',
+        });
+        expect(rubbers[1]).toMatchObject({
+            home_games_won: 0,
+            away_games_won: 3,
+            outcome_type: 'walkover',
+        });
+
+        const processedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', currentLog.id)
+            .executeTakeFirstOrThrow();
+        expect(processedLog.status).toBe('processed');
+    });
+
+    it('marks inconsistent TT365 match-card payload as failed when player-stats rows do not match fixture date', async () => {
+        const matchCardUrl =
+            'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900002';
+
+        const [currentLog] = await testDb
+            .insertInto('raw_scrape_logs')
+            .values({
+                platform_id: platformId,
+                endpoint_url: matchCardUrl,
+                raw_payload: tt365InconsistentMatchCardHtml,
+                payload_hash: createHash('sha256').update(tt365InconsistentMatchCardHtml).digest('hex'),
+                status: 'pending',
+            })
+            .returning('id')
+            .execute();
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : String(input?.url ?? '');
+
+            if (url.includes('/Gary_Ward/395890')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Indrit_Bajraktari/400934">Indrit Bajraktari</a></td>
+                      <td></td><td>Navestock A</td>
+                      <td><time datetime="2025-10-24">24/10/2025</time></td>
+                      <td><span class="game">11-8</span><span class="game">11-7</span><span class="game">9-11</span><span class="game">11-9</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900002">Win</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            if (url.includes('/Darren_Holmes/395892')) {
+                return new Response(`
+                    <table><tbody><tr>
+                      <td><a href="/Brentwood/Results/Player/Statistics/Winter_2025/Peter_Levy/400935">Peter Levy</a></td>
+                      <td></td><td>Billericay A</td>
+                      <td><time datetime="2025-10-24">24/10/2025</time></td>
+                      <td><span class="game">9-11</span><span class="game">7-11</span><span class="game">8-11</span></td>
+                      <td class="right"><a href="/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/900002">Loss</a></td>
+                    </tr></tbody></table>
+                `, { status: 200 });
+            }
+
+            return new Response('<table><tbody></tbody></table>', { status: 200 });
+        });
+
+        await processLogTask({
+            logId: currentLog.id,
+            competitionId,
+            platformId,
+            platformType: 'tt365',
+            tt365DataType: 'matchcard',
+            matchExternalId: '900002',
+        }, {
+            addJob: async () => undefined,
+            logger: { info: () => undefined },
+        });
+
+        const fixtureCount = await testDb
+            .selectFrom('fixtures')
+            .select((eb) => eb.fn.countAll<string>().as('count'))
+            .executeTakeFirstOrThrow();
+        expect(Number.parseInt(fixtureCount.count, 10)).toBe(0);
+
+        const failedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', currentLog.id)
+            .executeTakeFirstOrThrow();
+        expect(failedLog.status).toBe('failed');
+    });
+
+    it('processes TT365 player-stats logs as no-op for compatibility', async () => {
         const matchCardUrl =
             'https://www.tabletennis365.com/Brentwood/Results/Winter_2025/Premier_Division/MatchCard/458829';
         const [matchCardLog] = await testDb
@@ -492,7 +996,7 @@ describe('processLogTask TT365 modes', () => {
             logger: { info: () => undefined },
         });
 
-        const updatedRubber = await testDb
+        const unchangedRubber = await testDb
             .selectFrom('rubbers')
             .select(['home_games_won', 'away_games_won'])
             .where('fixture_id', '=', fixture.id)
@@ -500,7 +1004,14 @@ describe('processLogTask TT365 modes', () => {
             .where('away_player_1_id', '=', playerB.id)
             .executeTakeFirstOrThrow();
 
-        expect(updatedRubber.home_games_won).toBe(3);
-        expect(updatedRubber.away_games_won).toBe(1);
+        expect(unchangedRubber.home_games_won).toBe(0);
+        expect(unchangedRubber.away_games_won).toBe(3);
+
+        const processedLog = await testDb
+            .selectFrom('raw_scrape_logs')
+            .select(['status'])
+            .where('id', '=', playerStatsLog.id)
+            .executeTakeFirstOrThrow();
+        expect(processedLog.status).toBe('processed');
     });
 });

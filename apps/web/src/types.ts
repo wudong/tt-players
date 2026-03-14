@@ -300,12 +300,19 @@ export interface DivisionItem {
     external_id: string;
 }
 
+export interface RegionItem {
+    id: string;
+    slug: string;
+    name: string;
+}
+
 export interface LeagueWithDivisions {
     id: string;
     name: string;
     platform: string;
     season_id: string;
     season: string;
+    regions: RegionItem[];
     divisions: DivisionItem[];
 }
 

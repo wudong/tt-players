@@ -36,6 +36,28 @@ export type League = Selectable<LeaguesTable>;
 export type NewLeague = Insertable<LeaguesTable>;
 export type LeagueUpdate = Updateable<LeaguesTable>;
 
+export interface RegionsTable {
+    id: Generated<string>;
+    slug: string;
+    name: string;
+    created_at: Generated<Date>;
+}
+
+export type Region = Selectable<RegionsTable>;
+export type NewRegion = Insertable<RegionsTable>;
+export type RegionUpdate = Updateable<RegionsTable>;
+
+export interface LeagueRegionsTable {
+    id: Generated<string>;
+    league_id: string;
+    region_id: string;
+    created_at: Generated<Date>;
+}
+
+export type LeagueRegion = Selectable<LeagueRegionsTable>;
+export type NewLeagueRegion = Insertable<LeagueRegionsTable>;
+export type LeagueRegionUpdate = Updateable<LeagueRegionsTable>;
+
 export interface SeasonsTable {
     id: Generated<string>;
     league_id: string;
@@ -188,6 +210,8 @@ export type CacheEntryUpdate = Updateable<CacheEntriesTable>;
 export interface Database {
     platforms: PlatformsTable;
     leagues: LeaguesTable;
+    regions: RegionsTable;
+    league_regions: LeagueRegionsTable;
     seasons: SeasonsTable;
     competitions: CompetitionsTable;
     teams: TeamsTable;

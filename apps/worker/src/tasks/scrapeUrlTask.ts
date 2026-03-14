@@ -1,6 +1,7 @@
 import type { Task } from 'graphile-worker';
 import { db } from '@tt-players/db';
 import { extractAndStore, storeScrapePayload } from '../extractor.js';
+import { fetchWithTT365Policy } from '../tt365-http.js';
 
 export interface ScrapeUrlPayload {
     url: string;
@@ -42,7 +43,7 @@ function buildCookieHeader(setCookies: string[]): string {
 }
 
 async function extractAndStoreTT365MatchCard(url: string, platformId: string): Promise<string> {
-    const pageRes = await fetch(url);
+    const pageRes = await fetchWithTT365Policy(url);
     if (!pageRes.ok) {
         throw new Error(`HTTP ${pageRes.status} ${pageRes.statusText} when fetching ${url}`);
     }
@@ -59,7 +60,7 @@ async function extractAndStoreTT365MatchCard(url: string, platformId: string): P
     const setCookies = pageRes.headers.getSetCookie?.() ?? [];
     const cookieHeader = buildCookieHeader(setCookies);
 
-    const ajaxRes = await fetch(ajaxUrl, {
+    const ajaxRes = await fetchWithTT365Policy(ajaxUrl, {
         method: 'POST',
         headers: {
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -125,16 +126,6 @@ export const scrapeUrlTask: Task = async (payload, helpers) => {
     }
 
     helpers.logger.info(`scrapeUrlTask: stored log ${logId}, queuing processLogTask`);
-
-    // Player-stat pages are used to override TT365 singles scores.
-    // Ensure the transform step re-runs even when payload hash is unchanged.
-    if (platformType === 'tt365' && tt365DataType === 'playerstats') {
-        await db
-            .updateTable('raw_scrape_logs')
-            .set({ status: 'pending' })
-            .where('id', '=', logId)
-            .execute();
-    }
 
     // Chain: immediately queue a Phase 2 (transform + load) task
     await helpers.addJob('processLogTask', {

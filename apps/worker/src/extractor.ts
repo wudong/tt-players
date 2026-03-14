@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { sql, type Kysely } from 'kysely';
 import type { Database } from '@tt-players/db';
+import { fetchWithTT365Policy } from './tt365-http.js';
 
 export async function storeScrapePayload(
     url: string,
@@ -44,7 +45,7 @@ export async function extractAndStore(
     db: Kysely<Database>,
 ): Promise<string> {
     // 1. Fetch the URL (let network errors propagate naturally)
-    const response = await fetch(url);
+    const response = await fetchWithTT365Policy(url);
 
     // 2. Handle HTTP errors — throw so the job can be retried
     if (!response.ok) {

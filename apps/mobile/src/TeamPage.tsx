@@ -56,7 +56,7 @@ export function TeamPage() {
 
   const goHome = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    switchTab('leagues', 'root');
+    switchTab('home', 'root');
   };
 
   const openPlayer = (playerId: string) => {
@@ -84,7 +84,7 @@ export function TeamPage() {
           <AppMessageCard
             title="Team not available"
             message={summaryError || 'Failed to load this team profile.'}
-            action={{ label: 'Back to Leagues', onClick: goHome }}
+            action={{ label: 'Back Home', onClick: goHome }}
           />
         ) : (
           <>
@@ -149,7 +149,7 @@ export function TeamPage() {
                   <p className="mb-0 opacity-60">No players found for this team yet.</p>
                 ) : (
                   <PlayerList
-                    players={roster.map(p => ({
+                    players={roster.map((p: any) => ({
                       id: p.id,
                       name: p.name,
                       played: p.played,
@@ -158,7 +158,7 @@ export function TeamPage() {
                     listClassName="tt-player-search-list"
                     onSelectPlayer={(player) => openPlayer(player.id)}
                     getSubtitle={(player) => {
-                      const rosterItem = roster.find(r => r.id === player.id);
+                      const rosterItem = roster.find((r: any) => r.id === player.id);
                       return `${rosterItem?.winRate ?? 0}% WR • ${player.played} matches`;
                     }}
                   />
@@ -184,7 +184,7 @@ export function TeamPage() {
                   <p className="mb-0 opacity-60">No recent matches found.</p>
                 ) : (
                   <AppListGroup size="large" className="tt-match-history-list">
-                    {fixtures.map((fixture, index) => (
+                    {fixtures.map((fixture: any, index: number) => (
                       <AppListItem
                         key={fixture.id}
                         iconClassName="fa fa-table-tennis rounded-xl shadow-xl bg-blue-dark color-white"

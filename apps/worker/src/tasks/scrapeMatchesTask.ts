@@ -17,6 +17,12 @@ const TTL_RECHECK_COMPLETED_MS = 7 * 24 * 60 * 60 * 1000; // 7d
 const SCRAPE_RETRY_DELAY_MS = Number(
     process.env['SCRAPE_RETRY_DELAY_MS'] ?? '10000',
 );
+const TTL_MATCHES_FETCH_TIMEOUT_MS = Number(
+    process.env['TTL_MATCHES_FETCH_TIMEOUT_MS'] ?? '15000',
+);
+const TTL_SETS_FETCH_TIMEOUT_MS = Number(
+    process.env['TTL_SETS_FETCH_TIMEOUT_MS'] ?? '12000',
+);
 
 function hash(body: string): string {
     return createHash('sha256').update(body).digest('hex');
@@ -30,7 +36,7 @@ async function fetchWithOneRetry(
     url: string,
     helpers: { logger: { info: (msg: string) => void } },
 ): Promise<Response> {
-    const first = await fetch(url);
+    const first = await fetchWithTimeout(url, TTL_MATCHES_FETCH_TIMEOUT_MS);
     if (first.ok) return first;
 
     helpers.logger.info(
@@ -38,9 +44,19 @@ async function fetchWithOneRetry(
     );
     await sleep(SCRAPE_RETRY_DELAY_MS);
 
-    const second = await fetch(url);
+    const second = await fetchWithTimeout(url, TTL_MATCHES_FETCH_TIMEOUT_MS);
     if (second.ok) return second;
     throw new Error(`HTTP ${second.status} fetching ${url}`);
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, { signal: controller.signal });
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
 /**
@@ -97,7 +113,7 @@ export const scrapeMatchesTask: Task = async (payload, helpers) => {
     for (const match of matchesNeedingSets) {
         const setsUrl = `${TTL_API_BASE}/matches/${match.id}/sets`;
         try {
-            const setsRes = await fetch(setsUrl);
+            const setsRes = await fetchWithTimeout(setsUrl, TTL_SETS_FETCH_TIMEOUT_MS);
             if (setsRes.ok) {
                 setsMap[String(match.id)] = await setsRes.json();
             } else {
