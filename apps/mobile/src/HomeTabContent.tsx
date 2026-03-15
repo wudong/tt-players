@@ -60,28 +60,28 @@ export function HomeTabContent({
     meta: string;
     thumbnail: string;
   }> = [
-    {
-      tabId: 'players',
-      title: 'Search Players',
-      description: 'Browse the full player directory, follow their form, and dive into per-match stats and insights.',
-      meta: searchScopeLabel,
-      thumbnail: '/images/thumb-players.png',
-    },
-    {
-      tabId: 'leagues',
-      title: 'Leagues & Standings',
-      description: 'Explore live league tables, team hubs, fixture lists, and division standings all in one place.',
-      meta: `${totalDivisionCount} divisions across all leagues`,
-      thumbnail: '/images/thumb-leagues.png',
-    },
-    {
-      tabId: 'h2h',
-      title: 'Head to Head',
-      description: 'Pick any two players and see exactly how they compare — win rate, form, and past encounters.',
-      meta: searchScopeLabel,
-      thumbnail: '/images/thumb-h2h.png',
-    },
-  ];
+      {
+        tabId: 'players',
+        title: 'Search Players',
+        description: 'Browse the full player directory, follow their form, and dive into per-match stats and insights.',
+        meta: `Extensive player database include ${playerCount} players.`,
+        thumbnail: '/images/thumb-players.png',
+      },
+      {
+        tabId: 'leagues',
+        title: 'Leagues & Standings',
+        description: 'Explore live league tables, team hubs, fixture lists, and division standings all in one place.',
+        meta: `${totalDivisionCount} divisions across ${totalLeagueCount} leagues`,
+        thumbnail: '/images/thumb-leagues.png',
+      },
+      {
+        tabId: 'h2h',
+        title: 'Head to Head',
+        description: 'Pick any two players and see exactly how they compare — win rate, form, and past encounters.',
+        meta: `Against your friend and enemy`,
+        thumbnail: '/images/thumb-h2h.png',
+      }
+    ];
 
   return (
     <>
