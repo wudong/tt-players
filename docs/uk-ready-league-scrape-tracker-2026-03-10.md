@@ -1,14 +1,14 @@
 # UK Ready League Scrape Tracker
 
-Last updated: 2026-03-15T08:46:46.978Z
+Last updated: 2026-03-15T09:03:06.401Z
 
 ## Summary
 
 - Total ready leagues: 190
-- Completed: 7
+- Completed: 38
 - In progress: 1
 - Partial: 0
-- Pending: 182
+- Pending: 151
 
 ## England
 
@@ -21,38 +21,38 @@ Last updated: 2026-03-15T08:46:46.978Z
 | Berkshire | Bracknell and Wokingham Table Tennis League | 3/3 (completed) | 18/18 (completed) | completed | 2026-03-15T08:45:30.687Z | 2026-03-15T08:46:41.038Z | tt365 | https://www.tabletennis365.com/bracknellandwokingham |
 | Berkshire | Maidenhead Table Tennis League | 3/3 (completed) | 9/9 (completed) | completed | 2026-03-15T08:46:41.039Z | 2026-03-15T08:46:45.183Z | ttleagues | https://maidenhead.ttleagues.com |
 | Berkshire | Newbury Table Tennis League | 3/3 (completed) | 12/12 (completed) | completed | 2026-03-15T08:46:45.184Z | 2026-03-15T08:46:46.976Z | ttleagues | https://newbury.ttleagues.com |
-| Berkshire | Reading & District Table Tennis Association | 0/4 (pending) | 0/24 (pending) | in_progress | 2026-03-15T08:46:46.977Z |  | tt365 | https://www.tabletennis365.com/reading |
-| Buckinghamshire | Aylesbury Table Tennis League | 0/5 (pending) | 0/21 (pending) | pending |  |  | ttleagues | https://aylesbury.ttleagues.com |
-| Buckinghamshire | Chalfonts Table Tennis League | 0/2 (pending) | 0/11 (pending) | pending |  |  | ttleagues | https://chalfonts.ttleagues.com |
-| Buckinghamshire | Chiltern Table Tennis League | 0/2 (pending) | 0/8 (pending) | pending |  |  | ttleagues | https://chiltern.ttleagues.com |
-| Buckinghamshire | High Wycombe Table Tennis League | 0/4 (pending) | 0/16 (pending) | pending |  |  | ttleagues | https://highwycombe.ttleagues.com |
-| Cambridgeshire | Cambridge Table Tennis League | 0/4 (pending) | 0/17 (pending) | pending |  |  | ttleagues | https://cambridge.ttleagues.com |
-| Cambridgeshire | Ely & District Table Tennis League | 0/3 (pending) | 0/12 (pending) | pending |  |  | ttleagues | https://elydistrict.ttleagues.com |
-| Cambridgeshire | Peterborough Table Tennis League | 0/4 (pending) | 0/11 (pending) | pending |  |  | ttleagues | https://peterborough.ttleagues.com |
-| Cheshire | Chester and Ellesmere Port Table Tennis League | 0/4 (pending) | 0/18 (pending) | pending |  |  | ttleagues | https://chesterandellesmereport.ttleagues.com |
-| Cheshire | Crewe Table Tennis League | 0/8 (pending) | 0/16 (pending) | pending |  |  | ttleagues | https://crewe.ttleagues.com |
-| Cheshire | Glossop Table Tennis League | 0/3 (pending) | 0/15 (pending) | pending |  |  | ttleagues | https://glossop.ttleagues.com |
-| Cheshire | Halton Table Tennis League | 0/2 (pending) | 0/5 (pending) | pending |  |  | ttleagues | https://halton.ttleagues.com |
-| Cheshire | Mid-Cheshire Table Tennis League | 0/2 (pending) | 0/11 (pending) | pending |  |  | ttleagues | https://midcheshire.ttleagues.com |
-| Cheshire | Trafford Table Tennis League | 0/3 (pending) | 0/15 (pending) | pending |  |  | ttleagues | https://trafford.ttleagues.com |
-| Cheshire | Wilmslow Table Tennis League | 0/3 (pending) | 0/15 (pending) | pending |  |  | ttleagues | https://wilmslow.ttleagues.com |
-| Cheshire | Wirral Table Tennis League | 0/3 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://wirral.ttleagues.com |
-| Cheshire\|Lancashire | Lancashire And Cheshire Table Tennis League | 0/3 (pending) | 0/6 (pending) | pending |  |  | ttleagues | https://lancashireandcheshire.ttleagues.com |
-| Cleveland | Cleveland Table Tennis League | 0/1 (pending) | 0/3 (pending) | pending |  |  | ttleagues | https://cleveland.ttleagues.com |
-| Cleveland | Middlesbrough Table Tennis League | 0/3 (pending) | 0/6 (pending) | pending |  |  | ttleagues | https://middlesbrough.ttleagues.com |
-| Cleveland | Stockton Table Tennis League | 0/3 (pending) | 0/13 (pending) | pending |  |  | ttleagues | https://stockton.ttleagues.com |
-| Cornwall | North Cornwall Table Tennis League | 0/2 (pending) | 0/16 (pending) | pending |  |  | tt365 | https://www.tabletennis365.com/northcornwall |
-| Cornwall | West Cornwall Table Tennis League | 0/4 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://westcornwall.ttleagues.com |
-| Cumbria | Barrow Table Tennis League | 0/2 (pending) | 0/0 (not_required) | pending |  |  | ttleagues | https://barrow.ttleagues.com |
-| Derbyshire | Chesterfield Table Tennis League | 0/4 (pending) | 0/6 (pending) | pending |  |  | ttleagues | https://chesterfield.ttleagues.com |
-| Derbyshire | Derby & District Table Tennis Association | 0/4 (pending) | 0/21 (pending) | pending |  |  | ttleagues | https://derbydistrict.ttleagues.com |
-| Derbyshire | Matlock Table Tennis League | 0/2 (pending) | 0/10 (pending) | pending |  |  | ttleagues | https://matlock.ttleagues.com |
-| Devonshire | Exeter Table Tennis League | 0/4 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://exeter.ttleagues.com |
-| Devonshire | South Devon and Torbay Table Tennis League | 0/4 (pending) | 0/20 (pending) | pending |  |  | ttleagues | https://southdevonandtorbay.ttleagues.com |
-| Dorset | Blackmore Vale Table Tennis League | 0/2 (pending) | 0/2 (pending) | pending |  |  | ttleagues | https://blackmorevale.ttleagues.com |
-| Dorset | Weymouth Table Tennis League | 0/3 (pending) | 0/15 (pending) | pending |  |  | ttleagues | https://weymouth.ttleagues.com |
-| Durham | Darlington Table Tennis League | 0/2 (pending) | 0/9 (pending) | pending |  |  | ttleagues | https://darlington.ttleagues.com |
-| Durham | Sunderland Table Tennis League | 0/3 (pending) | 0/18 (pending) | pending |  |  | tt365 | https://www.tabletennis365.com/Sunderland |
+| Berkshire | Reading & District Table Tennis Association | 4/4 (completed) | 24/24 (completed) | completed | 2026-03-15T08:46:46.977Z | 2026-03-15T08:50:59.737Z | tt365 | https://www.tabletennis365.com/reading |
+| Buckinghamshire | Aylesbury Table Tennis League | 5/5 (completed) | 21/21 (completed) | completed | 2026-03-15T08:50:59.738Z | 2026-03-15T08:51:38.676Z | ttleagues | https://aylesbury.ttleagues.com |
+| Buckinghamshire | Chalfonts Table Tennis League | 2/2 (completed) | 11/11 (completed) | completed | 2026-03-15T08:51:38.681Z | 2026-03-15T08:51:46.265Z | ttleagues | https://chalfonts.ttleagues.com |
+| Buckinghamshire | Chiltern Table Tennis League | 2/2 (completed) | 8/8 (completed) | completed | 2026-03-15T08:51:46.266Z | 2026-03-15T08:51:47.612Z | ttleagues | https://chiltern.ttleagues.com |
+| Buckinghamshire | High Wycombe Table Tennis League | 4/4 (completed) | 16/16 (completed) | completed | 2026-03-15T08:51:47.615Z | 2026-03-15T08:51:52.088Z | ttleagues | https://highwycombe.ttleagues.com |
+| Cambridgeshire | Cambridge Table Tennis League | 4/4 (completed) | 17/17 (completed) | completed | 2026-03-15T08:51:52.091Z | 2026-03-15T08:53:27.262Z | ttleagues | https://cambridge.ttleagues.com |
+| Cambridgeshire | Ely & District Table Tennis League | 3/3 (completed) | 12/12 (completed) | completed | 2026-03-15T08:53:27.264Z | 2026-03-15T08:53:48.208Z | ttleagues | https://elydistrict.ttleagues.com |
+| Cambridgeshire | Peterborough Table Tennis League | 4/4 (completed) | 11/11 (completed) | completed | 2026-03-15T08:53:48.211Z | 2026-03-15T08:54:40.583Z | ttleagues | https://peterborough.ttleagues.com |
+| Cheshire | Chester and Ellesmere Port Table Tennis League | 4/4 (completed) | 18/18 (completed) | completed | 2026-03-15T08:54:40.587Z | 2026-03-15T08:54:44.657Z | ttleagues | https://chesterandellesmereport.ttleagues.com |
+| Cheshire | Crewe Table Tennis League | 8/8 (completed) | 16/16 (completed) | completed | 2026-03-15T08:54:44.661Z | 2026-03-15T08:54:47.220Z | ttleagues | https://crewe.ttleagues.com |
+| Cheshire | Glossop Table Tennis League | 3/3 (completed) | 15/15 (completed) | completed | 2026-03-15T08:54:47.222Z | 2026-03-15T08:55:29.888Z | ttleagues | https://glossop.ttleagues.com |
+| Cheshire | Halton Table Tennis League | 2/2 (completed) | 5/5 (completed) | completed | 2026-03-15T08:55:29.893Z | 2026-03-15T08:56:07.946Z | ttleagues | https://halton.ttleagues.com |
+| Cheshire | Mid-Cheshire Table Tennis League | 2/2 (completed) | 11/11 (completed) | completed | 2026-03-15T08:56:07.947Z | 2026-03-15T08:56:17.003Z | ttleagues | https://midcheshire.ttleagues.com |
+| Cheshire | Trafford Table Tennis League | 3/3 (completed) | 15/15 (completed) | completed | 2026-03-15T08:56:17.005Z | 2026-03-15T08:56:20.403Z | ttleagues | https://trafford.ttleagues.com |
+| Cheshire | Wilmslow Table Tennis League | 3/3 (completed) | 15/15 (completed) | completed | 2026-03-15T08:56:20.405Z | 2026-03-15T08:56:27.451Z | ttleagues | https://wilmslow.ttleagues.com |
+| Cheshire | Wirral Table Tennis League | 3/3 (completed) | 14/14 (completed) | completed | 2026-03-15T08:56:27.455Z | 2026-03-15T08:57:06.520Z | ttleagues | https://wirral.ttleagues.com |
+| Cheshire\|Lancashire | Lancashire And Cheshire Table Tennis League | 3/3 (completed) | 6/6 (completed) | completed | 2026-03-15T08:57:06.523Z | 2026-03-15T08:57:12.942Z | ttleagues | https://lancashireandcheshire.ttleagues.com |
+| Cleveland | Cleveland Table Tennis League | 1/1 (completed) | 3/3 (completed) | completed | 2026-03-15T08:57:12.944Z | 2026-03-15T08:57:33.181Z | ttleagues | https://cleveland.ttleagues.com |
+| Cleveland | Middlesbrough Table Tennis League | 3/3 (completed) | 6/6 (completed) | completed | 2026-03-15T08:57:33.185Z | 2026-03-15T08:57:34.391Z | ttleagues | https://middlesbrough.ttleagues.com |
+| Cleveland | Stockton Table Tennis League | 3/3 (completed) | 13/13 (completed) | completed | 2026-03-15T08:57:34.398Z | 2026-03-15T08:57:37.904Z | ttleagues | https://stockton.ttleagues.com |
+| Cornwall | North Cornwall Table Tennis League | 2/2 (completed) | 16/16 (completed) | completed | 2026-03-15T08:57:37.907Z | 2026-03-15T08:58:20.018Z | tt365 | https://www.tabletennis365.com/northcornwall |
+| Cornwall | West Cornwall Table Tennis League | 4/4 (completed) | 14/14 (completed) | completed | 2026-03-15T08:58:20.021Z | 2026-03-15T08:58:23.845Z | ttleagues | https://westcornwall.ttleagues.com |
+| Cumbria | Barrow Table Tennis League | 2/2 (completed) | 0/0 (not_required) | completed | 2026-03-15T08:58:23.847Z | 2026-03-15T08:58:24.188Z | ttleagues | https://barrow.ttleagues.com |
+| Derbyshire | Chesterfield Table Tennis League | 4/4 (completed) | 6/6 (completed) | completed | 2026-03-15T08:58:24.191Z | 2026-03-15T08:59:06.830Z | ttleagues | https://chesterfield.ttleagues.com |
+| Derbyshire | Derby & District Table Tennis Association | 4/4 (completed) | 21/21 (completed) | completed | 2026-03-15T08:59:06.836Z | 2026-03-15T09:00:00.628Z | ttleagues | https://derbydistrict.ttleagues.com |
+| Derbyshire | Matlock Table Tennis League | 2/2 (completed) | 10/10 (completed) | completed | 2026-03-15T09:00:00.633Z | 2026-03-15T09:00:03.793Z | ttleagues | https://matlock.ttleagues.com |
+| Devonshire | Exeter Table Tennis League | 4/4 (completed) | 14/14 (completed) | completed | 2026-03-15T09:00:03.796Z | 2026-03-15T09:01:08.740Z | ttleagues | https://exeter.ttleagues.com |
+| Devonshire | South Devon and Torbay Table Tennis League | 4/4 (completed) | 20/20 (completed) | completed | 2026-03-15T09:01:08.746Z | 2026-03-15T09:01:43.435Z | ttleagues | https://southdevonandtorbay.ttleagues.com |
+| Dorset | Blackmore Vale Table Tennis League | 2/2 (completed) | 2/2 (completed) | completed | 2026-03-15T09:01:43.439Z | 2026-03-15T09:01:44.154Z | ttleagues | https://blackmorevale.ttleagues.com |
+| Dorset | Weymouth Table Tennis League | 3/3 (completed) | 15/15 (completed) | completed | 2026-03-15T09:01:44.158Z | 2026-03-15T09:01:46.919Z | ttleagues | https://weymouth.ttleagues.com |
+| Durham | Darlington Table Tennis League | 2/2 (completed) | 9/9 (completed) | completed | 2026-03-15T09:01:46.920Z | 2026-03-15T09:01:48.830Z | ttleagues | https://darlington.ttleagues.com |
+| Durham | Sunderland Table Tennis League | 3/3 (completed) | 10/18 (partial) | in_progress | 2026-03-15T09:01:48.837Z |  | tt365 | https://www.tabletennis365.com/Sunderland |
 | Essex | Basildon Table Tennis League | 0/0 (not_required) | 0/0 (not_required) | pending |  |  | tt365 | https://www.tabletennis365.com/Basildon |
 | Essex | Becontree Table Tennis League | 0/6 (pending) | 0/7 (pending) | pending |  |  | ttleagues | https://becontree.ttleagues.com |
 | Essex | Braintree Table Tennis League | 0/3 (pending) | 0/14 (pending) | pending |  |  | ttleagues | https://braintree.ttleagues.com |
