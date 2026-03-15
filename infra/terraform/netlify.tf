@@ -19,3 +19,8 @@ resource "netlify_environment_variable" "vite_api_url" {
     value   = "/.netlify/functions/api"
   }]
 }
+
+resource "netlify_site_domain_settings" "main" {
+  site_id       = var.netlify_site_id
+  custom_domain = "ttplayers.tournapilot.com"
+}
