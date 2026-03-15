@@ -7,13 +7,11 @@ type DashboardTabId = Exclude<AppTabId, 'home'>;
 
 interface HomeTabContentProps {
   allLeagues: LeagueWithDivisions[];
-  searchScopeLabel: string;
   onOpenTab: (tabId: DashboardTabId) => void;
 }
 
 export function HomeTabContent({
   allLeagues,
-  searchScopeLabel,
   onOpenTab,
 }: HomeTabContentProps) {
   const totalLeagueCount = allLeagues.length;

@@ -258,29 +258,32 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
 
       <AppCard className="mt-2">
         <AppCardContent className="mb-1">
-          <div className="d-flex mb-2">
+          <div className="d-flex mb-3">
             <div className="align-self-center">
               <p className="mb-n1 color-highlight font-600">Matchup Setup</p>
-              <h4 className="mb-0">Select Two Players</h4>
+              <h4 className="mb-0"><i className="fa fa-users me-2 color-highlight" />Select Two Players</h4>
             </div>
           </div>
 
           <div className="tt-h2h-picker-grid">
-            <div className="tt-h2h-picker-card">
-              <p className="font-11 opacity-60 text-uppercase mb-2">Player A</p>
+            <div className="tt-h2h-picker-vs">VS</div>
+
+            {/* Player A Picker */}
+            <div className={`tt-h2h-picker-card ${playerA ? 'tt-h2h-picker-card-selected tt-h2h-picker-card-selected-a' : 'tt-h2h-picker-card-empty'}`}>
+              <p className={`font-11 text-uppercase mb-2 ${playerA ? 'color-white opacity-60' : 'opacity-60'}`}>Player A</p>
               {playerA ? (
                 <>
                   <div className="tt-h2h-selected-player">
-                    <span className="tt-h2h-selected-avatar bg-highlight color-white">{getInitials(playerA.name)}</span>
+                    <span className="tt-h2h-selected-avatar">{getInitials(playerA.name)}</span>
                     <div>
-                      <h5 className="mb-1">{playerA.name}</h5>
-                      <p className="font-12 opacity-70 mb-0">{playerA.wins}W · {playerA.played} played</p>
+                      <h5 className="mb-1 font-700">{playerA.name}</h5>
+                      <p className="font-12 mb-0">{playerA.wins}W · {playerA.played} played</p>
                     </div>
                   </div>
-                  <div className="d-flex gap-2 mt-2">
+                  <div className="d-flex gap-2 mt-3">
                     <AppButtonLink
                       size="s"
-                      tone="outline-highlight"
+                      tone="gray"
                       onClick={(event) => {
                         event.preventDefault();
                         setPlayerA(null);
@@ -292,6 +295,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                     </AppButtonLink>
                     <AppButtonLink
                       size="s"
+                      tone="gray"
                       onClick={(event) => {
                         event.preventDefault();
                         onOpenPlayer(playerA.id);
@@ -303,7 +307,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                 </>
               ) : (
                 <>
-                  <div className="search-box search-dark shadow-xs border-0 bg-theme rounded-sm mb-2">
+                  <div className="search-box search-dark shadow-xs border-0 bg-theme rounded-m mb-2">
                     <i className="fa fa-search ms-1" />
                     <input
                       type="text"
@@ -314,12 +318,12 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                     />
                   </div>
                   {normalizedQueryA.length > 0 && normalizedQueryA.length <= 2 ? (
-                    <p className="font-12 opacity-70 mb-0">Type at least 3 characters.</p>
+                    <p className="font-12 opacity-70 mb-0 px-1">Type at least 3 characters.</p>
                   ) : null}
-                  {isLoadingA ? <p className="font-12 mb-0"><i className="fa fa-spinner fa-spin me-1" />Searching...</p> : null}
-                  {errorA ? <p className="font-12 color-red-dark mb-0">{errorA}</p> : null}
+                  {isLoadingA ? <p className="font-12 mb-0 px-1"><i className="fa fa-spinner fa-spin me-1" />Searching...</p> : null}
+                  {errorA ? <p className="font-12 color-red-dark mb-0 px-1">{errorA}</p> : null}
                   {!isLoadingA && resultsA.length > 0 ? (
-                    <div className="list-group list-custom-small tt-h2h-result-list">
+                    <div className="list-group list-custom-small tt-h2h-result-list mt-2">
                       {resultsA.slice(0, 8).map((player) => (
                         <a
                           key={player.id}
@@ -333,7 +337,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                         >
                           <i className="tt-h2h-search-avatar bg-highlight color-white">{getInitials(player.name)}</i>
                           <span>{player.name}</span>
-                          <strong>{player.wins}W · {player.played} played</strong>
+                          <strong>{player.wins}W · {player.played}</strong>
                           <i className="fa fa-angle-right" />
                         </a>
                       ))}
@@ -343,21 +347,22 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
               )}
             </div>
 
-            <div className="tt-h2h-picker-card">
-              <p className="font-11 opacity-60 text-uppercase mb-2">Player B</p>
+            {/* Player B Picker */}
+            <div className={`tt-h2h-picker-card ${playerB ? 'tt-h2h-picker-card-selected tt-h2h-picker-card-selected-b' : 'tt-h2h-picker-card-empty'}`}>
+              <p className={`font-11 text-uppercase mb-2 ${playerB ? 'color-white opacity-60' : 'opacity-60'}`}>Player B</p>
               {playerB ? (
                 <>
                   <div className="tt-h2h-selected-player">
-                    <span className="tt-h2h-selected-avatar bg-red-dark color-white">{getInitials(playerB.name)}</span>
+                    <span className="tt-h2h-selected-avatar">{getInitials(playerB.name)}</span>
                     <div>
-                      <h5 className="mb-1">{playerB.name}</h5>
-                      <p className="font-12 opacity-70 mb-0">{playerB.wins}W · {playerB.played} played</p>
+                      <h5 className="mb-1 font-700">{playerB.name}</h5>
+                      <p className="font-12 mb-0">{playerB.wins}W · {playerB.played} played</p>
                     </div>
                   </div>
-                  <div className="d-flex gap-2 mt-2">
+                  <div className="d-flex gap-2 mt-3">
                     <AppButtonLink
                       size="s"
-                      tone="outline-highlight"
+                      tone="gray"
                       onClick={(event) => {
                         event.preventDefault();
                         setPlayerB(null);
@@ -369,6 +374,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                     </AppButtonLink>
                     <AppButtonLink
                       size="s"
+                      tone="gray"
                       onClick={(event) => {
                         event.preventDefault();
                         onOpenPlayer(playerB.id);
@@ -380,7 +386,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                 </>
               ) : (
                 <>
-                  <div className="search-box search-dark shadow-xs border-0 bg-theme rounded-sm mb-2">
+                  <div className="search-box search-dark shadow-xs border-0 bg-theme rounded-m mb-2">
                     <i className="fa fa-search ms-1" />
                     <input
                       type="text"
@@ -391,12 +397,12 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                     />
                   </div>
                   {normalizedQueryB.length > 0 && normalizedQueryB.length <= 2 ? (
-                    <p className="font-12 opacity-70 mb-0">Type at least 3 characters.</p>
+                    <p className="font-12 opacity-70 mb-0 px-1">Type at least 3 characters.</p>
                   ) : null}
-                  {isLoadingB ? <p className="font-12 mb-0"><i className="fa fa-spinner fa-spin me-1" />Searching...</p> : null}
-                  {errorB ? <p className="font-12 color-red-dark mb-0">{errorB}</p> : null}
+                  {isLoadingB ? <p className="font-12 mb-0 px-1"><i className="fa fa-spinner fa-spin me-1" />Searching...</p> : null}
+                  {errorB ? <p className="font-12 color-red-dark mb-0 px-1">{errorB}</p> : null}
                   {!isLoadingB && resultsB.length > 0 ? (
-                    <div className="list-group list-custom-small tt-h2h-result-list">
+                    <div className="list-group list-custom-small tt-h2h-result-list mt-2">
                       {resultsB.slice(0, 8).map((player) => (
                         <a
                           key={player.id}
@@ -410,7 +416,7 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
                         >
                           <i className="tt-h2h-search-avatar bg-red-dark color-white">{getInitials(player.name)}</i>
                           <span>{player.name}</span>
-                          <strong>{player.wins}W · {player.played} played</strong>
+                          <strong>{player.wins}W · {player.played}</strong>
                           <i className="fa fa-angle-right" />
                         </a>
                       ))}
@@ -424,12 +430,15 @@ export function H2HTabContent({ selectedLeagueIds, leagueScopeLabel, onOpenPlaye
       </AppCard>
 
       {!playerA || !playerB ? (
-        <AppCard className="mt-2">
-          <AppCardContent>
-            <p className="mb-0">Select both players to compare win split and encounter history.</p>
+        <AppCard className="mt-2 text-center" cardHeight={140}>
+          <AppCardContent className="d-flex flex-column justify-content-center h-100">
+            <i className="fa fa-bolt font-30 color-yellow-dark mb-2" />
+            <h5 className="mb-1">Ready for the Duel?</h5>
+            <p className="mb-0 px-4 font-12 opacity-70">Complete the matchup setup above to unlock deep H2H analytics.</p>
           </AppCardContent>
         </AppCard>
       ) : null}
+
 
       {isH2HLoading ? (
         <AppCard className="mt-2">

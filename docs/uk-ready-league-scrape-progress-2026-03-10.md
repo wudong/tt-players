@@ -786,3 +786,5 @@ Started: 2026-03-15T08:41:02.013Z
 - 2026-03-15T09:01:48.836Z completed 38/190: Darlington Table Tennis League, current=2/2, history=9/9, overall=completed, jobs_processed=44, jobs_failed=0
 - 2026-03-15T09:01:48.839Z starting 39/190: Sunderland Table Tennis League (England / Durham), current_targets=3, history_targets=18
 - 2026-03-15T09:03:06.403Z checkpoint (10 minute timer): completed=38, partial=0, in_progress=1, pending=151
+- 2026-03-15T09:13:06.577Z checkpoint (10 minute timer): completed=38, partial=0, in_progress=1, pending=151
+- 2026-03-15T09:23:06.584Z checkpoint (10 minute timer): completed=38, partial=0, in_progress=1, pending=151

@@ -3,7 +3,6 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const PWAReloadPrompt: React.FC = () => {
   const {
-    offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
@@ -16,60 +15,47 @@ const PWAReloadPrompt: React.FC = () => {
   });
 
   const close = () => {
-    setOfflineReady(false);
     setNeedRefresh(false);
   };
 
   return (
     <>
-      {(offlineReady || needRefresh) && (
-        <div 
-          className="snackbar-toast color-white bg-blue-dark mb-4 show" 
-          style={{ 
-            position: 'fixed', 
-            bottom: '70px', 
-            left: '15px', 
-            right: '15px', 
-            zIndex: 1000,
-            display: 'block',
-            opacity: 1,
-            pointerEvents: 'auto'
-          }}
-        >
-          {offlineReady ? (
-            <div className="d-flex">
-              <div className="align-self-center">
-                <i className="fa fa-info-circle me-3 font-20"></i>
+      {needRefresh && (
+        <>
+          <div
+            className="menu-hider menu-active"
+            onClick={close}
+            style={{ zIndex: 998 }}
+          />
+          <div
+            className="menu menu-box-bottom rounded-m menu-active"
+            style={{ height: '300px', zIndex: 999 }}
+          >
+            <div className="content">
+              <div className="text-center mt-4">
+                <i className="fa fa-sync fa-spin font-40 color-highlight mb-3"></i>
+                <h4 className="font-700">Update Available</h4>
+                <p className="boxed-text-xl mt-2">
+                  A newer version of TT Players is available. Update now to get the latest features and improvements!
+                </p>
               </div>
-              <div className="align-self-center">
-                <h1 className="color-white font-16 mb-0">App Ready</h1>
-                <p className="color-white mb-0 opacity-70">App is ready to work offline.</p>
-              </div>
-              <div className="ms-auto align-self-center">
-                <button onClick={close} className="btn btn-xxs bg-white color-black rounded-s">Close</button>
-              </div>
-            </div>
-          ) : (
-            <div className="d-flex">
-              <div className="align-self-center">
-                <i className="fa fa-sync fa-spin me-3 font-20"></i>
-              </div>
-              <div className="align-self-center">
-                <h1 className="color-white font-16 mb-0">Update Available</h1>
-                <p className="color-white mb-0 opacity-70">New content is available, click to update.</p>
-              </div>
-              <div className="ms-auto align-self-center">
-                <button 
-                  onClick={() => updateServiceWorker(true)} 
-                  className="btn btn-xxs bg-white color-black rounded-s me-2"
+              <div className="boxed-text-l mt-4">
+                <button
+                  onClick={() => updateServiceWorker(true)}
+                  className="btn btn-m font-600 bg-highlight w-100"
                 >
-                  Update
+                  Update Now
                 </button>
-                <button onClick={close} className="btn btn-xxs border-white color-white rounded-s">Close</button>
+                <button
+                  onClick={close}
+                  className="btn-full mt-3 pt-2 text-center text-uppercase font-600 color-red-light font-12 bg-transparent border-0 w-100"
+                >
+                  Maybe later
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        </>
       )}
     </>
   );

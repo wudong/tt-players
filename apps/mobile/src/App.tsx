@@ -695,7 +695,6 @@ function App() {
           {activeTab === 'home' ? (
             <HomeTabContent
               allLeagues={allLeagues}
-              searchScopeLabel={searchScopeLabel}
               onOpenTab={(tabId) => switchTab(tabId, 'root')}
             />
           ) : null}
@@ -1013,6 +1012,15 @@ function App() {
               </div>
             </a>
             <InstallAppMenuItem onClose={onCloseMenuClick} />
+          </div>
+
+          <h6 className="menu-divider mt-4">Links</h6>
+          <div className="list-group list-custom-small list-menu">
+            <a href="https://www.tournapilot.com/app" target="_blank" rel="noreferrer" onClick={onCloseMenuClick}>
+              <i className="fa fa-external-link-alt gradient-orange color-white" />
+              <span>TournaPilot</span>
+              <i className="fa fa-angle-right" />
+            </a>
           </div>
         </div>
 

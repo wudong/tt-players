@@ -1047,9 +1047,36 @@ body.theme-dark .tt-player-summary-divider {
 
 .tt-h2h-picker-grid {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  position: relative;
 }
+
+.tt-h2h-picker-vs {
+  align-items: center;
+  background: var(--theme-card-background);
+  border: 4px solid var(--theme-background);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  color: var(--bs-highlight);
+  display: flex;
+  font-size: 14px;
+  font-weight: 900;
+  height: 48px;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  z-index: 5;
+}
+
+body.theme-dark .tt-h2h-picker-vs {
+  background: #2b2b2b;
+  border-color: #1b1b1b;
+}
+
 
 .tt-h2h-hero-card .badge {
   border-radius: 999px;
@@ -1061,9 +1088,30 @@ body.theme-dark .tt-player-summary-divider {
 .tt-h2h-picker-card {
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s ease;
 }
+
+.tt-h2h-picker-card-empty {
+  border: 2px dashed rgba(0, 0, 0, 0.08); background: transparent;
+}
+
+.tt-h2h-picker-card-selected {
+  border-color: transparent;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.tt-h2h-picker-card-selected-a {
+  background: linear-gradient(135deg, var(--bs-highlight), #ff5757);
+  color: #fff;
+}
+
+.tt-h2h-picker-card-selected-b {
+  background: linear-gradient(135deg, #c63a3a, #e65a5a);
+  color: #fff;
+}
+
 
 .tt-h2h-result-list {
   max-height: 220px;
@@ -1091,22 +1139,37 @@ body.theme-dark .tt-player-summary-divider {
 .tt-h2h-selected-player {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
+
+.tt-h2h-selected-player h5 {
+  color: inherit;
+  font-size: 17px;
+}
+
+.tt-h2h-selected-player p {
+  color: inherit !important;
+  opacity: 0.8;
+}
+
 
 .tt-h2h-selected-avatar {
   align-items: center;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 999px;
+  color: #fff !important;
   display: inline-flex;
-  font-size: 11px;
+  font-size: 14px;
   font-style: normal;
-  font-weight: 700;
-  height: 42px;
+  font-weight: 800;
+  height: 54px;
   justify-content: center;
-  letter-spacing: 0.3px;
-  min-width: 42px;
+  letter-spacing: 0.5px;
+  min-width: 54px;
   text-transform: uppercase;
 }
+
 
 .tt-h2h-duel-grid {
   align-items: center;
@@ -1261,9 +1324,14 @@ body.theme-dark .tt-standings-table td {
 }
 
 body.theme-dark .tt-h2h-picker-card {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
 }
+
+body.theme-dark .tt-h2h-picker-card-empty {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 
 body.theme-dark .tt-h2h-bar {
   background: rgba(255, 255, 255, 0.14);
@@ -1281,6 +1349,12 @@ body.theme-dark .tt-h2h-duel-vs {
   .tt-h2h-picker-grid {
     grid-template-columns: 1fr;
   }
+
+  .tt-h2h-picker-vs {
+    top: 50%; /* Adjusted for stacked layout - effectively between cards */
+    display: none; /* Hide VS badge on mobile stack to avoid clutter or fix positioning */
+  }
+
 
   .tt-tab-toolbar {
     align-items: flex-start;

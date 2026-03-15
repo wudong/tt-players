@@ -1,7 +1,7 @@
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { cx } from './cx';
 
-type AppButtonTone = 'highlight' | 'outline-highlight' | 'gray' | 'danger';
+type AppButtonTone = 'highlight' | 'outline-highlight' | 'gray' | 'danger' | 'light';
 type AppButtonSize = 's' | 'sm' | 'm' | 'l';
 type AppButtonRounded = 's' | 'm';
 type AppButtonFontWeight = 'regular' | 'semibold' | 'bold';
@@ -11,6 +11,7 @@ const toneClassName: Record<AppButtonTone, string> = {
   'outline-highlight': 'color-highlight border-highlight bg-transparent',
   gray: 'bg-gray-dark color-white border-0',
   danger: 'bg-red-dark color-white border-0',
+  light: 'bg-white color-black border-0',
 };
 
 const sizeClassName: Record<AppButtonSize, string> = {
