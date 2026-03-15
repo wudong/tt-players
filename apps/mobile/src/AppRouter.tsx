@@ -8,6 +8,7 @@ import { PlayerPage } from './PlayerPage';
 import { TeamPage } from './TeamPage';
 import PWAReloadPrompt from './PWAReloadPrompt';
 import PWAInstallSheet from './PWAInstallSheet';
+import { PWAInstallProvider } from './PWAInstallContext';
 
 function LegacyPlayerRedirect() {
   const { playerId = '' } = useParams<{ playerId: string }>();
@@ -41,9 +42,10 @@ function EnsureValidTab({ children }: { children: JSX.Element }) {
 export function AppRouter() {
   return (
     <HashRouter>
-      <PWAReloadPrompt />
-      <PWAInstallSheet />
-      <TabNavigationProvider>
+      <PWAInstallProvider>
+        <PWAReloadPrompt />
+        <PWAInstallSheet />
+        <TabNavigationProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/tabs/home" replace />} />
 
@@ -61,7 +63,8 @@ export function AppRouter() {
 
           <Route path="*" element={<Navigate to="/tabs/home" replace />} />
         </Routes>
-      </TabNavigationProvider>
+        </TabNavigationProvider>
+      </PWAInstallProvider>
     </HashRouter>
   );
 }

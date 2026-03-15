@@ -8,6 +8,7 @@ import {
   type LeadersResponse,
   type LeagueSeasonsResponse,
   type LeaguesResponse,
+  type PlayerCountResponse,
   type PlayerCurrentSeasonAffiliationsResponse,
   type PlayerInsights,
   type PlayerSearchResponse,
@@ -29,6 +30,14 @@ export function useLeaguesQuery(seasonId?: string, enabled = true) {
       return apiFetch<LeaguesResponse>(`/leagues?${params.toString()}`, signal);
     },
     enabled,
+  });
+}
+
+export function usePlayerCountQuery() {
+  return useQuery({
+    queryKey: ['players', 'count'],
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      apiFetch<PlayerCountResponse>('/players/count', signal),
   });
 }
 

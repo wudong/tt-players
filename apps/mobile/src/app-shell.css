@@ -332,13 +332,83 @@ body.theme-dark .list-custom-large a {
   cursor: pointer;
 }
 
+/* ── Hero section ────────────────────────────────────────────────────── */
+
+.tt-home-hero {
+  border-radius: 20px;
+  box-shadow: var(--tt-home-shadow);
+  margin: 0 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tt-home-hero img {
+  display: block;
+  height: 320px;
+  object-fit: cover;
+  object-position: center 30%;
+  width: 100%;
+}
+
+.tt-home-hero-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.45) 50%, transparent 100%);
+  bottom: 0;
+  left: 0;
+  padding: 24px 18px 18px;
+  position: absolute;
+  right: 0;
+}
+
+.tt-home-hero-title {
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+.tt-home-hero-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .tt-home-stat-card {
   background: var(--tt-home-surface);
   border: 1px solid var(--tt-home-border);
   border-radius: 18px;
   box-shadow: var(--tt-home-shadow);
   height: 100%;
-  padding: 14px 12px;
+  padding: 16px 12px 14px;
+  text-align: center;
+}
+
+.tt-home-stat-icon {
+  align-items: center;
+  border-radius: 14px;
+  display: inline-flex;
+  font-size: 16px;
+  height: 36px;
+  justify-content: center;
+  margin-bottom: 10px;
+  width: 36px;
+}
+
+.tt-home-stat-accent-blue .tt-home-stat-icon {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.06));
+  color: #3b82f6;
+}
+
+.tt-home-stat-accent-green .tt-home-stat-icon {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(34, 197, 94, 0.06));
+  color: #22c55e;
+}
+
+.tt-home-stat-accent-amber .tt-home-stat-icon {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.06));
+  color: #f59e0b;
 }
 
 .tt-home-stat-label {
@@ -355,75 +425,66 @@ body.theme-dark .list-custom-large a {
   line-height: 1;
 }
 
-.tt-home-shortcuts {
-  display: grid;
-  gap: 12px;
+.tt-home-stat-accent-red .tt-home-stat-icon {
+  background: linear-gradient(135deg, rgba(227, 28, 35, 0.16), rgba(227, 28, 35, 0.06));
+  color: #e31c23;
 }
 
-.tt-home-shortcut-card {
-  align-items: flex-start;
-  background: var(--tt-home-surface);
-  border: 1px solid var(--tt-home-border);
-  border-radius: 22px;
-  box-shadow: var(--tt-home-shadow);
+/* ── Trending-style shortcut rows ─────────────────────────────────────── */
+
+.tt-home-trending {
+  display: grid;
+  gap: 0;
+}
+
+.tt-home-trending-row {
+  align-items: center;
+  border-bottom: 1px solid var(--tt-home-border);
   color: inherit !important;
   display: flex;
-  gap: 12px;
-  padding: 14px;
+  gap: 14px;
+  padding: 14px 0;
   text-decoration: none;
 }
 
-.tt-home-shortcut-icon {
-  align-items: center;
-  background: linear-gradient(160deg, rgba(227, 28, 35, 0.14), rgba(227, 28, 35, 0.04));
-  border-radius: 18px;
-  color: var(--highlight);
-  display: inline-flex;
-  flex: 0 0 48px;
-  font-size: 20px;
-  height: 48px;
-  justify-content: center;
-  margin-top: 2px;
-  width: 48px;
+.tt-home-trending-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
-.tt-home-shortcut-copy {
+.tt-home-trending-copy {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.tt-home-shortcut-eyebrow {
+.tt-home-trending-title {
+  color: var(--tt-home-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+
+.tt-home-trending-desc {
+  color: var(--tt-home-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0 0 5px;
+}
+
+.tt-home-trending-meta {
   color: var(--highlight);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-.tt-home-shortcut-copy h4 {
-  color: var(--tt-home-text);
-}
-
-.tt-home-shortcut-copy p:not(.tt-home-shortcut-eyebrow) {
-  color: var(--tt-home-muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.tt-home-shortcut-meta {
-  background: rgba(227, 28, 35, 0.08);
-  border-radius: 999px;
-  color: var(--tt-home-text);
-  display: inline-flex;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 6px 10px;
-}
-
-.tt-home-shortcut-arrow {
-  align-self: center;
-  color: var(--tt-home-muted);
-  margin-top: 0;
+.tt-home-trending-thumb {
+  border-radius: 14px;
+  flex: 0 0 33%;
+  height: auto;
+  max-height: 110px;
+  object-fit: cover;
+  width: 33%;
 }
 
 .tt-home-leaders-list a {

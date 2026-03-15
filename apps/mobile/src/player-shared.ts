@@ -11,6 +11,11 @@ export type PlayerSearchResponse = {
   data: PlayerSearchItem[];
 };
 
+export type PlayerCountResponse = {
+  players: number;
+  matches: number;
+};
+
 export type StandingItem = {
   position: number;
   team_id: string;

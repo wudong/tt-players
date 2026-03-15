@@ -237,6 +237,40 @@ export function playersRoutes(db: Kysely<Database>): FastifyPluginAsync {
         const app = fastify.withTypeProvider<ZodTypeProvider>();
 
         app.get(
+            '/count',
+            {
+                schema: {
+                    response: {
+                        200: z.object({
+                            players: z.number().int(),
+                            matches: z.number().int(),
+                        }),
+                        500: ErrorSchema,
+                    },
+                },
+            },
+            async (_request, reply) => {
+                const [playerResult, matchResult] = await Promise.all([
+                    db
+                        .selectFrom('external_players')
+                        .select(sql<number>`COUNT(*)`.as('count'))
+                        .where('deleted_at', 'is', null)
+                        .executeTakeFirstOrThrow(),
+                    db
+                        .selectFrom('rubbers')
+                        .select(sql<number>`COUNT(*)`.as('count'))
+                        .where('deleted_at', 'is', null)
+                        .executeTakeFirstOrThrow(),
+                ]);
+
+                return reply.send({
+                    players: Number(playerResult.count),
+                    matches: Number(matchResult.count),
+                });
+            },
+        );
+
+        app.get(
             '/leaders',
             {
                 schema: {

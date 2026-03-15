@@ -8,6 +8,7 @@ import { TabFooterBar } from './TabFooterBar';
 import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { useTabNavigation, type AppTabId } from './navigation/tab-navigation';
 import { useLeadersQuery, useLeaguesQuery, usePlayerSearchQuery } from './queries';
+import { usePWAInstallContext } from './PWAInstallContext';
 
 type MenuId = 'menu-main' | 'menu-share' | 'menu-colors';
 type MenuPlacement = 'left' | 'right' | 'top' | 'bottom';
@@ -41,7 +42,7 @@ type PlayerSearchItem = {
 };
 
 const tabTitles: Record<AppTabId, string> = {
-  home: 'Home',
+  home: 'TTLive',
   players: 'Players',
   leagues: 'Leagues',
   h2h: 'Head to Head',
@@ -138,8 +139,28 @@ function persistFavouritePlayers(players: PlayerSearchItem[]) {
   window.dispatchEvent(new Event(FAVOURITES_UPDATED_EVENT));
 }
 
+
+function InstallAppMenuItem({ onClose }: { onClose: (e: MouseEvent<HTMLAnchorElement>) => void }) {
+  const { triggerInstallPrompt, canInstall } = usePWAInstallContext();
+
+  if (!canInstall) return null;
+
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    onClose(e);
+    triggerInstallPrompt();
+  };
+
+  return (
+    <a href="#" onClick={handleClick}>
+      <i className="fa fa-download gradient-blue color-white" />
+      <span>Install App</span>
+      <i className="fa fa-angle-right" />
+    </a>
+  );
+}
+
 function App() {
-  const { activeTab, handleSystemBack, navigateInActiveTab, navigateInTab, switchTab } = useTabNavigation();
+  const { activeTab, handleSystemBack, navigateInActiveTab, switchTab } = useTabNavigation();
   const [activeGradient, setActiveGradient] = useState<GradientName>('default');
   const [activeHighlight, setActiveHighlight] = useState<HighlightName>('red');
   const [activeMenuId, setActiveMenuId] = useState<MenuId | null>(null);
@@ -674,13 +695,7 @@ function App() {
           {activeTab === 'home' ? (
             <HomeTabContent
               allLeagues={allLeagues}
-              selectedLeagueIds={selectedLeagueIds}
-              isLeagueSelectionReady={isLeagueSelectionReady}
-              isLeaguesLoading={isLeaguesLoading}
-              leaguesError={leaguesError}
               searchScopeLabel={searchScopeLabel}
-              onOpenLeagueFilter={openLeagueSelector}
-              onOpenPlayer={(playerId) => navigateInTab('players', `player/${playerId}`)}
               onOpenTab={(tabId) => switchTab(tabId, 'root')}
             />
           ) : null}
@@ -997,6 +1012,7 @@ function App() {
                 <label className="custom-control-label" htmlFor="toggle-dark-menu" />
               </div>
             </a>
+            <InstallAppMenuItem onClose={onCloseMenuClick} />
           </div>
         </div>
 

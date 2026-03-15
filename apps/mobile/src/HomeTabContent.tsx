@@ -1,264 +1,137 @@
-import { useMemo } from 'react';
 import type { AppTabId } from './navigation/tab-navigation';
 import { type LeagueWithDivisions } from './player-shared';
-import { useLeadersQuery } from './queries';
-import { AppButtonLink, AppCard, AppCardContent } from './ui/appkit';
+import { usePlayerCountQuery } from './queries';
+import { AppCard, AppCardContent } from './ui/appkit';
 
 type DashboardTabId = Exclude<AppTabId, 'home'>;
 
 interface HomeTabContentProps {
   allLeagues: LeagueWithDivisions[];
-  selectedLeagueIds: string[];
-  isLeagueSelectionReady: boolean;
-  isLeaguesLoading: boolean;
-  leaguesError: string | null;
   searchScopeLabel: string;
-  onOpenLeagueFilter: () => void;
-  onOpenPlayer: (playerId: string) => void;
   onOpenTab: (tabId: DashboardTabId) => void;
 }
 
 export function HomeTabContent({
   allLeagues,
-  selectedLeagueIds,
-  isLeagueSelectionReady,
-  isLeaguesLoading,
-  leaguesError,
   searchScopeLabel,
-  onOpenLeagueFilter,
-  onOpenPlayer,
   onOpenTab,
 }: HomeTabContentProps) {
-  const isAllLeagueScope = selectedLeagueIds.length === 0
-    || (allLeagues.length > 0 && selectedLeagueIds.length === allLeagues.length);
+  const totalLeagueCount = allLeagues.length;
+  const totalDivisionCount = allLeagues.reduce((sum, league) => sum + league.divisions.length, 0);
 
-  const selectedLeagues = useMemo(() => {
-    if (allLeagues.length === 0) return [];
-    if (isAllLeagueScope) return allLeagues;
+  const countQuery = usePlayerCountQuery();
+  const isCountLoading = countQuery.isLoading;
+  const playerCount = countQuery.data?.players ?? null;
+  const matchCount = countQuery.data?.matches ?? null;
 
-    const selectedLeagueIdSet = new Set(selectedLeagueIds);
-    const filtered = allLeagues.filter((league) => selectedLeagueIdSet.has(league.id));
-    return filtered.length > 0 ? filtered : allLeagues;
-  }, [allLeagues, isAllLeagueScope, selectedLeagueIds]);
+  const fmt = (v: number | null) => isCountLoading ? '...' : v !== null ? v.toLocaleString() : '–';
 
-  const selectedLeagueCount = selectedLeagues.length;
-  const selectedDivisionCount = selectedLeagues.reduce((sum, league) => sum + league.divisions.length, 0);
-  const visibleLeagues = selectedLeagues.slice(0, 4);
-  const hiddenLeagueCount = Math.max(selectedLeagueCount - visibleLeagues.length, 0);
-  const topPlayersLeagueIds = isAllLeagueScope ? [] : selectedLeagueIds;
+  const statCards = [
+    {
+      label: 'Players',
+      value: fmt(playerCount),
+      iconClassName: 'fa fa-user-friends',
+      accentClass: 'tt-home-stat-accent-blue',
+    },
+    {
+      label: 'Leagues',
+      value: String(totalLeagueCount),
+      iconClassName: 'fa fa-trophy',
+      accentClass: 'tt-home-stat-accent-green',
+    },
+    {
+      label: 'Divisions',
+      value: String(totalDivisionCount),
+      iconClassName: 'fa fa-layer-group',
+      accentClass: 'tt-home-stat-accent-amber',
+    },
+    {
+      label: 'Matches',
+      value: fmt(matchCount),
+      iconClassName: 'fa fa-table-tennis',
+      accentClass: 'tt-home-stat-accent-red',
+    },
+  ];
 
-  const leadersQuery = useLeadersQuery({
-    mode: 'combined',
-    leagueIds: topPlayersLeagueIds,
-    limit: 5,
-    minPlayed: 3,
-    enabled: isLeagueSelectionReady && !isLeaguesLoading && !leaguesError,
-  });
-
-  const topPlayers = leadersQuery.data?.data ?? [];
-  const leadersFormula = leadersQuery.data?.formula ?? null;
-  const topPlayersError = leadersQuery.error instanceof Error ? leadersQuery.error.message : null;
-  const isTopPlayersLoading = leadersQuery.isLoading || (leadersQuery.isFetching && !leadersQuery.data);
-  const leaderCountLabel = isTopPlayersLoading ? '...' : String(topPlayers.length);
   const shortcutCards: Array<{
     tabId: DashboardTabId;
-    eyebrow: string;
     title: string;
     description: string;
-    iconClassName: string;
     meta: string;
+    thumbnail: string;
   }> = [
     {
       tabId: 'players',
-      eyebrow: 'Search and scout',
-      title: 'Players',
-      description: 'Search the player directory and drill into form, insights and match history across your current scope.',
-      iconClassName: 'fa fa-user-friends',
+      title: 'Search Players',
+      description: 'Browse the full player directory, follow their form, and dive into per-match stats and insights.',
       meta: searchScopeLabel,
+      thumbnail: '/images/thumb-players.png',
     },
     {
       tabId: 'leagues',
-      eyebrow: 'Tables and fixtures',
-      title: 'Leagues',
-      description: 'Browse standings, open team hubs, and inspect fixture breakdowns for the current league scope.',
-      iconClassName: 'fa fa-table-tennis',
-      meta: `${selectedDivisionCount} division${selectedDivisionCount === 1 ? '' : 's'} in scope`,
+      title: 'Leagues & Standings',
+      description: 'Explore live league tables, team hubs, fixture lists, and division standings all in one place.',
+      meta: `${totalDivisionCount} divisions across all leagues`,
+      thumbnail: '/images/thumb-leagues.png',
     },
     {
       tabId: 'h2h',
-      eyebrow: 'Compare rivals',
       title: 'Head to Head',
-      description: 'Pick two players and compare their encounters across the leagues you currently care about.',
-      iconClassName: 'fa fa-code-compare',
+      description: 'Pick any two players and see exactly how they compare — win rate, form, and past encounters.',
       meta: searchScopeLabel,
+      thumbnail: '/images/thumb-h2h.png',
     },
   ];
 
   return (
     <>
+      <div className="tt-home-hero">
+        <img src="/images/hero-tt.png" alt="Table tennis action" />
+        <div className="tt-home-hero-overlay">
+          <h1 className="tt-home-hero-title">Track, Compare & Explore.</h1>
+          <p className="tt-home-hero-subtitle">
+            Dive into leaderboards, head-to-head matchups, and match history across all your favourite leagues.
+          </p>
+        </div>
+      </div>
+
       <div className="content mt-3 mb-2">
         <div className="row mb-0">
-          <div className="col-4">
-            <div className="tt-home-stat-card">
-              <p className="tt-home-stat-label mb-1">Leaders</p>
-              <h3 className="tt-home-stat-value mb-0">{leaderCountLabel}</h3>
+          {statCards.map((card) => (
+            <div key={card.label} className="col-6 mb-3">
+              <div className={`tt-home-stat-card ${card.accentClass}`}>
+                <div className="tt-home-stat-icon">
+                  <i className={card.iconClassName} />
+                </div>
+                <h3 className="tt-home-stat-value mb-1">{card.value}</h3>
+                <p className="tt-home-stat-label mb-0">{card.label}</p>
+              </div>
             </div>
-          </div>
-          <div className="col-4">
-            <div className="tt-home-stat-card">
-              <p className="tt-home-stat-label mb-1">Leagues</p>
-              <h3 className="tt-home-stat-value mb-0">{selectedLeagueCount}</h3>
-            </div>
-          </div>
-          <div className="col-4">
-            <div className="tt-home-stat-card">
-              <p className="tt-home-stat-label mb-1">Divisions</p>
-              <h3 className="tt-home-stat-value mb-0">{selectedDivisionCount}</h3>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       <AppCard>
         <AppCardContent className="mb-2">
-          <div className="d-flex mb-3">
-            <div className="align-self-center">
-              <p className="mb-1 color-highlight font-700 text-uppercase font-11">Explore</p>
-              <h1 className="mb-0 font-18">What you can do next</h1>
-            </div>
-          </div>
-
-          <div className="tt-home-shortcuts">
+          <div className="tt-home-trending">
             {shortcutCards.map((card) => (
               <a
                 key={card.tabId}
                 href="#"
-                className="tt-home-shortcut-card"
+                className="tt-home-trending-row"
                 onClick={(event) => {
                   event.preventDefault();
                   onOpenTab(card.tabId);
                 }}
               >
-                <div className="tt-home-shortcut-icon">
-                  <i className={card.iconClassName} />
+                <div className="tt-home-trending-copy">
+                  <h4 className="tt-home-trending-title">{card.title}</h4>
+                  <p className="tt-home-trending-desc">{card.description}</p>
+                  <span className="tt-home-trending-meta">{card.meta}</span>
                 </div>
-                <div className="tt-home-shortcut-copy">
-                  <p className="tt-home-shortcut-eyebrow mb-1">{card.eyebrow}</p>
-                  <h4 className="mb-1">{card.title}</h4>
-                  <p className="mb-2">{card.description}</p>
-                  <span className="tt-home-shortcut-meta">{card.meta}</span>
-                </div>
-                <i className="fa fa-angle-right tt-home-shortcut-arrow" />
+                <img className="tt-home-trending-thumb" src={card.thumbnail} alt="" />
               </a>
             ))}
-          </div>
-        </AppCardContent>
-      </AppCard>
-
-      <AppCard>
-        <AppCardContent className="mb-2">
-          <div className="d-flex mb-2">
-            <div className="align-self-center">
-              <p className="mb-1 color-highlight font-700 text-uppercase font-11">Discover</p>
-              <h1 className="mb-0 font-18">Top players in scope</h1>
-            </div>
-            <div className="ms-auto align-self-center">
-              <span className="font-11 opacity-60">{searchScopeLabel}</span>
-            </div>
-          </div>
-
-          {leadersFormula ? (
-            <p className="font-11 opacity-60 mt-n1 mb-2">{leadersFormula}</p>
-          ) : (
-            <p className="font-11 opacity-60 mt-n1 mb-2">Best current performers weighted by win rate and volume.</p>
-          )}
-
-          {!isLeagueSelectionReady || isLeaguesLoading ? (
-            <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading league scope...</p>
-          ) : leaguesError ? (
-            <p className="mb-0 color-red-dark">Failed to load leagues: {leaguesError}</p>
-          ) : isTopPlayersLoading ? (
-            <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading top players...</p>
-          ) : topPlayersError ? (
-            <p className="mb-0 color-red-dark">Failed to load top players: {topPlayersError}</p>
-          ) : topPlayers.length === 0 ? (
-            <p className="mb-0">No leaderboard entries are available yet for the selected scope.</p>
-          ) : (
-            <div className="list-group list-custom-large tt-home-leaders-list">
-              {topPlayers.map((player, index) => (
-                <a
-                  key={player.player_id}
-                  href="#"
-                  className={index === topPlayers.length - 1 ? 'border-0' : undefined}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onOpenPlayer(player.player_id);
-                  }}
-                >
-                  <i className="tt-home-rank-badge">{player.rank}</i>
-                  <span>{player.player_name}</span>
-                  <strong>{player.wins}W-{player.losses}L • {player.played} played • {Math.round(player.win_rate)}% WR</strong>
-                  <i className="fa fa-angle-right" />
-                </a>
-              ))}
-            </div>
-          )}
-        </AppCardContent>
-      </AppCard>
-
-      <AppCard className="mb-3">
-        <AppCardContent className="mb-2">
-          <div className="d-flex mb-2">
-            <div className="align-self-center">
-              <p className="mb-1 color-highlight font-700 text-uppercase font-11">Scope</p>
-              <h1 className="mb-0 font-18">League focus</h1>
-            </div>
-            <div className="ms-auto align-self-center">
-              <span className="font-11 opacity-60">{searchScopeLabel}</span>
-            </div>
-          </div>
-
-          {!isLeagueSelectionReady || isLeaguesLoading ? (
-            <p className="mb-0"><i className="fa fa-spinner fa-spin me-2" />Loading your leagues...</p>
-          ) : leaguesError ? (
-            <p className="mb-3 color-red-dark">Failed to load leagues: {leaguesError}</p>
-          ) : (
-            <>
-              <p className="mb-3">
-                Every dashboard card follows this scope. Narrow it down when you want cleaner leaderboards or tighter H2H comparisons.
-              </p>
-              <div className="tt-home-league-pills">
-                {visibleLeagues.map((league) => (
-                  <span key={league.id} className="tt-home-league-pill">
-                    {league.name}
-                  </span>
-                ))}
-                {hiddenLeagueCount > 0 ? (
-                  <span className="tt-home-league-pill tt-home-league-pill-muted">+{hiddenLeagueCount} more</span>
-                ) : null}
-              </div>
-            </>
-          )}
-
-          <div className="tt-home-scope-actions">
-            <AppButtonLink
-              tone="outline-highlight"
-              onClick={(event) => {
-                event.preventDefault();
-                onOpenLeagueFilter();
-              }}
-            >
-              Change Scope
-            </AppButtonLink>
-            <AppButtonLink
-              tone="gray"
-              onClick={(event) => {
-                event.preventDefault();
-                onOpenTab('h2h');
-              }}
-            >
-              Open H2H
-            </AppButtonLink>
           </div>
         </AppCardContent>
       </AppCard>
